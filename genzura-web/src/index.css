@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-page-bg text-text-primary font-sans antialiased;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-medium;
+  }
+
+  /* No ALL CAPS anywhere in the UI */
+  * {
+    text-transform: none !important;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply rounded-button h-input px-4 inline-flex items-center justify-center transition-all duration-base;
+  }
+
+  .btn-primary {
+    @apply bg-brand-blue text-white hover:bg-brand-dark;
+  }
+
+  .card {
+    @apply bg-white rounded-card shadow-card border border-border-base;
+  }
+
+  .input-field {
+    @apply h-input rounded-button border border-border-base px-3 text-sm focus:outline-none focus:border-brand-blue transition-all duration-base;
+  }
+}
