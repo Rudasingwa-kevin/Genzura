@@ -35,7 +35,7 @@ export default {
         'button': '8px',
       },
       height: {
-        'navbar': '52px',
+        'navbar': '120px',
         'input': '36px',
       },
       width: {

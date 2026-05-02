@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -7,34 +7,37 @@
 @layer base {
   body {
     @apply bg-page-bg text-text-primary font-sans antialiased;
-    font-size: 14px;
-    line-height: 1.6;
+    font-family: 'Outfit', sans-serif;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-medium;
-  }
-
-  /* No ALL CAPS anywhere in the UI */
-  * {
-    text-transform: none !important;
+    @apply font-semibold tracking-tight;
   }
 }
 
 @layer components {
-  .btn {
-    @apply rounded-button h-input px-4 inline-flex items-center justify-center transition-all duration-base;
+  .glass {
+    @apply bg-white/70 backdrop-blur-md border border-white/20;
   }
+  
+  .btn-premium {
+    @apply px-8 py-3 rounded-button font-medium transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl;
+  }
+  
+  .section-container {
+    @apply max-w-7xl mx-auto px-6 py-20;
+  }
+}
 
-  .btn-primary {
-    @apply bg-brand-blue text-white hover:bg-brand-dark;
-  }
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
 
-  .card {
-    @apply bg-white rounded-card shadow-card border border-border-base;
-  }
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
 
-  .input-field {
-    @apply h-input rounded-button border border-border-base px-3 text-sm focus:outline-none focus:border-brand-blue transition-all duration-base;
-  }
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-blue to-brand-dark;
 }
