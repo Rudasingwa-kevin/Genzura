@@ -30,6 +30,7 @@ const RegisterPage = () => {
                 </label>
                 <input
                   type="text"
+                  autoComplete="given-name"
                   className="w-full h-12 px-4 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all bg-page-bg/50"
                   placeholder="John"
                 />
@@ -40,6 +41,7 @@ const RegisterPage = () => {
                 </label>
                 <input
                   type="text"
+                  autoComplete="family-name"
                   className="w-full h-12 px-4 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all bg-page-bg/50"
                   placeholder="Doe"
                 />
@@ -52,6 +54,7 @@ const RegisterPage = () => {
               </label>
               <input
                 type="text"
+                autoComplete="organization"
                 className="w-full h-12 px-4 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all bg-page-bg/50"
                 placeholder="Apex Legal Group"
               />
@@ -63,6 +66,7 @@ const RegisterPage = () => {
               </label>
               <input
                 type="email"
+                autoComplete="email"
                 className="w-full h-12 px-4 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all bg-page-bg/50"
                 placeholder="name@company.com"
               />
@@ -74,6 +78,7 @@ const RegisterPage = () => {
               </label>
               <input
                 type="password"
+                autoComplete="new-password"
                 className="w-full h-12 px-4 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all bg-page-bg/50"
                 placeholder="At least 8 characters"
               />

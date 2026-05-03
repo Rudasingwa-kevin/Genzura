@@ -29,6 +29,7 @@ const LoginPage = () => {
               </label>
               <input
                 type="email"
+                autoComplete="email"
                 className="w-full h-14 px-4 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all bg-page-bg/50"
                 placeholder="name@company.com"
               />
@@ -43,6 +44,7 @@ const LoginPage = () => {
               </div>
               <input
                 type="password"
+                autoComplete="current-password"
                 className="w-full h-14 px-4 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all bg-page-bg/50"
                 placeholder="••••••••"
               />
