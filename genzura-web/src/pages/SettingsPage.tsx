@@ -5,7 +5,7 @@ import AppLayout from '../components/AppLayout';
 // ─── Tab types ────────────────────────────────────────────────────────────────
 type Tab = 'profile' | 'organization' | 'security' | 'notifications';
 
-const TABS: { id: Tab; label: string; icon: any }[] = [
+const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: 'profile',      label: 'Profile',       icon: User     },
   { id: 'organization', label: 'Organization',   icon: Building },
   { id: 'security',     label: 'Security',       icon: Shield   },

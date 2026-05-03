@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Briefcase,
@@ -9,17 +9,20 @@ import {
   Search,
   Plus,
   BarChart3,
+  Calendar as CalendarIcon
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', to: '/dashboard' },
   { icon: Briefcase,       label: 'Cases',     to: '/cases'     },
+  { icon: CalendarIcon,    label: 'Calendar',  to: '/calendar'  },
   { icon: Users,           label: 'Clients',   to: '/clients'   },
   { icon: BarChart3,       label: 'Analytics', to: '/analytics' },
   { icon: Settings,        label: 'Settings',  to: '/settings'  },
 ];
 
-const SidebarItem = ({ icon: Icon, label, to }: { icon: any; label: string; to: string }) => {
+const SidebarItem = ({ icon: Icon, label, to }: { icon: React.ElementType; label: string; to: string }) => {
   const { pathname } = useLocation();
   const active = pathname === to;
   return (
@@ -46,6 +49,14 @@ interface AppLayoutProps {
 }
 
 export default function AppLayout({ children, title, action }: AppLayoutProps) {
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
+
   return (
     <div className="flex min-h-screen bg-page-bg font-sans">
       {/* Sidebar */}
@@ -63,13 +74,16 @@ export default function AppLayout({ children, title, action }: AppLayoutProps) {
         <div className="pt-6 border-t border-border-base mt-6">
           <div className="bg-brand-light/50 p-4 rounded-2xl flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-brand-blue flex items-center justify-center text-white font-bold text-sm">
-              JW
+              {user?.initials || 'JW'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-brand-dark text-sm truncate">James Wilson</p>
-              <Link to="/login" className="text-xs text-text-muted truncate underline cursor-pointer hover:text-brand-blue transition-colors no-underline">
+              <p className="font-bold text-brand-dark text-sm truncate">{user ? `${user.firstName} ${user.lastName}` : 'James Wilson'}</p>
+              <button 
+                onClick={handleLogout}
+                className="text-xs text-text-muted truncate underline cursor-pointer hover:text-brand-blue transition-colors block text-left"
+              >
                 Log out
-              </Link>
+              </button>
             </div>
           </div>
         </div>

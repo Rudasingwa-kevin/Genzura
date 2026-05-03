@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 
-const CaseRow = ({ id, title, client, status, date }: any) => (
+const CaseRow = ({ id, title, client, status, date }: { id: string; title: string; client: string; status: 'Active' | 'Pending' | 'Resolved'; date: string }) => (
   <tr className="border-b border-border-base hover:bg-page-bg/50 transition-colors group">
     <td className="py-5 px-8">
       <div className="flex items-center gap-3">

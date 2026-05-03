@@ -57,7 +57,7 @@ const Navbar = () => {
   );
 };
 
-const FeatureCard = ({ icon: Icon, title, description }: { icon: any, title: string, description: string }) => (
+const FeatureCard = ({ icon: Icon, title, description }: { icon: React.ElementType, title: string, description: string }) => (
   <div className="bg-white p-8 rounded-card shadow-card border border-border-base hover:shadow-xl transition-all group">
     <div className="w-12 h-12 rounded-xl bg-brand-light flex items-center justify-center text-brand-blue mb-6 group-hover:scale-110 transition-transform">
       <Icon size={24} />

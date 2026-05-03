@@ -1,50 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Plus, Filter, Search as SearchIcon, MoreHorizontal, Clock, X,
   ChevronDown, AlertTriangle, CheckCircle2, Hourglass,
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
-
-// ─── Types ──────────────────────────────────────────────────────────────────
-interface Case {
-  id: string;
-  title: string;
-  client: string;
-  attorney: string;
-  status: 'Active' | 'Pending' | 'Resolved';
-  priority: 'High' | 'Medium' | 'Low';
-  deadline: string;
-  updated: string;
-}
-
-// ─── Mock Data ───────────────────────────────────────────────────────────────
-const CASES: Case[] = [
-  { id: 'CZ-882', title: 'Corporate Restructuring',      client: 'Apex Global Inc.',    attorney: 'J. Wilson',    status: 'Active',   priority: 'High',   deadline: 'May 20, 2026',  updated: '2h ago'     },
-  { id: 'CZ-879', title: 'Intellectual Property Audit',  client: 'NextGen Systems',     attorney: 'S. Owens',     status: 'Pending',  priority: 'Medium', deadline: 'Jun 5, 2026',   updated: '5h ago'     },
-  { id: 'CZ-875', title: 'Compliance Verification',      client: 'Horizon Partners',    attorney: 'J. Wilson',    status: 'Active',   priority: 'High',   deadline: 'May 15, 2026',  updated: 'Yesterday'  },
-  { id: 'CZ-871', title: 'Litigation Strategy',          client: 'Silverline Law',      attorney: 'A. Torres',    status: 'Resolved', priority: 'Low',    deadline: 'Apr 30, 2026',  updated: '2 days ago' },
-  { id: 'CZ-868', title: 'Asset Recovery Plan',          client: 'Estate Mgmt Co.',     attorney: 'S. Owens',     status: 'Active',   priority: 'Medium', deadline: 'Jun 12, 2026',  updated: '3 days ago' },
-  { id: 'CZ-861', title: 'Merger & Acquisition Review',  client: 'TechVenture Ltd.',    attorney: 'A. Torres',    status: 'Pending',  priority: 'High',   deadline: 'Jul 1, 2026',   updated: '4 days ago' },
-  { id: 'CZ-854', title: 'Employment Dispute',           client: 'BlueOak Corp.',       attorney: 'J. Wilson',    status: 'Active',   priority: 'Low',    deadline: 'Jun 20, 2026',  updated: '1 week ago' },
-  { id: 'CZ-847', title: 'Contract Negotiation',         client: 'Sterling Finance',    attorney: 'S. Owens',     status: 'Resolved', priority: 'Medium', deadline: 'Apr 15, 2026',  updated: '2 weeks ago'},
-];
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-const statusStyles: Record<Case['status'], string> = {
-  Active:   'bg-emerald-100/50 text-emerald-700',
-  Pending:  'bg-amber-100/50 text-amber-700',
-  Resolved: 'bg-slate-100/50 text-slate-700',
-};
-const statusDot: Record<Case['status'], string> = {
-  Active:   'bg-emerald-500',
-  Pending:  'bg-amber-500',
-  Resolved: 'bg-slate-400',
-};
-const priorityStyles: Record<Case['priority'], string> = {
-  High:   'text-red-600 bg-red-50',
-  Medium: 'text-amber-600 bg-amber-50',
-  Low:    'text-slate-500 bg-slate-100',
-};
+import { CASES, STATUS_STYLES, STATUS_DOT, PRIORITY_STYLES } from '../data/cases';
 
 // ─── New Case Modal ───────────────────────────────────────────────────────────
 const NewCaseModal = ({ onClose }: { onClose: () => void }) => (
@@ -107,6 +68,7 @@ const TABS = ['All', 'Active', 'Pending', 'Resolved'] as const;
 type Tab = typeof TABS[number];
 
 export default function CasesPage() {
+  const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>('All');
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -144,13 +106,13 @@ export default function CasesPage() {
         {/* Stat Chips */}
         <div className="grid grid-cols-4 gap-4">
           {[
-            { label: 'Total',    value: CASES.length,                          icon: SearchIcon,   color: 'text-brand-blue',    bg: 'bg-brand-light'   },
-            { label: 'Active',   value: CASES.filter(c=>c.status==='Active').length,   icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50'    },
-            { label: 'Pending',  value: CASES.filter(c=>c.status==='Pending').length,  icon: Hourglass,    color: 'text-amber-600',   bg: 'bg-amber-50'      },
-            { label: 'Resolved', value: CASES.filter(c=>c.status==='Resolved').length, icon: AlertTriangle,color: 'text-slate-500',   bg: 'bg-slate-100'     },
+            { label: 'Total',    value: CASES.length,                                        icon: SearchIcon,   color: 'text-brand-blue',    bg: 'bg-brand-light'  },
+            { label: 'Active',   value: CASES.filter(c => c.status === 'Active').length,   icon: CheckCircle2, color: 'text-emerald-600',  bg: 'bg-emerald-50'   },
+            { label: 'Pending',  value: CASES.filter(c => c.status === 'Pending').length,  icon: Hourglass,    color: 'text-amber-600',    bg: 'bg-amber-50'     },
+            { label: 'Resolved', value: CASES.filter(c => c.status === 'Resolved').length, icon: AlertTriangle,color: 'text-slate-500',    bg: 'bg-slate-100'    },
           ].map((s) => (
             <div key={s.label} className="bg-white rounded-2xl border border-border-base p-5 flex items-center gap-4">
-              <div className={`p-3 rounded-xl ${s.bg} ${s.color}`}><s.icon size={20}/></div>
+              <div className={`p-3 rounded-xl ${s.bg} ${s.color}`}><s.icon size={20} /></div>
               <div>
                 <p className="text-2xl font-bold text-brand-dark">{s.value}</p>
                 <p className="text-xs font-semibold text-text-muted uppercase tracking-wider">{s.label}</p>
@@ -219,21 +181,25 @@ export default function CasesPage() {
                     <td colSpan={8} className="py-16 text-center text-text-muted text-sm">No cases found.</td>
                   </tr>
                 ) : filtered.map((c) => (
-                  <tr key={c.id} className="border-b border-border-base hover:bg-page-bg/40 transition-colors group">
+                  <tr
+                    key={c.id}
+                    className="border-b border-border-base hover:bg-page-bg/40 transition-colors group cursor-pointer"
+                    onClick={() => navigate(`/cases/${c.id}`)}
+                  >
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-lg bg-brand-light text-brand-blue font-bold text-[10px] flex items-center justify-center shrink-0">{c.id}</div>
-                        <p className="font-semibold text-brand-dark text-sm group-hover:text-brand-blue transition-colors cursor-pointer max-w-[180px] truncate">{c.title}</p>
+                        <p className="font-semibold text-brand-dark text-sm group-hover:text-brand-blue transition-colors max-w-[180px] truncate">{c.title}</p>
                       </div>
                     </td>
                     <td className="py-4 px-6 text-sm text-text-secondary">{c.client}</td>
                     <td className="py-4 px-6 text-sm text-text-secondary">{c.attorney}</td>
                     <td className="py-4 px-6">
-                      <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-full ${priorityStyles[c.priority]}`}>{c.priority}</span>
+                      <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-full ${PRIORITY_STYLES[c.priority]}`}>{c.priority}</span>
                     </td>
                     <td className="py-4 px-6">
-                      <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusStyles[c.status]}`}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${statusDot[c.status]}`} />
+                      <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${STATUS_STYLES[c.status]}`}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT[c.status]}`} />
                         {c.status}
                       </div>
                     </td>
@@ -243,7 +209,7 @@ export default function CasesPage() {
                       </div>
                     </td>
                     <td className="py-4 px-6 text-xs text-text-muted">{c.updated}</td>
-                    <td className="py-4 px-6 text-center">
+                    <td className="py-4 px-6 text-center" onClick={(e) => e.stopPropagation()}>
                       <button className="p-1.5 rounded-lg hover:bg-brand-light text-text-muted hover:text-brand-blue transition-all">
                         <MoreHorizontal size={16} />
                       </button>
@@ -258,7 +224,7 @@ export default function CasesPage() {
           <div className="px-6 py-4 border-t border-border-base flex items-center justify-between">
             <p className="text-xs text-text-muted">Showing <span className="font-bold text-brand-dark">{filtered.length}</span> of <span className="font-bold text-brand-dark">{CASES.length}</span> cases</p>
             <div className="flex gap-1">
-              {[1,2,3].map((p) => (
+              {[1, 2, 3].map((p) => (
                 <button key={p} className={`w-8 h-8 rounded-lg text-sm font-semibold transition-all ${p === 1 ? 'bg-brand-blue text-white' : 'text-text-muted hover:bg-page-bg'}`}>{p}</button>
               ))}
             </div>

@@ -1,14 +1,36 @@
-
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Lock, Mail, ChevronRight, Scale } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { ArrowRight, Lock, Mail, Scale } from 'lucide-react';
+import { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 
 const LoginPage = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const from = location.state?.from?.pathname || '/dashboard';
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      await login(email || 'user@genzura.com');
+      navigate(from, { replace: true });
+    } catch (error) {
+      console.error('Failed to login', error);
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-white">
       {/* Left Side - Form */}
       <div className="flex items-center justify-center p-8 lg:p-24 relative">
         <Link to="/" className="absolute top-8 left-8 flex items-center gap-2 text-sm font-medium text-text-muted hover:text-brand-blue transition-colors">
-          <ArrowLeft size={16} /> Back to site
+          <ArrowRight size={16} className="rotate-180" /> Back to site
         </Link>
 
         <div className="w-full max-w-md space-y-8">
@@ -22,13 +44,15 @@ const LoginPage = () => {
             </div>
           </div>
 
-          <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <label className="text-sm font-bold text-brand-dark ml-1 flex items-center gap-2">
                 <Mail size={14} className="text-brand-blue" /> Email Address
               </label>
               <input
                 type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
                 className="w-full h-14 px-4 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all bg-page-bg/50"
                 placeholder="name@company.com"
@@ -40,10 +64,12 @@ const LoginPage = () => {
                 <label className="text-sm font-bold text-brand-dark ml-1 flex items-center gap-2">
                   <Lock size={14} className="text-brand-blue" /> Password
                 </label>
-                <a href="#" className="text-xs font-bold text-brand-blue hover:underline">Forgot password?</a>
+                <Link to="/forgot-password" className="text-xs font-bold text-brand-blue hover:underline">Forgot password?</Link>
               </div>
               <input
                 type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
                 className="w-full h-14 px-4 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all bg-page-bg/50"
                 placeholder="••••••••"
@@ -55,9 +81,13 @@ const LoginPage = () => {
               <label htmlFor="remember" className="text-sm text-text-secondary">Remember me for 30 days</label>
             </div>
 
-            <Link to="/dashboard" className="w-full bg-brand-blue text-white h-14 rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 no-underline">
-              Sign In <ChevronRight size={18} />
-            </Link>
+            <button 
+              type="submit" 
+              disabled={isLoading}
+              className="w-full bg-brand-blue text-white h-14 rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+            >
+              {isLoading ? 'Signing in...' : 'Sign In'} <ArrowRight size={18} />
+            </button>
           </form>
 
           <p className="text-center text-sm text-text-secondary">

@@ -1,8 +1,31 @@
 
-import { Link } from 'react-router-dom';
-import { ArrowLeft, User, Mail, Lock, Building, ChevronRight, ShieldCheck } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { ArrowLeft, User, Mail, Lock, Building, ShieldCheck, ArrowRight } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const RegisterPage = () => {
+  const navigate = useNavigate();
+  const { register } = useAuth();
+  
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      await register(firstName || 'James', lastName || 'Wilson', email || 'user@genzura.com');
+      navigate('/dashboard', { replace: true });
+    } catch (error) {
+      console.error('Failed to register', error);
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-white font-sans">
       {/* Left Side - Form */}
@@ -22,7 +45,7 @@ const RegisterPage = () => {
             </div>
           </div>
 
-          <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+          <form className="space-y-5" onSubmit={handleSubmit}>
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-bold text-brand-dark ml-1 flex items-center gap-2">
@@ -30,6 +53,8 @@ const RegisterPage = () => {
                 </label>
                 <input
                   type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
                   autoComplete="given-name"
                   className="w-full h-12 px-4 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all bg-page-bg/50"
                   placeholder="John"
@@ -41,6 +66,8 @@ const RegisterPage = () => {
                 </label>
                 <input
                   type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
                   autoComplete="family-name"
                   className="w-full h-12 px-4 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all bg-page-bg/50"
                   placeholder="Doe"
@@ -66,6 +93,8 @@ const RegisterPage = () => {
               </label>
               <input
                 type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
                 className="w-full h-12 px-4 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all bg-page-bg/50"
                 placeholder="name@company.com"
@@ -78,6 +107,8 @@ const RegisterPage = () => {
               </label>
               <input
                 type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 autoComplete="new-password"
                 className="w-full h-12 px-4 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all bg-page-bg/50"
                 placeholder="At least 8 characters"
@@ -91,9 +122,13 @@ const RegisterPage = () => {
               </label>
             </div>
 
-            <Link to="/dashboard" className="w-full bg-brand-blue text-white h-14 rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 no-underline mt-4">
-              Create My Account <ChevronRight size={18} />
-            </Link>
+            <button 
+              type="submit" 
+              disabled={isLoading}
+              className="w-full bg-brand-blue text-white h-14 rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 mt-4"
+            >
+              {isLoading ? 'Creating Account...' : 'Create My Account'} <ArrowRight size={18} />
+            </button>
           </form>
 
           <p className="text-center text-sm text-text-secondary">

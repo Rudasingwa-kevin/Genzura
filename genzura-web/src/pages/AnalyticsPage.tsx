@@ -43,7 +43,7 @@ const KpiCard = ({
   label, value, sub, icon: Icon, color, bg, trend, trendUp,
 }: {
   label: string; value: string; sub: string;
-  icon: any; color: string; bg: string;
+  icon: React.ElementType; color: string; bg: string;
   trend: string; trendUp: boolean;
 }) => (
   <div className="bg-white rounded-[2rem] border border-border-base p-7 hover:shadow-md transition-shadow">
