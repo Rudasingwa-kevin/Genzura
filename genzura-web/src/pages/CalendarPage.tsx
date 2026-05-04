@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckSquare, Plus, Clock, MoreVertical, Filter, AlertCircle } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
-import { EVENTS, TASKS, type CalendarEvent, type Task } from '../data/calendar';
+import { EVENTS, TASKS } from '../data/calendar';
 
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());

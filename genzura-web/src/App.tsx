@@ -10,6 +10,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import Dashboard      from './pages/Dashboard';
 import CasesPage      from './pages/CasesPage';
 import CalendarPage   from './pages/CalendarPage';
+import DocumentsPage  from './pages/DocumentsPage';
 import ClientsPage    from './pages/ClientsPage';
 import AnalyticsPage  from './pages/AnalyticsPage';
 import SettingsPage   from './pages/SettingsPage';
@@ -30,6 +31,7 @@ function App() {
           <Route path="/cases"      element={<ProtectedRoute><CasesPage /></ProtectedRoute>}     />
           <Route path="/cases/:id"  element={<ProtectedRoute><CaseDetailPage /></ProtectedRoute>} />
           <Route path="/calendar"   element={<ProtectedRoute><CalendarPage /></ProtectedRoute>}  />
+          <Route path="/documents"  element={<ProtectedRoute><DocumentsPage /></ProtectedRoute>} />
           <Route path="/clients"    element={<ProtectedRoute><ClientsPage /></ProtectedRoute>}   />
           <Route path="/analytics"  element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
           <Route path="/settings"   element={<ProtectedRoute><SettingsPage /></ProtectedRoute>}  />

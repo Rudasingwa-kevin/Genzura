@@ -9,7 +9,8 @@ import {
   Search,
   Plus,
   BarChart3,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  Folder
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -17,6 +18,7 @@ const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', to: '/dashboard' },
   { icon: Briefcase,       label: 'Cases',     to: '/cases'     },
   { icon: CalendarIcon,    label: 'Calendar',  to: '/calendar'  },
+  { icon: Folder,          label: 'Documents', to: '/documents' },
   { icon: Users,           label: 'Clients',   to: '/clients'   },
   { icon: BarChart3,       label: 'Analytics', to: '/analytics' },
   { icon: Settings,        label: 'Settings',  to: '/settings'  },
