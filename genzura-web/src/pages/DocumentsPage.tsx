@@ -10,7 +10,7 @@ import {
   FileSpreadsheet
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
-import { DOCUMENTS, type DocumentInfo, type DocType } from '../data/documents';
+import { DOCUMENTS, type DocType } from '../data/documents';
 
 export default function DocumentsPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -63,7 +63,7 @@ export default function DocumentsPage() {
               <Filter size={18} className="text-text-muted" />
               <select 
                 value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value as any)}
+                onChange={(e) => setTypeFilter(e.target.value as DocType | 'All')}
                 className="bg-transparent border-none outline-none font-bold cursor-pointer"
               >
                 <option value="All">All Types</option>

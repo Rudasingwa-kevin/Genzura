@@ -12,6 +12,7 @@ import CasesPage      from './pages/CasesPage';
 import CalendarPage   from './pages/CalendarPage';
 import DocumentsPage  from './pages/DocumentsPage';
 import ClientsPage    from './pages/ClientsPage';
+import ClientDetailPage from './pages/ClientDetailPage';
 import AnalyticsPage  from './pages/AnalyticsPage';
 import SettingsPage   from './pages/SettingsPage';
 import CaseDetailPage from './pages/CaseDetailPage';
@@ -32,7 +33,8 @@ function App() {
           <Route path="/cases/:id"  element={<ProtectedRoute><CaseDetailPage /></ProtectedRoute>} />
           <Route path="/calendar"   element={<ProtectedRoute><CalendarPage /></ProtectedRoute>}  />
           <Route path="/documents"  element={<ProtectedRoute><DocumentsPage /></ProtectedRoute>} />
-          <Route path="/clients"    element={<ProtectedRoute><ClientsPage /></ProtectedRoute>}   />
+          <Route path="/clients"      element={<ProtectedRoute><ClientsPage /></ProtectedRoute>}       />
+          <Route path="/clients/:id"   element={<ProtectedRoute><ClientDetailPage /></ProtectedRoute>}  />
           <Route path="/analytics"  element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
           <Route path="/settings"   element={<ProtectedRoute><SettingsPage /></ProtectedRoute>}  />
         </Routes>
