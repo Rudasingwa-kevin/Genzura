@@ -16,6 +16,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string) => Promise<void>;
   register: (firstName: string, lastName: string, email: string) => Promise<void>;
+  updateUser: (updates: Partial<User>) => void;
   logout: () => void;
 }
 
@@ -71,6 +72,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('genzura_user');
   };
 
+  const updateUser = (updates: Partial<User>) => {
+    if (!user) return;
+    const updatedUser = { ...user, ...updates };
+    if (updates.firstName || updates.lastName) {
+      updatedUser.initials = `${updatedUser.firstName[0]}${updatedUser.lastName[0]}`.toUpperCase();
+    }
+    setUser(updatedUser);
+    localStorage.setItem('genzura_user', JSON.stringify(updatedUser));
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -79,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading,
         login,
         register,
+        updateUser,
         logout,
       }}
     >
