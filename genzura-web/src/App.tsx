@@ -16,6 +16,7 @@ import ClientDetailPage from './pages/ClientDetailPage';
 import AnalyticsPage  from './pages/AnalyticsPage';
 import SettingsPage   from './pages/SettingsPage';
 import CaseDetailPage from './pages/CaseDetailPage';
+import LegalPage      from './pages/LegalPage';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           <Route path="/register"   element={<RegisterPage />}  />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/legal/:documentId" element={<LegalPage />} />
           
           <Route path="/dashboard"  element={<ProtectedRoute><Dashboard /></ProtectedRoute>}     />
           <Route path="/cases"      element={<ProtectedRoute><CasesPage /></ProtectedRoute>}     />

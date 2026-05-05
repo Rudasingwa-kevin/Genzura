@@ -20,6 +20,7 @@ import {
   Menu,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import NewCaseModal from './NewCaseModal';
 
 // ─── Notifications Data ────────────────────────────────────────────────────────
 interface Notification {
@@ -226,6 +227,7 @@ export default function AppLayout({ children, title, action }: AppLayoutProps) {
   const { user, logout } = useAuth();
   const [notifOpen, setNotifOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showNewCase, setShowNewCase] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = INITIAL_NOTIFICATIONS.filter(n => !n.read).length;
@@ -248,6 +250,9 @@ export default function AppLayout({ children, title, action }: AppLayoutProps) {
 
   return (
     <div className="flex min-h-screen bg-page-bg font-sans">
+      {/* Global New Case Modal */}
+      {showNewCase && <NewCaseModal onClose={() => setShowNewCase(false)} />}
+
       {/* Mobile Backdrop */}
       {sidebarOpen && (
         <div 
@@ -337,7 +342,10 @@ export default function AppLayout({ children, title, action }: AppLayoutProps) {
             </div>
 
             {action ?? (
-              <button className="bg-brand-blue text-white px-3 py-2 lg:px-5 lg:py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:opacity-90 transition-all active:scale-95 whitespace-nowrap">
+              <button 
+                onClick={() => setShowNewCase(true)}
+                className="bg-brand-blue text-white px-3 py-2 lg:px-5 lg:py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:opacity-90 transition-all active:scale-95 whitespace-nowrap"
+              >
                 <Plus size={18} /> <span className="hidden sm:inline">New Case</span>
               </button>
             )}

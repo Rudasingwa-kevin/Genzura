@@ -1,67 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Plus, Filter, Search as SearchIcon, MoreHorizontal, Clock, X,
+  Filter, Search as SearchIcon, MoreHorizontal, Clock,
   ChevronDown, AlertTriangle, CheckCircle2, Hourglass,
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { CASES, STATUS_STYLES, STATUS_DOT, PRIORITY_STYLES } from '../data/cases';
 
-// ─── New Case Modal ───────────────────────────────────────────────────────────
-const NewCaseModal = ({ onClose }: { onClose: () => void }) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center">
-    <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
-    <div className="relative bg-white rounded-[2rem] shadow-2xl p-10 w-full max-w-lg mx-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <div className="flex items-center justify-between mb-8">
-        <h2 className="text-2xl font-bold text-brand-dark">New Case</h2>
-        <button onClick={onClose} className="p-2 rounded-xl hover:bg-page-bg transition-colors text-text-muted">
-          <X size={20} />
-        </button>
-      </div>
-      <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
-        <div className="space-y-2">
-          <label className="text-sm font-bold text-brand-dark ml-1">Case Title</label>
-          <input type="text" className="w-full h-12 px-4 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all" placeholder="e.g. Corporate Restructuring" autoFocus />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-brand-dark ml-1">Client Name</label>
-            <input type="text" className="w-full h-12 px-4 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all" placeholder="Apex Global Inc." />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-brand-dark ml-1">Priority</label>
-            <select className="w-full h-12 px-4 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all bg-white appearance-none">
-              <option>High</option>
-              <option>Medium</option>
-              <option>Low</option>
-            </select>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-brand-dark ml-1">Assigned Attorney</label>
-            <select className="w-full h-12 px-4 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all bg-white appearance-none">
-              <option>J. Wilson</option>
-              <option>S. Owens</option>
-              <option>A. Torres</option>
-            </select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-brand-dark ml-1">Deadline</label>
-            <input type="date" className="w-full h-12 px-4 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all" />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-bold text-brand-dark ml-1">Description</label>
-          <textarea rows={3} className="w-full px-4 py-3 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all resize-none" placeholder="Brief summary of the case..." />
-        </div>
-        <button type="submit" className="w-full bg-brand-blue text-white h-12 rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all">
-          Create Case
-        </button>
-      </form>
-    </div>
-  </div>
-);
+
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const TABS = ['All', 'Active', 'Pending', 'Resolved'] as const;
@@ -71,7 +17,6 @@ export default function CasesPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>('All');
   const [search, setSearch] = useState('');
-  const [showModal, setShowModal] = useState(false);
 
   const filtered = CASES.filter((c) => {
     const matchTab = tab === 'All' || c.status === tab;
@@ -82,19 +27,9 @@ export default function CasesPage() {
     return matchTab && matchSearch;
   });
 
-  const action = (
-    <button
-      onClick={() => setShowModal(true)}
-      className="bg-brand-blue text-white px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:opacity-90 transition-all active:scale-95 whitespace-nowrap"
-    >
-      <Plus size={18} /> New Case
-    </button>
-  );
-
   return (
     <>
-      {showModal && <NewCaseModal onClose={() => setShowModal(false)} />}
-      <AppLayout action={action}>
+      <AppLayout>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>

@@ -5,7 +5,6 @@ import {
   AlertCircle,
   Filter,
   MoreHorizontal,
-  Plus,
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 
@@ -51,14 +50,8 @@ const CaseRow = ({ id, title, client, status, date }: { id: string; title: strin
 );
 
 const Dashboard = () => {
-  const topbarAction = (
-    <button className="bg-brand-blue text-white px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-lg shadow-brand-blue/20 hover:scale-105 transition-all active:scale-95">
-      <Plus size={18} /> New Case
-    </button>
-  );
-
   return (
-    <AppLayout action={topbarAction}>
+    <AppLayout>
       {/* Stats Grid */}
       <div className="grid md:grid-cols-4 gap-8">
         {[

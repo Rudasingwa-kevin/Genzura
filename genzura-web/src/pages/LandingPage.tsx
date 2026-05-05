@@ -245,9 +245,9 @@ const LandingPage = () => {
                 <p className="text-text-secondary leading-relaxed mb-8">
                   {solution.description}
                 </p>
-                <a href="#" className="inline-flex items-center gap-2 text-sm font-bold text-brand-blue group-hover:gap-3 transition-all">
+                <Link to="/register" className="inline-flex items-center gap-2 text-sm font-bold text-brand-blue group-hover:gap-3 transition-all">
                   Learn more <ChevronRight size={16} />
-                </a>
+                </Link>
               </div>
             ))}
           </div>
@@ -401,9 +401,9 @@ const LandingPage = () => {
             <img src="/Genzura website header.png" alt="Genzura" className="h-24 w-auto object-contain" />
           </div>
           <div className="flex gap-8 text-sm text-text-muted font-medium">
-            <a href="#" className="hover:text-brand-blue transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-brand-blue transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-brand-blue transition-colors">Security</a>
+            <Link to="/legal/privacy" className="hover:text-brand-blue transition-colors">Privacy Policy</Link>
+            <Link to="/legal/terms" className="hover:text-brand-blue transition-colors">Terms of Service</Link>
+            <Link to="/legal/security" className="hover:text-brand-blue transition-colors">Security</Link>
           </div>
           <p className="text-sm text-text-muted">
             &copy; 2026 Genzura Inc. All rights reserved.
