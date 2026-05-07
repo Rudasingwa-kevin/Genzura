@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import NewCaseModal from './NewCaseModal';
+import { CASES } from '../data/cases';
 
 // ─── Notifications Data ────────────────────────────────────────────────────────
 interface Notification {
@@ -215,7 +216,61 @@ const SidebarItem = ({ icon: Icon, label, to }: { icon: React.ElementType; label
   );
 };
 
+// ─── Search Results Dropdown ───────────────────────────────────────────────────
+function SearchResultDropdown({
+  results,
+  onClose,
+  onClear
+}: {
+  results: typeof CASES;
+  onClose: () => void;
+  onClear: () => void;
+}) {
+  const navigate = useNavigate();
+
+  if (results.length === 0) return null;
+
+  return (
+    <div className="absolute top-[calc(100%+8px)] left-0 w-full min-w-[320px] bg-white/90 backdrop-blur-xl rounded-[1.5rem] border border-border-base shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+      <div className="px-5 py-3 border-b border-border-base bg-page-bg/30">
+        <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Search Results ({results.length})</p>
+      </div>
+      <div className="max-h-[360px] overflow-y-auto divide-y divide-border-base">
+        {results.map((c) => (
+          <div
+            key={c.id}
+            className="flex items-center gap-4 px-5 py-4 hover:bg-brand-blue hover:text-white group cursor-pointer transition-colors"
+            onClick={() => {
+              navigate(`/cases/${c.id}`);
+              onClose();
+              onClear();
+            }}
+          >
+            <div className="w-10 h-10 rounded-xl bg-brand-light flex items-center justify-center text-brand-blue font-bold text-xs group-hover:bg-white/20 group-hover:text-white shrink-0">
+              {c.id}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-sm truncate">{c.title}</p>
+              <p className="text-xs opacity-70 truncate">{c.client} • {c.attorney}</p>
+            </div>
+            <Plus size={14} className="opacity-0 group-hover:opacity-100 transition-opacity rotate-45" />
+          </div>
+        ))}
+      </div>
+      <div className="px-5 py-3 text-center border-t border-border-base">
+        <button
+          onClick={onClose}
+          className="text-xs font-bold text-text-muted hover:text-brand-blue transition-colors"
+        >
+          Close Results
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Layout ───────────────────────────────────────────────────────────────────
+
 interface AppLayoutProps {
   children: ReactNode;
   title?: string;
@@ -228,7 +283,17 @@ export default function AppLayout({ children, title, action }: AppLayoutProps) {
   const [notifOpen, setNotifOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNewCase, setShowNewCase] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const notifRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  const filteredResults = searchQuery.trim().length > 1
+    ? CASES.filter(c =>
+        c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.client.toLowerCase().includes(searchQuery.toLowerCase())
+      ).slice(0, 6)
+    : [];
 
   const unreadCount = INITIAL_NOTIFICATIONS.filter(n => !n.read).length;
 
@@ -242,6 +307,26 @@ export default function AppLayout({ children, title, action }: AppLayoutProps) {
     if (notifOpen) document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [notifOpen]);
+
+  // Handle click outside and Esc for Search
+  useEffect(() => {
+    const handleEvents = (e: any) => {
+      if (e.key === 'Escape') {
+        setSearchQuery('');
+      }
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchQuery('');
+      }
+    };
+    if (searchQuery) {
+      document.addEventListener('mousedown', handleEvents);
+      document.addEventListener('keydown', handleEvents);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleEvents);
+      document.removeEventListener('keydown', handleEvents);
+    };
+  }, [searchQuery]);
 
   const handleLogout = () => {
     logout();
@@ -314,12 +399,28 @@ export default function AppLayout({ children, title, action }: AppLayoutProps) {
             </button>
             
             {/* Search */}
-            <div className="relative w-full max-w-[160px] sm:max-w-xs group hidden md:block">
+            <div className="relative w-full max-w-[160px] sm:max-w-xs group hidden md:block" ref={searchRef}>
               <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-brand-blue transition-colors" />
               <input
                 type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Quick search..."
-                className="w-full h-10 pl-10 pr-4 rounded-xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue/30 focus:ring-4 focus:ring-brand-blue/5 outline-none transition-all text-sm"
+                className="w-full h-10 pl-10 pr-10 rounded-xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue/30 focus:ring-4 focus:ring-brand-blue/5 outline-none transition-all text-sm"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-page-bg text-text-muted transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              )}
+              
+              <SearchResultDropdown 
+                results={filteredResults} 
+                onClose={() => setSearchQuery('')}
+                onClear={() => setSearchQuery('')}
               />
             </div>
           </div>
