@@ -90,8 +90,12 @@ export default function DocumentsPage() {
             </thead>
             <tbody>
               {filteredDocs.length > 0 ? (
-                filteredDocs.map((doc) => (
-                  <tr key={doc.id} className="border-b border-border-base hover:bg-page-bg/50 transition-colors group">
+                filteredDocs.map((doc, i) => (
+                  <tr 
+                    key={doc.id} 
+                    className="border-b border-border-base hover:bg-page-bg/50 transition-colors group animate-in-fade"
+                    style={{ animationDelay: `${(i % 15) * 40 + 200}ms` }}
+                  >
                     <td className="py-5 px-6">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-white border border-border-base flex items-center justify-center shadow-sm">

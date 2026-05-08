@@ -9,7 +9,7 @@ import {
 import AppLayout from '../components/AppLayout';
 
 const CaseRow = ({ id, title, client, status, date }: { id: string; title: string; client: string; status: 'Active' | 'Pending' | 'Resolved'; date: string }) => (
-  <tr className="border-b border-border-base hover:bg-page-bg/50 transition-colors group">
+  <tr className="border-b border-border-base hover:bg-page-bg/50 transition-colors group animate-in-fade delay-500">
     <td className="py-5 px-8">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-lg bg-brand-light flex items-center justify-center text-brand-blue font-bold text-xs">
@@ -60,7 +60,7 @@ const Dashboard = () => {
           { label: 'Resolved',        value: '12', icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50/50' },
           { label: 'System Alerts',   value: '02', icon: AlertCircle,  color: 'text-red-600',     bg: 'bg-red-50/50'     },
         ].map((stat, i) => (
-          <div key={i} className="bg-white p-7 rounded-[2rem] border border-border-base shadow-sm hover:shadow-md transition-shadow">
+          <div key={i} className={`bg-white p-7 rounded-[2rem] border border-border-base shadow-sm hover:shadow-md transition-shadow animate-in-up delay-${(i + 1) * 100}`}>
             <div className="flex justify-between items-start mb-6">
               <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color}`}>
                 <stat.icon size={26} />

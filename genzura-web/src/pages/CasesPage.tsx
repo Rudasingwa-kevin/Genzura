@@ -115,10 +115,11 @@ export default function CasesPage() {
                   <tr>
                     <td colSpan={8} className="py-16 text-center text-text-muted text-sm">No cases found.</td>
                   </tr>
-                ) : filtered.map((c) => (
+                ) : filtered.map((c, i) => (
                   <tr
                     key={c.id}
-                    className="border-b border-border-base hover:bg-page-bg/40 transition-colors group cursor-pointer"
+                    className="border-b border-border-base hover:bg-page-bg/40 transition-colors group cursor-pointer animate-in-fade"
+                    style={{ animationDelay: `${(i % 10) * 50 + 200}ms` }}
                     onClick={() => navigate(`/cases/${c.id}`)}
                   >
                     <td className="py-4 px-6">

@@ -83,7 +83,7 @@ export default function CalendarPage() {
           </div>
 
           {/* Calendar Grid */}
-          <div className="grid grid-cols-7 gap-px bg-border-base rounded-xl overflow-hidden border border-border-base">
+          <div className="grid grid-cols-7 gap-px bg-border-base rounded-xl overflow-hidden border border-border-base animate-in-fade">
             {/* Days Header */}
             {dayNames.map(day => (
               <div key={day} className="bg-page-bg/80 py-3 text-center text-xs font-bold text-text-muted uppercase tracking-wider">
@@ -149,8 +149,8 @@ export default function CalendarPage() {
             </div>
             
             <div className="space-y-4">
-              {upcomingEvents.map(evt => (
-                <div key={evt.id} className="flex gap-4 group">
+              {upcomingEvents.map((evt, i) => (
+                <div key={evt.id} className="flex gap-4 group animate-in-up" style={{ animationDelay: `${(i + 1) * 100}ms` }}>
                   <div className="w-12 h-12 rounded-xl bg-page-bg flex flex-col items-center justify-center shrink-0 border border-border-base group-hover:border-brand-blue/30 transition-colors">
                     <span className="text-xs font-bold text-text-muted uppercase">{new Date(evt.date).toLocaleDateString('en-US', { month: 'short' })}</span>
                     <span className="text-sm font-bold text-brand-dark">{new Date(evt.date).getDate()}</span>
@@ -194,14 +194,15 @@ export default function CalendarPage() {
             </div>
             
             <div className="space-y-3">
-              {tasks.map(task => (
+              {tasks.map((task, i) => (
                 <div 
                   key={task.id} 
-                  className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                  className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer animate-in-up ${
                     task.completed 
                       ? 'border-transparent bg-page-bg/50 opacity-60' 
                       : 'border-border-base hover:border-brand-blue/50 bg-white hover:shadow-sm'
                   }`}
+                  style={{ animationDelay: `${(i + 1) * 50 + 200}ms` }}
                   onClick={() => toggleTask(task.id)}
                 >
                   <div className={`mt-0.5 shrink-0 flex items-center justify-center w-5 h-5 rounded border ${

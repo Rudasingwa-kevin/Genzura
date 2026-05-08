@@ -34,7 +34,7 @@ const KpiCard = ({
   icon: React.ElementType; color: string; bg: string;
   trend: string; trendUp: boolean;
 }) => (
-  <div className="bg-white rounded-[2rem] border border-border-base p-7 hover:shadow-md transition-shadow">
+  <div className="bg-white rounded-[2rem] border border-border-base p-7 hover:shadow-md transition-shadow animate-in-up">
     <div className="flex justify-between items-start mb-6">
       <div className={`p-4 rounded-2xl ${bg} ${color}`}><Icon size={24}/></div>
       <div className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg ${trendUp ? 'text-emerald-600 bg-emerald-50' : 'text-red-500 bg-red-50'}`}>
@@ -187,10 +187,18 @@ export default function AnalyticsPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KpiCard label="Cases Opened"    value={kpi.opened}          sub="new cases filed"     icon={Briefcase}    color="text-brand-blue"    bg="bg-brand-light"   trend="+8%"  trendUp />
-        <KpiCard label="Cases Closed"    value={kpi.closed}          sub="successfully closed"  icon={CheckCircle2} color="text-emerald-600"  bg="bg-emerald-50"    trend="+12%" trendUp />
-        <KpiCard label="Avg. Resolution" value={`${kpi.avgDays}d`}     sub="days to close"        icon={Clock}        color="text-amber-600"   bg="bg-amber-50"      trend="-3%"  trendUp />
-        <KpiCard label="Win Rate"         value={`${kpi.winRate}%`}    sub="favorable outcomes"   icon={BarChart3}    color="text-violet-600"  bg="bg-violet-50"     trend="+2%"  trendUp />
+        <div className="contents animate-in-up delay-100">
+          <KpiCard label="Cases Opened"    value={kpi.opened}          sub="new cases filed"     icon={Briefcase}    color="text-brand-blue"    bg="bg-brand-light"   trend="+8%"  trendUp />
+        </div>
+        <div className="contents animate-in-up delay-200">
+          <KpiCard label="Cases Closed"    value={kpi.closed}          sub="successfully closed"  icon={CheckCircle2} color="text-emerald-600"  bg="bg-emerald-50"    trend="+12%" trendUp />
+        </div>
+        <div className="contents animate-in-up delay-300">
+          <KpiCard label="Avg. Resolution" value={`${kpi.avgDays}d`}     sub="days to close"        icon={Clock}        color="text-amber-600"   bg="bg-amber-50"      trend="-3%"  trendUp />
+        </div>
+        <div className="contents animate-in-up delay-400">
+          <KpiCard label="Win Rate"         value={`${kpi.winRate}%`}    sub="favorable outcomes"   icon={BarChart3}    color="text-violet-600"  bg="bg-violet-50"     trend="+2%"  trendUp />
+        </div>
       </div>
 
       {/* Charts Row */}
@@ -203,14 +211,14 @@ export default function AnalyticsPage() {
               <p className="text-xs text-text-muted mt-0.5">Cases opened vs time period</p>
             </div>
           </div>
-          <div className="min-w-[400px]">
+          <div className="min-w-[400px] animate-in-fade delay-500">
             <BarChart data={barData} />
           </div>
         </div>
       </div>
 
       {/* Attorney Leaderboard */}
-      <div className="bg-white rounded-[2rem] border border-border-base overflow-hidden">
+      <div className="bg-white rounded-[2rem] border border-border-base overflow-hidden animate-in-fade delay-500">
         <div className="p-6 md:p-8 border-b border-border-base">
           <h3 className="text-lg font-bold text-brand-dark">Attorney Performance</h3>
           <p className="text-xs text-text-muted mt-1">Cases handled and resolution rates</p>
@@ -228,7 +236,7 @@ export default function AnalyticsPage() {
             </thead>
             <tbody>
               {leaderboard.map((a, i) => (
-                <tr key={a.name} className="border-b border-border-base hover:bg-page-bg/40 transition-colors">
+                <tr key={a.name} className="border-b border-border-base hover:bg-page-bg/40 transition-colors animate-in-fade" style={{ animationDelay: `${(i * 50) + 600}ms` }}>
                   <td className="py-5 px-6 md:px-8">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-xl bg-brand-blue text-white font-bold text-xs flex items-center justify-center shrink-0">{a.avatar}</div>

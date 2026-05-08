@@ -8,7 +8,7 @@ import { CLIENTS, type Client } from '../data/clients';
 const ClientCard = ({ client, onSelect }: { client: Client; onSelect: (c: Client) => void }) => (
   <div
     onClick={() => onSelect(client)}
-    className="bg-white rounded-[1.5rem] border border-border-base p-6 hover:shadow-xl hover:border-brand-blue/20 transition-all cursor-pointer group"
+    className="bg-white rounded-[1.5rem] border border-border-base p-6 hover:shadow-xl hover:border-brand-blue/20 transition-all cursor-pointer group animate-in-up"
   >
     <div className="flex items-start justify-between mb-5">
       <div className={`w-14 h-14 rounded-2xl ${client.color} text-white font-bold text-lg flex items-center justify-center shadow-lg`}>
@@ -179,8 +179,8 @@ export default function ClientsPage() {
             { label: 'Total Clients', value: CLIENTS.length },
             { label: 'With Active Cases', value: CLIENTS.filter(c=>c.activeCases>0).length },
             { label: 'Total Cases Managed', value: CLIENTS.reduce((s,c)=>s+c.cases,0) },
-          ].map((s) => (
-            <div key={s.label} className="bg-white rounded-2xl border border-border-base p-6">
+          ].map((s, i) => (
+            <div key={s.label} className={`bg-white rounded-2xl border border-border-base p-6 animate-in-up delay-${(i + 1) * 100}`}>
               <p className="text-3xl font-bold text-brand-dark">{s.value}</p>
               <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mt-1">{s.label}</p>
             </div>
@@ -192,8 +192,10 @@ export default function ClientsPage() {
           <div className="text-center py-20 text-text-muted">No clients found.</div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((c) => (
-              <ClientCard key={c.id} client={c} onSelect={setSelected} />
+            {filtered.map((c, i) => (
+              <div key={c.id} style={{ animationDelay: `${(i % 12) * 50 + 300}ms` }} className="animate-in-fade">
+                <ClientCard client={c} onSelect={setSelected} />
+              </div>
             ))}
           </div>
         )}
