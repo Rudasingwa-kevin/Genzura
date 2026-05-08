@@ -17,14 +17,26 @@ export default function CasesPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>('All');
   const [search, setSearch] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState<'All' | 'High' | 'Medium' | 'Low'>('All');
+  const [sortBy, setSortBy] = useState<'updated' | 'deadline'>('updated');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const filtered = CASES.filter((c) => {
     const matchTab = tab === 'All' || c.status === tab;
+    const matchPriority = priorityFilter === 'All' || c.priority === priorityFilter;
     const matchSearch =
       c.title.toLowerCase().includes(search.toLowerCase()) ||
       c.client.toLowerCase().includes(search.toLowerCase()) ||
       c.id.toLowerCase().includes(search.toLowerCase());
-    return matchTab && matchSearch;
+    return matchTab && matchPriority && matchSearch;
+  }).sort((a, b) => {
+    const aVal = sortBy === 'updated' ? a.updated : a.deadline;
+    const bVal = sortBy === 'updated' ? b.updated : b.deadline;
+    
+    // Simple string comparison for mock dates like "2 hours ago" or "May 15"
+    // In a real app, these would be Date objects
+    if (sortOrder === 'asc') return aVal.localeCompare(bVal);
+    return bVal.localeCompare(aVal);
   });
 
   return (
@@ -90,8 +102,25 @@ export default function CasesPage() {
             </div>
 
             {/* Filter */}
-            <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border-base text-sm font-semibold text-text-secondary hover:bg-page-bg transition-all">
-              <Filter size={15} /> Filter <ChevronDown size={14} />
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border-base bg-white shadow-sm">
+              <Filter size={14} className="text-text-muted" />
+              <select 
+                value={priorityFilter}
+                onChange={(e) => setPriorityFilter(e.target.value as any)}
+                className="bg-transparent border-none outline-none text-sm font-semibold text-text-secondary cursor-pointer"
+              >
+                <option value="All">All Priorities</option>
+                <option value="High">High Priority</option>
+                <option value="Medium">Medium Priority</option>
+                <option value="Low">Low Priority</option>
+              </select>
+            </div>
+            
+            <button 
+              onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border-base text-sm font-semibold text-text-secondary hover:bg-page-bg transition-all"
+            >
+              Sort {sortOrder === 'asc' ? '↑' : '↓'}
             </button>
           </div>
 

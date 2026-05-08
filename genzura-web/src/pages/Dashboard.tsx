@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Briefcase,
   Clock,
@@ -7,6 +8,7 @@ import {
   MoreHorizontal,
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
+import { CASES } from '../data/cases';
 
 const CaseRow = ({ id, title, client, status, date }: { id: string; title: string; client: string; status: 'Active' | 'Pending' | 'Resolved'; date: string }) => (
   <tr className="border-b border-border-base hover:bg-page-bg/50 transition-colors group animate-in-fade delay-500">
@@ -50,15 +52,24 @@ const CaseRow = ({ id, title, client, status, date }: { id: string; title: strin
 );
 
 const Dashboard = () => {
+  const [priority, setPriority] = useState<'All' | 'High' | 'Medium' | 'Low'>('All');
+  
+  const activeCases = CASES.filter(c => c.status === 'Active');
+  const pendingCases = CASES.filter(c => c.status === 'Pending');
+  const resolvedCases = CASES.filter(c => c.status === 'Resolved');
+  
+  const filteredActive = activeCases.filter(c => priority === 'All' || c.priority === priority);
+  const recentCases = filteredActive.slice(0, 5);
+
   return (
     <AppLayout>
       {/* Stats Grid */}
       <div className="grid md:grid-cols-4 gap-8">
         {[
-          { label: 'Active Cases',    value: '24', icon: Briefcase,    color: 'text-blue-600',    bg: 'bg-blue-50/50'    },
-          { label: 'Pending Review',  value: '08', icon: Clock,        color: 'text-amber-600',   bg: 'bg-amber-50/50'   },
-          { label: 'Resolved',        value: '12', icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50/50' },
-          { label: 'System Alerts',   value: '02', icon: AlertCircle,  color: 'text-red-600',     bg: 'bg-red-50/50'     },
+          { label: 'Active Cases',    value: activeCases.length,  icon: Briefcase,    color: 'text-blue-600',    bg: 'bg-blue-50/50'    },
+          { label: 'Pending Review',  value: pendingCases.length, icon: Clock,        color: 'text-amber-600',   bg: 'bg-amber-50/50'   },
+          { label: 'Resolved',        value: resolvedCases.length,icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50/50' },
+          { label: 'System Alerts',   value: '02',                icon: AlertCircle,  color: 'text-red-600',     bg: 'bg-red-50/50'     },
         ].map((stat, i) => (
           <div key={i} className={`bg-white p-7 rounded-[2rem] border border-border-base shadow-sm hover:shadow-md transition-shadow animate-in-up delay-${(i + 1) * 100}`}>
             <div className="flex justify-between items-start mb-6">
@@ -78,12 +89,22 @@ const Dashboard = () => {
         <div className="p-8 border-b border-border-base flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-brand-dark">Active Cases</h2>
-            <p className="text-xs text-text-muted mt-1">Showing 5 of 24 active cases</p>
+            <p className="text-xs text-text-muted mt-1">Showing {recentCases.length} of {activeCases.length} active cases</p>
           </div>
           <div className="flex gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border-base text-sm font-semibold text-text-secondary hover:bg-page-bg transition-all">
-              <Filter size={16} /> Filter
-            </button>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border-base bg-white shadow-sm">
+              <Filter size={14} className="text-text-muted" />
+              <select 
+                value={priority}
+                onChange={(e) => setPriority(e.target.value as any)}
+                className="bg-transparent border-none outline-none text-xs font-bold text-text-secondary cursor-pointer"
+              >
+                <option value="All">All Priority</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </select>
+            </div>
             <button className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border-base text-sm font-semibold text-text-secondary hover:bg-page-bg transition-all">
               Export
             </button>
@@ -101,11 +122,16 @@ const Dashboard = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-border-base">
-              <CaseRow id="CZ-882" title="Corporate Restructuring"    client="Apex Global Inc."    status="Active"   date="2 hours ago"  />
-              <CaseRow id="CZ-879" title="Intellectual Property Audit" client="NextGen Systems"     status="Pending"  date="5 hours ago"  />
-              <CaseRow id="CZ-875" title="Compliance Verification"    client="Horizon Partners"    status="Active"   date="Yesterday"    />
-              <CaseRow id="CZ-871" title="Litigation Strategy"        client="Silverline Law"      status="Resolved" date="2 days ago"   />
-              <CaseRow id="CZ-868" title="Asset Recovery Plan"        client="Estate Mgmt Co."     status="Active"   date="3 days ago"   />
+              {recentCases.map((c) => (
+                <CaseRow 
+                  key={c.id} 
+                  id={c.id} 
+                  title={c.title} 
+                  client={c.client} 
+                  status={c.status} 
+                  date={c.updated} 
+                />
+              ))}
             </tbody>
           </table>
         </div>
@@ -137,9 +163,9 @@ const Dashboard = () => {
           <h3 className="text-lg font-bold text-brand-dark mb-6">Case Status</h3>
           <div className="space-y-4">
             {[
-              { label: 'Active',   count: 24, pct: 60, color: 'bg-brand-blue'  },
-              { label: 'Pending',  count: 8,  pct: 20, color: 'bg-amber-400'   },
-              { label: 'Resolved', count: 12, pct: 30, color: 'bg-emerald-400' },
+              { label: 'Active',   count: activeCases.length,   pct: Math.round((activeCases.length / CASES.length) * 100),   color: 'bg-brand-blue'  },
+              { label: 'Pending',  count: pendingCases.length,  pct: Math.round((pendingCases.length / CASES.length) * 100),  color: 'bg-amber-400'   },
+              { label: 'Resolved', count: resolvedCases.length, pct: Math.round((resolvedCases.length / CASES.length) * 100), color: 'bg-emerald-400' },
             ].map((s) => (
               <div key={s.label}>
                 <div className="flex justify-between text-xs mb-1.5">
