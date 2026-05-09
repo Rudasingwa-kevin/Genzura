@@ -1,5 +1,5 @@
 // ─── Types ────────────────────────────────────────────────────────────────────
-export type CaseStatus   = 'Active' | 'Pending' | 'Resolved';
+export type CaseStatus   = 'Active' | 'Pending' | 'Resolved' | 'Archived';
 export type CasePriority = 'High' | 'Medium' | 'Low';
 export type CaseType     = 'Litigation' | 'Corporate' | 'Compliance' | 'IP' | 'Employment' | 'M&A' | 'Real Estate';
 
@@ -346,11 +346,13 @@ export const STATUS_STYLES: Record<string, string> = {
   Active:   'bg-emerald-100/60 text-emerald-700',
   Pending:  'bg-amber-100/60 text-amber-700',
   Resolved: 'bg-slate-100/60 text-slate-600',
+  Archived: 'bg-slate-200/60 text-slate-700',
 };
 export const STATUS_DOT: Record<string, string> = {
   Active:   'bg-emerald-500',
   Pending:  'bg-amber-500',
   Resolved: 'bg-slate-400',
+  Archived: 'bg-slate-500',
 };
 export const PRIORITY_STYLES: Record<string, string> = {
   High:   'text-red-600 bg-red-50',
