@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Briefcase,
   Clock,
@@ -8,9 +8,10 @@ import {
   MoreHorizontal,
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
-import { CASES } from '../data/cases';
+import { CASES, type CaseStatus } from '../data/cases';
+import { CardSkeleton, TableSkeleton, Skeleton } from '../components/Skeleton';
 
-const CaseRow = ({ id, title, client, status, date }: { id: string; title: string; client: string; status: 'Active' | 'Pending' | 'Resolved'; date: string }) => (
+const CaseRow = ({ id, title, client, status, date }: { id: string; title: string; client: string; status: CaseStatus; date: string }) => (
   <tr className="border-b border-border-base hover:bg-page-bg/50 transition-colors group animate-in-fade delay-500">
     <td className="py-5 px-8">
       <div className="flex items-center gap-3">
@@ -53,6 +54,12 @@ const CaseRow = ({ id, title, client, status, date }: { id: string; title: strin
 
 const Dashboard = () => {
   const [priority, setPriority] = useState<'All' | 'High' | 'Medium' | 'Low'>('All');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1200);
+    return () => clearTimeout(timer);
+  }, []);
   
   const activeCases = CASES.filter(c => c.status === 'Active');
   const pendingCases = CASES.filter(c => c.status === 'Pending');
@@ -65,119 +72,145 @@ const Dashboard = () => {
     <AppLayout>
       {/* Stats Grid */}
       <div className="grid md:grid-cols-4 gap-8">
-        {[
-          { label: 'Active Cases',    value: activeCases.length,  icon: Briefcase,    color: 'text-blue-600',    bg: 'bg-blue-50/50'    },
-          { label: 'Pending Review',  value: pendingCases.length, icon: Clock,        color: 'text-amber-600',   bg: 'bg-amber-50/50'   },
-          { label: 'Resolved',        value: resolvedCases.length,icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50/50' },
-          { label: 'System Alerts',   value: '02',                icon: AlertCircle,  color: 'text-red-600',     bg: 'bg-red-50/50'     },
-        ].map((stat, i) => (
-          <div key={i} className={`bg-white p-7 rounded-[2rem] border border-border-base shadow-sm hover:shadow-md transition-shadow animate-in-up delay-${(i + 1) * 100}`}>
-            <div className="flex justify-between items-start mb-6">
-              <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color}`}>
-                <stat.icon size={26} />
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} />)
+        ) : (
+          [
+            { label: 'Active Cases',    value: activeCases.length,  icon: Briefcase,    color: 'text-blue-600',    bg: 'bg-blue-50/50'    },
+            { label: 'Pending Review',  value: pendingCases.length, icon: Clock,        color: 'text-amber-600',   bg: 'bg-amber-50/50'   },
+            { label: 'Resolved',        value: resolvedCases.length,icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50/50' },
+            { label: 'System Alerts',   value: '02',                icon: AlertCircle,  color: 'text-red-600',     bg: 'bg-red-50/50'     },
+          ].map((stat, i) => (
+            <div key={i} className={`bg-white p-7 rounded-[2rem] border border-border-base shadow-sm hover:shadow-md transition-shadow animate-in-up delay-${(i + 1) * 100}`}>
+              <div className="flex justify-between items-start mb-6">
+                <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color}`}>
+                  <stat.icon size={26} />
+                </div>
+                <span className="text-emerald-600 text-xs font-bold bg-emerald-50 px-2.5 py-1 rounded-lg">+12%</span>
               </div>
-              <span className="text-emerald-600 text-xs font-bold bg-emerald-50 px-2.5 py-1 rounded-lg">+12%</span>
+              <p className="text-text-muted text-[10px] font-bold uppercase tracking-[0.1em] mb-2">{stat.label}</p>
+              <p className="text-4xl font-bold text-brand-dark tracking-tighter">{stat.value}</p>
             </div>
-            <p className="text-text-muted text-[10px] font-bold uppercase tracking-[0.1em] mb-2">{stat.label}</p>
-            <p className="text-4xl font-bold text-brand-dark tracking-tighter">{stat.value}</p>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* Case Table */}
-      <div className="bg-white rounded-[2rem] border border-border-base shadow-sm overflow-hidden">
-        <div className="p-8 border-b border-border-base flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-brand-dark">Active Cases</h2>
-            <p className="text-xs text-text-muted mt-1">Showing {recentCases.length} of {activeCases.length} active cases</p>
-          </div>
-          <div className="flex gap-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border-base bg-white shadow-sm">
-              <Filter size={14} className="text-text-muted" />
-              <select 
-                value={priority}
-                onChange={(e) => setPriority(e.target.value as any)}
-                className="bg-transparent border-none outline-none text-xs font-bold text-text-secondary cursor-pointer"
-              >
-                <option value="All">All Priority</option>
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
-              </select>
+      {isLoading ? (
+        <TableSkeleton />
+      ) : (
+        <div className="bg-white rounded-[2rem] border border-border-base shadow-sm overflow-hidden">
+          <div className="p-8 border-b border-border-base flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-brand-dark">Active Cases</h2>
+              <p className="text-xs text-text-muted mt-1">Showing {recentCases.length} of {activeCases.length} active cases</p>
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border-base text-sm font-semibold text-text-secondary hover:bg-page-bg transition-all">
-              Export
-            </button>
+            <div className="flex gap-3">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border-base bg-white shadow-sm">
+                <Filter size={14} className="text-text-muted" />
+                <select 
+                  value={priority}
+                  onChange={(e) => setPriority(e.target.value as any)}
+                  className="bg-transparent border-none outline-none text-xs font-bold text-text-secondary cursor-pointer"
+                >
+                  <option value="All">All Priority</option>
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
+              </div>
+              <button className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border-base text-sm font-semibold text-text-secondary hover:bg-page-bg transition-all">
+                Export
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-page-bg/30 text-text-muted text-[10px] font-bold uppercase tracking-[0.2em] border-b border-border-base">
+                  <th className="py-5 px-8">Case Details</th>
+                  <th className="py-5 px-8">Status</th>
+                  <th className="py-5 px-8">Last Updated</th>
+                  <th className="py-5 px-8 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border-base">
+                {recentCases.map((c) => (
+                  <CaseRow 
+                    key={c.id} 
+                    id={c.id} 
+                    title={c.title} 
+                    client={c.client} 
+                    status={c.status} 
+                    date={c.updated} 
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="p-6 bg-page-bg/20 text-center">
+            <button className="text-sm font-bold text-brand-blue hover:underline underline-offset-4">View all cases</button>
           </div>
         </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-page-bg/30 text-text-muted text-[10px] font-bold uppercase tracking-[0.2em] border-b border-border-base">
-                <th className="py-5 px-8">Case Details</th>
-                <th className="py-5 px-8">Status</th>
-                <th className="py-5 px-8">Last Updated</th>
-                <th className="py-5 px-8 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-base">
-              {recentCases.map((c) => (
-                <CaseRow 
-                  key={c.id} 
-                  id={c.id} 
-                  title={c.title} 
-                  client={c.client} 
-                  status={c.status} 
-                  date={c.updated} 
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="p-6 bg-page-bg/20 text-center">
-          <button className="text-sm font-bold text-brand-blue hover:underline underline-offset-4">View all cases</button>
-        </div>
-      </div>
+      )}
 
       {/* Quick Stats Row */}
       <div className="grid md:grid-cols-3 gap-8">
         <div className="bg-white rounded-[2rem] border border-border-base shadow-sm p-7 col-span-2">
           <h3 className="text-lg font-bold text-brand-dark mb-6">Weekly Activity</h3>
-          <div className="flex items-end gap-3 h-28">
-            {[40, 65, 45, 80, 55, 90, 70].map((h, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                <div
-                  className="w-full rounded-t-lg bg-brand-blue/20 hover:bg-brand-blue transition-colors cursor-pointer"
-                  style={{ height: `${h}%` }}
-                />
-                <span className="text-[10px] text-text-muted font-medium">
-                  {['M','T','W','T','F','S','S'][i]}
-                </span>
-              </div>
-            ))}
-          </div>
+          {isLoading ? (
+            <Skeleton className="w-full h-28 rounded-xl" />
+          ) : (
+            <div className="flex items-end gap-3 h-28">
+              {[40, 65, 45, 80, 55, 90, 70].map((h, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                  <div
+                    className="w-full rounded-t-lg bg-brand-blue/20 hover:bg-brand-blue transition-colors cursor-pointer"
+                    style={{ height: `${h}%` }}
+                  />
+                  <span className="text-[10px] text-text-muted font-medium">
+                    {['M','T','W','T','F','S','S'][i]}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         <div className="bg-white rounded-[2rem] border border-border-base shadow-sm p-7">
           <h3 className="text-lg font-bold text-brand-dark mb-6">Case Status</h3>
-          <div className="space-y-4">
-            {[
-              { label: 'Active',   count: activeCases.length,   pct: Math.round((activeCases.length / CASES.length) * 100),   color: 'bg-brand-blue'  },
-              { label: 'Pending',  count: pendingCases.length,  pct: Math.round((pendingCases.length / CASES.length) * 100),  color: 'bg-amber-400'   },
-              { label: 'Resolved', count: resolvedCases.length, pct: Math.round((resolvedCases.length / CASES.length) * 100), color: 'bg-emerald-400' },
-            ].map((s) => (
-              <div key={s.label}>
-                <div className="flex justify-between text-xs mb-1.5">
-                  <span className="font-semibold text-text-secondary">{s.label}</span>
-                  <span className="font-bold text-brand-dark">{s.count}</span>
+          {isLoading ? (
+            <div className="space-y-6">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i}>
+                  <div className="flex justify-between mb-2">
+                    <Skeleton className="w-16 h-3" />
+                    <Skeleton className="w-8 h-3" />
+                  </div>
+                  <Skeleton className="w-full h-2 rounded-full" />
                 </div>
-                <div className="h-2 bg-page-bg rounded-full overflow-hidden">
-                  <div className={`h-full ${s.color} rounded-full`} style={{ width: `${s.pct}%` }} />
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {[
+                { label: 'Active',   count: activeCases.length,   pct: Math.round((activeCases.length / CASES.length) * 100),   color: 'bg-brand-blue'  },
+                { label: 'Pending',  count: pendingCases.length,  pct: Math.round((pendingCases.length / CASES.length) * 100),  color: 'bg-amber-400'   },
+                { label: 'Resolved', count: resolvedCases.length, pct: Math.round((resolvedCases.length / CASES.length) * 100), color: 'bg-emerald-400' },
+              ].map((s) => (
+                <div key={s.label}>
+                  <div className="flex justify-between text-xs mb-1.5">
+                    <span className="font-semibold text-text-secondary">{s.label}</span>
+                    <span className="font-bold text-brand-dark">{s.count}</span>
+                  </div>
+                  <div className="h-2 bg-page-bg rounded-full overflow-hidden">
+                    <div className={`h-full ${s.color} rounded-full`} style={{ width: `${s.pct}%` }} />
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </AppLayout>

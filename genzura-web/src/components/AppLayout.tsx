@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import NewCaseModal from './NewCaseModal';
+import Breadcrumbs from './Breadcrumbs';
+import EmptyState from './EmptyState';
 import { CASES } from '../data/cases';
 
 // ─── Notifications Data ────────────────────────────────────────────────────────
@@ -119,12 +121,12 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
       {/* List */}
       <div className="divide-y divide-border-base max-h-[480px] overflow-y-auto">
         {notifs.length === 0 ? (
-          <div className="py-16 text-center">
-            <div className="w-14 h-14 bg-page-bg rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Bell size={24} className="text-text-muted" />
-            </div>
-            <p className="font-bold text-brand-dark mb-1">All caught up!</p>
-            <p className="text-sm text-text-muted">No new notifications.</p>
+          <div className="py-8">
+            <EmptyState 
+              illustration="notifications"
+              title="All Caught Up!"
+              description="No new notifications at the moment. We'll let you know when something important happens."
+            />
           </div>
         ) : (
           notifs.map((notif) => {
@@ -455,6 +457,7 @@ export default function AppLayout({ children, title, action }: AppLayoutProps) {
 
         {/* Page Content */}
         <div className="p-4 lg:p-8 space-y-6 lg:space-y-8 flex-1">
+          <Breadcrumbs />
           {title && (
             <div>
               <h1 className="text-xl lg:text-2xl font-bold text-brand-dark">{title}</h1>

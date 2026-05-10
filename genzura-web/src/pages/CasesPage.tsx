@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Filter, Search as SearchIcon, MoreHorizontal, Clock,
@@ -7,6 +7,8 @@ import {
 import { toast } from 'react-hot-toast';
 import AppLayout from '../components/AppLayout';
 import { CASES, STATUS_STYLES, STATUS_DOT, PRIORITY_STYLES } from '../data/cases';
+import EmptyState from '../components/EmptyState';
+import { TableSkeleton } from '../components/Skeleton';
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -185,6 +187,12 @@ export default function CasesPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [localCases, setLocalCases] = useState(CASES);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const filtered = localCases.filter((c) => {
     const matchTab = tab === 'All' ? c.status !== 'Archived' : c.status === tab;
@@ -252,7 +260,10 @@ export default function CasesPage() {
         </div>
 
         {/* Table Card */}
-        <div className="bg-white rounded-[2rem] border border-border-base shadow-sm overflow-hidden">
+        {isLoading ? (
+          <TableSkeleton rows={10} />
+        ) : (
+          <div className="bg-white rounded-[2rem] border border-border-base shadow-sm overflow-hidden">
           {/* Toolbar */}
           <div className="p-6 border-b border-border-base flex flex-wrap items-center gap-4 bg-white sticky top-0 z-10">
             {/* Tabs */}
@@ -379,17 +390,24 @@ export default function CasesPage() {
               </tbody>
             </table>
             {sorted.length === 0 && (
-              <div className="py-32 text-center">
-                <div className="w-20 h-20 bg-page-bg rounded-3xl flex items-center justify-center mx-auto mb-6 border border-dashed border-border-base">
-                  <SearchIcon size={32} className="text-text-muted opacity-20" />
-                </div>
-                <p className="text-sm font-bold text-text-muted uppercase tracking-[0.2em]">No matching records found</p>
-                <button onClick={() => { setSearch(''); setTab('All'); }} className="mt-4 text-xs font-bold text-brand-blue hover:underline">Clear all search parameters</button>
-              </div>
+              <EmptyState 
+                illustration="search"
+                title="No Matching Records"
+                description="We couldn't find any cases matching your current search parameters. Try adjusting your filters or search query."
+                action={
+                  <button 
+                    onClick={() => { setSearch(''); setTab('All'); }} 
+                    className="text-sm font-bold text-brand-blue hover:underline underline-offset-4"
+                  >
+                    Clear all search parameters
+                  </button>
+                }
+              />
             )}
           </div>
         </div>
-      </div>
-    </AppLayout>
+      )}
+    </div>
+  </AppLayout>
   );
 }

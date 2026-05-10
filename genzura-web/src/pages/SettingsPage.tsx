@@ -240,7 +240,7 @@ const AppearanceTab = () => {
 };
 
 const NotificationsTab = () => {
-  const [isSaving, setIsSaving] = useState(false);
+  const [isSaving] = useState(false);
   
   return (
     <div className="space-y-10 animate-in-fade">

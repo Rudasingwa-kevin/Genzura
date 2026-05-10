@@ -12,6 +12,7 @@ import {
   getCaseById, STATUS_STYLES, STATUS_DOT, PRIORITY_STYLES,
   type TimelineEvent, type CaseDocument, type CaseNote,
 } from '../data/cases';
+import EmptyState from '../components/EmptyState';
 
 // ─── Timeline icon map ────────────────────────────────────────────────────────
 const timelineIcon = (type: TimelineEvent['type']) => {
@@ -508,10 +509,16 @@ export default function CaseDetailPage() {
                     </div>
                     <div className="grid gap-2">
                       {caseData.documents.length === 0 ? (
-                        <div className="text-center py-20 bg-page-bg/30 rounded-3xl border-2 border-dashed border-border-base">
-                          <FileText size={40} className="mx-auto text-text-muted mb-4 opacity-20" />
-                          <p className="text-sm font-bold text-text-muted">No documents found for this case.</p>
-                        </div>
+                        <EmptyState 
+                          illustration="generic"
+                          title="No Documents"
+                          description="This case doesn't have any documents yet. Upload files to get started."
+                          action={
+                            <button className="text-xs font-bold text-brand-blue flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-brand-light hover:shadow-md transition-all">
+                              <Plus size={14} /> Upload First Document
+                            </button>
+                          }
+                        />
                       ) : (
                         caseData.documents.map((doc, i) => <DocumentRow key={doc.id} doc={doc} index={i} />)
                       )}
@@ -523,9 +530,17 @@ export default function CaseDetailPage() {
                 {activeTab === 'notes' && (
                   <div className="space-y-8 max-w-2xl">
                     <div className="space-y-6">
-                      {caseData.notes.map((note, i) => (
-                        <NoteCard key={note.id} note={note} index={i} />
-                      ))}
+                      {caseData.notes.length === 0 ? (
+                        <EmptyState 
+                          illustration="generic"
+                          title="No Internal Notes"
+                          description="Keep track of case observations and legal strategy by posting your first note below."
+                        />
+                      ) : (
+                        caseData.notes.map((note, i) => (
+                          <NoteCard key={note.id} note={note} index={i} />
+                        ))
+                      )}
                     </div>
 
                     {/* Enhanced Post Note */}

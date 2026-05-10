@@ -6,13 +6,11 @@ import {
   CheckCircle2, 
   Clock, 
   BarChart3, 
-  ChevronRight,
-  Filter,
-  Download,
-  Calendar
+  ChevronRight
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { CASES } from '../data/cases';
+import { CardSkeleton, Skeleton } from '../components/Skeleton';
 
 // ─── Types ────────────────────────────────────────────────────────────────
 type Range = '7d' | '30d' | '90d' | '1y';
@@ -21,7 +19,6 @@ const RANGES: Range[] = ['7d', '30d', '90d', '1y'];
 // ─── Helper Functions ────────────────────────────────────────────────────────
 const getToday = () => new Date('2026-05-10');
 const parseDateStr = (dateStr: string) => new Date(dateStr);
-const getDaysDiff = (d1: Date, d2: Date) => Math.floor((d2.getTime() - d1.getTime()) / (1000 * 3600 * 24));
 
 const getCutoffDate = (range: Range): Date => {
   const today = getToday();
@@ -110,6 +107,12 @@ const AreaChart = ({ data }: { data: { label: string; value: number }[] }) => {
 
 export default function AnalyticsPage() {
   const [range, setRange] = useState<Range>('90d');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const { kpi, velocityData, leaderboard } = useMemo(() => {
     const cutoffDate = getCutoffDate(range);
@@ -188,10 +191,16 @@ export default function AnalyticsPage() {
 
       {/* KPI Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <KpiCard label="Cases Opened"    value={kpi.opened}          sub="new cases filed"     icon={Briefcase}    color="text-brand-blue"    bg="bg-brand-light"   trend="+8%"  trendUp index={0} />
-        <KpiCard label="Cases Closed"    value={kpi.closed}          sub="successfully closed"  icon={CheckCircle2} color="text-emerald-600"  bg="bg-emerald-50"    trend="+12%" trendUp index={1} />
-        <KpiCard label="Avg. Resolution" value={`${kpi.avgDays}d`}     sub="days to close"        icon={Clock}        color="text-amber-600"   bg="bg-amber-50"      trend="-3%"  trendUp index={2} />
-        <KpiCard label="Win Rate"         value={`${kpi.winRate}%`}    sub="favorable outcomes"   icon={BarChart3}    color="text-violet-600"  bg="bg-violet-50"     trend="+2%"  trendUp index={3} />
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} />)
+        ) : (
+          <>
+            <KpiCard label="Cases Opened"    value={kpi.opened}          sub="new cases filed"     icon={Briefcase}    color="text-brand-blue"    bg="bg-brand-light"   trend="+8%"  trendUp index={0} />
+            <KpiCard label="Cases Closed"    value={kpi.closed}          sub="successfully closed"  icon={CheckCircle2} color="text-emerald-600"  bg="bg-emerald-50"    trend="+12%" trendUp index={1} />
+            <KpiCard label="Avg. Resolution" value={`${kpi.avgDays}d`}     sub="days to close"        icon={Clock}        color="text-amber-600"   bg="bg-amber-50"      trend="-3%"  trendUp index={2} />
+            <KpiCard label="Win Rate"         value={`${kpi.winRate}%`}    sub="favorable outcomes"   icon={BarChart3}    color="text-violet-600"  bg="bg-violet-50"     trend="+2%"  trendUp index={3} />
+          </>
+        )}
       </div>
 
       {/* Velocity Area Chart */}
@@ -203,7 +212,7 @@ export default function AnalyticsPage() {
           </div>
         </div>
         <div className="h-64">
-          <AreaChart data={velocityData} />
+          {isLoading ? <Skeleton className="w-full h-full rounded-2xl" /> : <AreaChart data={velocityData} />}
         </div>
       </div>
 
@@ -225,7 +234,7 @@ export default function AnalyticsPage() {
               </tr>
             </thead>
             <tbody>
-              {leaderboard.map((a, i) => (
+              {leaderboard.map((a) => (
                 <tr key={a.name} className="border-b border-border-base last:border-0 hover:bg-page-bg/40 transition-colors">
                   <td className="py-5 px-8">
                     <div className="flex items-center gap-3">

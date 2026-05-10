@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckSquare, Plus, Clock, MoreVertical, Filter, AlertCircle, X, ExternalLink, MapPin } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckSquare, Plus, Clock, MoreVertical, AlertCircle, X, ExternalLink, MapPin } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { EVENTS, TASKS, type CalendarEvent, type Task, type EventType } from '../data/calendar';
 
