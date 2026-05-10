@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute     from './components/AdminRoute';
 
 import LandingPage    from './pages/LandingPage';
 import LoginPage      from './pages/LoginPage';
@@ -17,6 +18,12 @@ import AnalyticsPage  from './pages/AnalyticsPage';
 import SettingsPage   from './pages/SettingsPage';
 import CaseDetailPage from './pages/CaseDetailPage';
 import LegalPage      from './pages/LegalPage';
+
+// Admin Pages
+import AdminDashboard from './pages/admin/AdminDashboard';
+import UserManagement from './pages/admin/UserManagement';
+import SystemSettings from './pages/admin/SystemSettings';
+import AuditLogPage   from './pages/admin/AuditLogPage';
 
 function App() {
   return (
@@ -39,6 +46,12 @@ function App() {
           <Route path="/clients/:id"   element={<ProtectedRoute><ClientDetailPage /></ProtectedRoute>}  />
           <Route path="/analytics"  element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
           <Route path="/settings"   element={<ProtectedRoute><SettingsPage /></ProtectedRoute>}  />
+          
+          {/* Admin Routes */}
+          <Route path="/admin"          element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+          <Route path="/admin/users"    element={<AdminRoute><UserManagement /></AdminRoute>} />
+          <Route path="/admin/settings" element={<AdminRoute><SystemSettings /></AdminRoute>} />
+          <Route path="/admin/audit"    element={<AdminRoute><AuditLogPage /></AdminRoute>} />
         </Routes>
       </Router>
     </AuthProvider>

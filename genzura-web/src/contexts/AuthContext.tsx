@@ -8,13 +8,14 @@ export interface User {
   lastName: string;
   email: string;
   initials: string;
+  role: 'admin' | 'user';
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string) => Promise<void>;
+  login: (email: string) => Promise<User>;
   register: (firstName: string, lastName: string, email: string) => Promise<void>;
   updateUser: (updates: Partial<User>) => void;
   logout: () => void;
@@ -44,11 +45,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       firstName: 'James',
       lastName: 'Wilson',
       email,
-      initials: 'JW', // In a real app, generate from name
+      initials: 'JW',
+      role: email.toLowerCase() === 'admin@genzura.law' ? 'admin' : 'user',
     };
     
     setUser(mockUser);
     localStorage.setItem('genzura_user', JSON.stringify(mockUser));
+    return mockUser;
   };
 
   const register = async (firstName: string, lastName: string, email: string) => {
@@ -61,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       lastName,
       email,
       initials: `${firstName[0]}${lastName[0]}`.toUpperCase(),
+      role: email.toLowerCase() === 'admin@genzura.law' ? 'admin' : 'user',
     };
     
     setUser(mockUser);

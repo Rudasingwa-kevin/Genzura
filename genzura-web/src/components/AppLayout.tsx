@@ -12,6 +12,7 @@ import {
   Calendar as CalendarIcon,
   Folder,
   X,
+  ShieldCheck,
   Briefcase as CaseIcon,
   Calendar as CalIcon,
   FileText,
@@ -360,12 +361,33 @@ export default function AppLayout({ children, title, action }: AppLayoutProps) {
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto space-y-3 min-h-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          {navItems.map((item) => (
-            <div key={item.to} onClick={() => setSidebarOpen(false)}>
-              <SidebarItem {...item} />
+        <nav className="flex-1 overflow-y-auto min-h-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          {user?.role !== 'admin' && (
+            <div className="space-y-3 mb-10">
+              {navItems.map((item) => (
+                <div key={item.to} onClick={() => setSidebarOpen(false)}>
+                  <SidebarItem {...item} />
+                </div>
+              ))}
             </div>
-          ))}
+          )}
+
+          {user?.role === 'admin' && (
+            <div className="mb-8">
+              <p className="px-5 text-[10px] font-bold text-text-muted uppercase tracking-[0.2em] mb-5">Command Center</p>
+              <div className="space-y-3">
+                <div onClick={() => setSidebarOpen(false)}>
+                  <Link
+                    to="/admin"
+                    className="flex items-center gap-3.5 px-5 py-3.5 rounded-xl bg-brand-dark text-white shadow-xl shadow-brand-dark/20 hover:scale-[1.02] transition-all no-underline"
+                  >
+                    <ShieldCheck size={20} />
+                    <span className="font-bold text-sm">Admin Portal</span>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
         </nav>
 
         <div className="pt-6 border-t border-border-base mt-6 shrink-0">

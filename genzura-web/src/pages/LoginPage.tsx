@@ -17,8 +17,9 @@ const LoginPage = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await login(email || 'user@genzura.com');
-      navigate(from, { replace: true });
+      const user = await login(email || 'user@genzura.com');
+      const targetPath = user?.role === 'admin' && from === '/dashboard' ? '/admin' : from;
+      navigate(targetPath, { replace: true });
     } catch (error) {
       console.error('Failed to login', error);
       setIsLoading(false);
