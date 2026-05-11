@@ -10,8 +10,9 @@ import {
 import AppLayout from '../components/AppLayout';
 import {
   getCaseById, STATUS_STYLES, STATUS_DOT, PRIORITY_STYLES,
-  type TimelineEvent, type CaseDocument, type CaseNote,
+  type TimelineEvent, type CaseDocument, type CaseNote, type TeamMember
 } from '../data/cases';
+import { USERS } from '../data/users';
 import EmptyState from '../components/EmptyState';
 
 // ─── Timeline icon map ────────────────────────────────────────────────────────
@@ -122,6 +123,101 @@ const NoteCard = ({ note, index }: { note: CaseNote; index: number }) => (
   </div>
 );
 
+function InviteCollaboratorModal({ onClose, onInvite }: { onClose: () => void; onInvite: (member: TeamMember) => void }) {
+  const [search, setSearch] = useState('');
+  const [selectedRole, setSelectedRole] = useState('Assistant Counsel');
+  const [isInviting, setIsInviting] = useState(false);
+
+  const filteredUsers = USERS.filter(u => 
+    u.name.toLowerCase().includes(search.toLowerCase()) || 
+    u.email.toLowerCase().includes(search.toLowerCase())
+  ).slice(0, 5);
+
+  const handleInvite = (user: any) => {
+    setIsInviting(true);
+    setTimeout(() => {
+      onInvite({
+        name: user.name,
+        role: selectedRole,
+        initials: user.initials
+      });
+      setIsInviting(false);
+      onClose();
+    }, 800);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-brand-dark/20 backdrop-blur-sm animate-in fade-in duration-300" onClick={onClose} />
+      <div className="relative bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl border border-border-base p-8 animate-in zoom-in-95 fade-in duration-300">
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-xl font-bold text-brand-dark">Invite Collaborator</h2>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-page-bg text-text-muted transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="space-y-6">
+          <div>
+            <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Search Firm Members</label>
+            <div className="relative">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
+              <input 
+                type="text" 
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Name or email..."
+                className="w-full h-12 pl-11 pr-4 rounded-xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold"
+              />
+            </div>
+          </div>
+
+          {search && (
+            <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+              {filteredUsers.map(user => (
+                <button 
+                  key={user.id}
+                  onClick={() => handleInvite(user)}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-page-bg transition-all group border border-transparent hover:border-border-base"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-brand-blue text-white font-bold text-[10px] flex items-center justify-center">
+                    {user.initials}
+                  </div>
+                  <div className="text-left flex-1">
+                    <p className="text-xs font-bold text-brand-dark group-hover:text-brand-blue transition-colors">{user.name}</p>
+                    <p className="text-[10px] text-text-muted">{user.email}</p>
+                  </div>
+                  <Plus size={14} className="text-text-muted" />
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Assign Case Role</label>
+            <select 
+              value={selectedRole}
+              onChange={e => setSelectedRole(e.target.value)}
+              className="w-full h-12 px-4 rounded-xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-sm"
+            >
+              <option>Assistant Counsel</option>
+              <option>Reviewer</option>
+              <option>Co-Counsel</option>
+              <option>Expert Witness</option>
+              <option>Paralegal</option>
+            </select>
+          </div>
+
+          <div className="pt-4 flex items-center gap-2 text-[10px] font-bold text-text-muted uppercase tracking-widest bg-page-bg/50 p-4 rounded-2xl border border-dashed border-border-base">
+            <Mail size={14} className="text-brand-blue" />
+            Invitation will be sent via secure link
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function EditCaseModal({ caseData, onClose, onSave }: { caseData: any; onClose: () => void; onSave: (updated: any) => void }) {
   const [title, setTitle] = useState(caseData.title);
   const [description, setDescription] = useState(caseData.description);
@@ -138,28 +234,25 @@ function EditCaseModal({ caseData, onClose, onSave }: { caseData: any; onClose: 
             <X size={20} />
           </button>
         </div>
-        
         <div className="space-y-6">
           <div>
             <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Case Title</label>
-            <input 
+            <input
               type="text" value={title} onChange={e => setTitle(e.target.value)}
               className="w-full h-12 px-4 rounded-xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold"
             />
           </div>
-          
           <div>
             <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Description</label>
-            <textarea 
+            <textarea
               rows={4} value={description} onChange={e => setDescription(e.target.value)}
               className="w-full px-4 py-3 rounded-xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-medium text-sm"
             />
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Status</label>
-              <select 
+              <select
                 value={status} onChange={e => setStatus(e.target.value)}
                 className="w-full h-12 px-4 rounded-xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-sm"
               >
@@ -171,7 +264,7 @@ function EditCaseModal({ caseData, onClose, onSave }: { caseData: any; onClose: 
             </div>
             <div>
               <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Priority</label>
-              <select 
+              <select
                 value={priority} onChange={e => setPriority(e.target.value)}
                 className="w-full h-12 px-4 rounded-xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-sm"
               >
@@ -181,16 +274,12 @@ function EditCaseModal({ caseData, onClose, onSave }: { caseData: any; onClose: 
               </select>
             </div>
           </div>
-
           <div className="flex gap-3 pt-4">
             <button onClick={onClose} className="flex-1 h-14 rounded-2xl border border-border-base font-bold text-brand-dark hover:bg-page-bg transition-all">
               Cancel
             </button>
-            <button 
-              onClick={() => {
-                onSave({ ...caseData, title, description, status, priority });
-                onClose();
-              }}
+            <button
+              onClick={() => { onSave({ ...caseData, title, description, status, priority }); onClose(); }}
               className="flex-1 h-14 bg-brand-blue text-white rounded-2xl font-bold shadow-lg shadow-brand-blue/20 hover:shadow-xl hover:-translate-y-0.5 transition-all"
             >
               Save Changes
@@ -210,6 +299,7 @@ export default function CaseDetailPage() {
   const [activeTab, setActiveTab] = useState<'timeline' | 'documents' | 'notes'>('timeline');
   const [currentCase, setCurrentCase] = useState<any>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   useEffect(() => {
@@ -334,6 +424,12 @@ export default function CaseDetailPage() {
           )}
         </div>
       </div>
+      <button
+        onClick={() => setShowInviteModal(true)}
+        className="flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-brand-blue text-brand-blue font-bold hover:bg-brand-blue hover:text-white hover:shadow-lg hover:shadow-brand-blue/20 hover:-translate-y-0.5 transition-all active:scale-95"
+      >
+        <Plus size={18} /> Invite Attorney
+      </button>
       <button 
         onClick={() => setShowEditModal(true)}
         className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-brand-blue text-white font-bold shadow-lg shadow-brand-blue/30 hover:shadow-xl hover:-translate-y-0.5 transition-all active:scale-95"
@@ -346,12 +442,24 @@ export default function CaseDetailPage() {
   return (
     <AppLayout action={actionBar}>
       {showEditModal && (
-        <EditCaseModal 
-          caseData={caseData} 
-          onClose={() => setShowEditModal(false)} 
+        <EditCaseModal
+          caseData={caseData}
+          onClose={() => setShowEditModal(false)}
           onSave={(updated) => {
             setCurrentCase(updated);
             toast.success('Case updated successfully!');
+          }}
+        />
+      )}
+      {showInviteModal && (
+        <InviteCollaboratorModal
+          onClose={() => setShowInviteModal(false)}
+          onInvite={(member) => {
+            setCurrentCase({ ...caseData, team: [...caseData.team, member] });
+            toast.success(`${member.name} added to the case team!`, {
+              icon: '👥',
+              style: { borderRadius: '1rem', background: '#1e293b', color: '#fff', fontWeight: 'bold' }
+            });
           }}
         />
       )}
@@ -591,7 +699,10 @@ export default function CaseDetailPage() {
                     </button>
                   </div>
                 ))}
-                <button className="w-full py-4 mt-2 rounded-[1.25rem] border-2 border-dashed border-border-base text-xs font-bold text-text-muted hover:border-brand-blue hover:text-brand-blue hover:bg-brand-light transition-all flex items-center justify-center gap-2">
+                <button 
+                  onClick={() => setShowInviteModal(true)}
+                  className="w-full py-4 mt-2 rounded-[1.25rem] border-2 border-dashed border-border-base text-xs font-bold text-text-muted hover:border-brand-blue hover:text-brand-blue hover:bg-brand-light transition-all flex items-center justify-center gap-2"
+                >
                   <Plus size={16} /> Add Collaborator
                 </button>
               </div>

@@ -157,7 +157,7 @@ const LandingPage = () => {
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-6">
                   <div className="bg-white p-6 rounded-2xl shadow-sm border border-border-base transform -rotate-3">
-                    <p className="text-sm font-bold text-brand-blue">Est. 2018</p>
+                    <p className="text-sm font-bold text-brand-blue">Est. 2026</p>
                     <p className="text-xs text-text-muted">A legacy of precision</p>
                   </div>
                   <div className="bg-white p-6 rounded-2xl shadow-sm border border-border-base transform rotate-2">
