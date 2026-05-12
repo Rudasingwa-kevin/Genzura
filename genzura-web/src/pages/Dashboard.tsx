@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Briefcase,
   Clock,
@@ -11,49 +12,58 @@ import AppLayout from '../components/AppLayout';
 import { CASES, type CaseStatus } from '../data/cases';
 import { CardSkeleton, TableSkeleton, Skeleton } from '../components/Skeleton';
 
-const CaseRow = ({ id, title, client, status, date }: { id: string; title: string; client: string; status: CaseStatus; date: string }) => (
-  <tr className="border-b border-border-base hover:bg-page-bg/50 transition-colors group animate-in-fade delay-500">
-    <td className="py-5 px-8">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-brand-light flex items-center justify-center text-brand-blue font-bold text-xs">
-          {id}
+const CaseRow = ({ id, title, client, status, date }: { id: string; title: string; client: string; status: CaseStatus; date: string }) => {
+  const navigate = useNavigate();
+  
+  return (
+    <tr 
+      className="border-b border-border-base hover:bg-page-bg/50 transition-colors group animate-in-fade delay-500 cursor-pointer"
+      onClick={() => navigate(`/cases/${id}`)}
+    >
+      <td className="py-5 px-8">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-brand-light flex items-center justify-center text-brand-blue font-bold text-xs">
+            {id}
+          </div>
+          <div>
+            <p className="font-bold text-brand-dark text-sm group-hover:text-brand-blue transition-colors">{title}</p>
+            <p className="text-xs text-text-muted mt-0.5">{client}</p>
+          </div>
         </div>
-        <div>
-          <p className="font-bold text-brand-dark text-sm group-hover:text-brand-blue transition-colors cursor-pointer">{title}</p>
-          <p className="text-xs text-text-muted mt-0.5">{client}</p>
+      </td>
+      <td className="py-5 px-8">
+        <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+          status === 'Active'   ? 'bg-emerald-100/50 text-emerald-700' :
+          status === 'Pending'  ? 'bg-amber-100/50 text-amber-700'    :
+                                  'bg-slate-100/50 text-slate-700'
+        }`}>
+          <div className={`w-1.5 h-1.5 rounded-full ${
+            status === 'Active'  ? 'bg-emerald-500' :
+            status === 'Pending' ? 'bg-amber-500'   :
+                                   'bg-slate-500'
+          }`} />
+          {status}
         </div>
-      </div>
-    </td>
-    <td className="py-5 px-8">
-      <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-        status === 'Active'   ? 'bg-emerald-100/50 text-emerald-700' :
-        status === 'Pending'  ? 'bg-amber-100/50 text-amber-700'    :
-                                'bg-slate-100/50 text-slate-700'
-      }`}>
-        <div className={`w-1.5 h-1.5 rounded-full ${
-          status === 'Active'  ? 'bg-emerald-500' :
-          status === 'Pending' ? 'bg-amber-500'   :
-                                 'bg-slate-500'
-        }`} />
-        {status}
-      </div>
-    </td>
-    <td className="py-5 px-8">
-      <div className="flex items-center gap-2 text-sm text-text-secondary">
-        <Clock size={14} className="text-text-muted" />
-        {date}
-      </div>
-    </td>
-    <td className="py-5 px-8 text-center">
-      <button className="p-2 rounded-xl hover:bg-brand-light text-text-muted hover:text-brand-blue transition-all">
-        <MoreHorizontal size={18} />
-      </button>
-    </td>
-  </tr>
-);
+      </td>
+      <td className="py-5 px-8">
+        <div className="flex items-center gap-2 text-sm text-text-secondary">
+          <Clock size={14} className="text-text-muted" />
+          {date}
+        </div>
+      </td>
+      <td className="py-5 px-8 text-center" onClick={(e) => e.stopPropagation()}>
+        <button className="p-2 rounded-xl hover:bg-brand-light text-text-muted hover:text-brand-blue transition-all">
+          <MoreHorizontal size={18} />
+        </button>
+      </td>
+    </tr>
+  );
+};
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [priority, setPriority] = useState<'All' | 'High' | 'Medium' | 'Low'>('All');
+  const [statusFilter, setStatusFilter] = useState<CaseStatus | 'High'>('Active');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -64,9 +74,22 @@ const Dashboard = () => {
   const activeCases = CASES.filter(c => c.status === 'Active');
   const pendingCases = CASES.filter(c => c.status === 'Pending');
   const resolvedCases = CASES.filter(c => c.status === 'Resolved');
+  const highPriorityCases = CASES.filter(c => c.priority === 'High' && c.status !== 'Archived');
   
-  const filteredActive = activeCases.filter(c => priority === 'All' || c.priority === priority);
-  const recentCases = filteredActive.slice(0, 5);
+  const displayCases = CASES.filter(c => {
+    if (statusFilter === 'High') return c.priority === 'High' && c.status !== 'Archived';
+    return c.status === statusFilter;
+  });
+
+  const filteredCases = displayCases.filter(c => priority === 'All' || c.priority === priority);
+  const recentCases = filteredCases.slice(0, 5);
+
+  const stats = [
+    { label: 'Active Cases',    value: activeCases.length,      icon: Briefcase,    color: 'text-blue-600',    bg: 'bg-blue-50/50',    status: 'Active' as const },
+    { label: 'Pending Review',  value: pendingCases.length,     icon: Clock,        color: 'text-amber-600',   bg: 'bg-amber-50/50',   status: 'Pending' as const },
+    { label: 'Resolved',        value: resolvedCases.length,    icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50/50', status: 'Resolved' as const },
+    { label: 'High Priority',   value: highPriorityCases.length,icon: AlertCircle,  color: 'text-red-600',     bg: 'bg-red-50/50',     status: 'High' as const },
+  ];
 
   return (
     <AppLayout>
@@ -75,13 +98,16 @@ const Dashboard = () => {
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} />)
         ) : (
-          [
-            { label: 'Active Cases',    value: activeCases.length,  icon: Briefcase,    color: 'text-blue-600',    bg: 'bg-blue-50/50'    },
-            { label: 'Pending Review',  value: pendingCases.length, icon: Clock,        color: 'text-amber-600',   bg: 'bg-amber-50/50'   },
-            { label: 'Resolved',        value: resolvedCases.length,icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50/50' },
-            { label: 'System Alerts',   value: '02',                icon: AlertCircle,  color: 'text-red-600',     bg: 'bg-red-50/50'     },
-          ].map((stat, i) => (
-            <div key={i} className={`bg-white p-7 rounded-[2rem] border border-border-base shadow-sm hover:shadow-md transition-shadow animate-in-up delay-${(i + 1) * 100}`}>
+          stats.map((stat, i) => (
+            <button 
+              key={i} 
+              onClick={() => setStatusFilter(stat.status)}
+              className={`bg-white p-7 rounded-[2rem] border transition-all text-left animate-in-up delay-${(i + 1) * 100} ${
+                statusFilter === stat.status 
+                  ? 'border-brand-blue shadow-lg shadow-brand-blue/10 ring-1 ring-brand-blue/50' 
+                  : 'border-border-base shadow-sm hover:shadow-md'
+              }`}
+            >
               <div className="flex justify-between items-start mb-6">
                 <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color}`}>
                   <stat.icon size={26} />
@@ -90,7 +116,7 @@ const Dashboard = () => {
               </div>
               <p className="text-text-muted text-[10px] font-bold uppercase tracking-[0.1em] mb-2">{stat.label}</p>
               <p className="text-4xl font-bold text-brand-dark tracking-tighter">{stat.value}</p>
-            </div>
+            </button>
           ))
         )}
       </div>
@@ -102,8 +128,15 @@ const Dashboard = () => {
         <div className="bg-white rounded-[2rem] border border-border-base shadow-sm overflow-hidden">
           <div className="p-8 border-b border-border-base flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-brand-dark">Active Cases</h2>
-              <p className="text-xs text-text-muted mt-1">Showing {recentCases.length} of {activeCases.length} active cases</p>
+              <h2 className="text-xl font-bold text-brand-dark">
+                {statusFilter === 'High' ? 'High Priority Matters' : `${statusFilter} Cases`}
+              </h2>
+              <p className="text-xs text-text-muted mt-1">
+                {statusFilter === 'High' 
+                  ? 'Matters requiring immediate legal attention and oversight' 
+                  : `Showing ${recentCases.length} of ${displayCases.length} ${statusFilter.toLowerCase()} cases`
+                }
+              </p>
             </div>
             <div className="flex gap-3">
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border-base bg-white shadow-sm">
@@ -126,32 +159,47 @@ const Dashboard = () => {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-page-bg/30 text-text-muted text-[10px] font-bold uppercase tracking-[0.2em] border-b border-border-base">
-                  <th className="py-5 px-8">Case Details</th>
-                  <th className="py-5 px-8">Status</th>
-                  <th className="py-5 px-8">Last Updated</th>
-                  <th className="py-5 px-8 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-base">
-                {recentCases.map((c) => (
-                  <CaseRow 
-                    key={c.id} 
-                    id={c.id} 
-                    title={c.title} 
-                    client={c.client} 
-                    status={c.status} 
-                    date={c.updated} 
-                  />
-                ))}
-              </tbody>
-            </table>
+            {displayCases.length === 0 ? (
+              <div className="p-20 text-center">
+                <div className="w-20 h-20 bg-page-bg text-text-muted rounded-3xl flex items-center justify-center mx-auto mb-6">
+                  <Briefcase size={40} />
+                </div>
+                <h3 className="text-lg font-bold text-brand-dark mb-2">No Cases Found</h3>
+                <p className="text-sm text-text-muted max-w-xs mx-auto">There are currently no cases matching this criteria.</p>
+              </div>
+            ) : (
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-page-bg/30 text-text-muted text-[10px] font-bold uppercase tracking-[0.2em] border-b border-border-base">
+                    <th className="py-5 px-8">Case Details</th>
+                    <th className="py-5 px-8">Status</th>
+                    <th className="py-5 px-8">Last Updated</th>
+                    <th className="py-5 px-8 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-base">
+                  {recentCases.map((c) => (
+                    <CaseRow 
+                      key={c.id} 
+                      id={c.id} 
+                      title={c.title} 
+                      client={c.client} 
+                      status={c.status} 
+                      date={c.updated} 
+                    />
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
 
           <div className="p-6 bg-page-bg/20 text-center">
-            <button className="text-sm font-bold text-brand-blue hover:underline underline-offset-4">View all cases</button>
+            <button 
+              onClick={() => navigate('/cases')}
+              className="text-sm font-bold text-brand-blue hover:underline underline-offset-4"
+            >
+              View all {statusFilter === 'High' ? 'priority' : statusFilter.toLowerCase()} cases
+            </button>
           </div>
         </div>
       )}
