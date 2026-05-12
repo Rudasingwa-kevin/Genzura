@@ -198,6 +198,7 @@ const navItems = [
   { icon: Folder,          label: 'Documents', to: '/documents' },
   { icon: Users,           label: 'Clients',   to: '/clients'   },
   { icon: BarChart3,       label: 'Analytics', to: '/analytics' },
+  { icon: MessageSquare,   label: 'Feedback',  to: '/feedback'  },
   { icon: Settings,        label: 'Settings',  to: '/settings'  },
 ];
 

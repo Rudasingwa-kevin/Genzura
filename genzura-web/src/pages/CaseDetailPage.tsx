@@ -38,37 +38,38 @@ const docTypeStyle: Record<string, string> = {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 const SectionCard = ({ title, children, action, className = "" }: { title: string; children: React.ReactNode; action?: React.ReactNode; className?: string }) => (
-  <div className={`bg-white rounded-[2rem] border border-border-base shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 ${className}`}>
-    <div className="px-8 py-6 border-b border-border-base flex items-center justify-between bg-white">
-      <h3 className="font-bold text-brand-dark tracking-tight">{title}</h3>
+  <div className={`glass-card rounded-[2.5rem] shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700 premium-border ${className}`}>
+    <div className="px-10 py-8 border-b border-border-base/50 flex items-center justify-between bg-white/40">
+      <h3 className="font-bold text-brand-dark tracking-tight text-lg">{title}</h3>
       {action}
     </div>
-    <div className="p-8">{children}</div>
+    <div className="p-10">{children}</div>
   </div>
 );
 
 const TimelineItem = ({ event, isLast, index }: { event: TimelineEvent; isLast: boolean; index: number }) => {
   const { icon: Icon, bg, color } = timelineIcon(event.type);
   return (
-    <div className="flex gap-6 group animate-in-up" style={{ animationDelay: `${index * 100}ms` }}>
+    <div className="flex gap-8 group animate-in-up" style={{ animationDelay: `${index * 100}ms` }}>
       <div className="flex flex-col items-center">
-        <div className={`w-10 h-10 rounded-2xl ${bg} ${color} flex items-center justify-center shrink-0 z-10 shadow-sm border border-white transition-transform group-hover:scale-110`}>
-          <Icon size={18} />
+        <div className={`w-12 h-12 rounded-2xl ${bg} ${color} flex items-center justify-center shrink-0 z-10 shadow-lg border-4 border-white transition-all duration-500 group-hover:scale-110 group-hover:rotate-6`}>
+          <Icon size={20} />
         </div>
-        {!isLast && <div className="w-0.5 flex-1 bg-gradient-to-b from-border-base to-transparent my-2" />}
+        {!isLast && <div className="w-0.5 flex-1 bg-gradient-to-b from-border-base/50 via-border-base/20 to-transparent my-3" />}
       </div>
-      <div className="pb-8 pt-1">
-        <div className="flex items-center gap-3 mb-1">
-          <p className="text-sm font-bold text-brand-dark leading-tight group-hover:text-brand-blue transition-colors">{event.description}</p>
-          <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{event.timestamp.split('·')[1]}</span>
+      <div className="pb-10 pt-1.5 flex-1">
+        <div className="flex items-center justify-between gap-4 mb-2">
+          <p className="text-[15px] font-bold text-brand-dark leading-snug group-hover:text-brand-blue transition-colors">{event.description}</p>
+          <span className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em] whitespace-nowrap bg-page-bg px-2 py-1 rounded-md">{event.timestamp.split('·')[1]}</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded-lg bg-page-bg flex items-center justify-center text-[10px] font-bold text-brand-blue border border-border-base">
-            {event.author.split(' ').map(n => n[0]).join('')}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-page-bg/50 border border-border-base/50 hover:border-brand-blue/30 transition-colors cursor-default">
+            <div className="w-5 h-5 rounded-lg bg-brand-blue text-white flex items-center justify-center text-[9px] font-black shadow-sm">
+              {event.author.split(' ').map(n => n[0]).join('')}
+            </div>
+            <span className="text-xs font-bold text-brand-dark/70">{event.author}</span>
           </div>
-          <span className="text-xs font-bold text-text-muted">{event.author}</span>
-          <span className="text-xs text-text-muted/50">·</span>
-          <span className="text-xs text-text-muted font-medium">{event.timestamp.split('·')[0]}</span>
+          <span className="text-xs text-text-muted font-medium opacity-60 tracking-tight">{event.timestamp.split('·')[0]}</span>
         </div>
       </div>
     </div>
@@ -76,25 +77,27 @@ const TimelineItem = ({ event, isLast, index }: { event: TimelineEvent; isLast: 
 };
 
 const DocumentRow = ({ doc, index }: { doc: CaseDocument; index: number }) => (
-  <div className="flex items-center gap-4 py-4 border-b border-border-base last:border-0 group animate-in-up" style={{ animationDelay: `${index * 50}ms` }}>
-    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all group-hover:scale-105 ${docTypeStyle[doc.type]}`}>
-      <FileText size={20} />
+  <div className="flex items-center gap-5 py-5 border-b border-border-base last:border-0 group animate-in-up" style={{ animationDelay: `${index * 50}ms` }}>
+    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-sm border border-white ${docTypeStyle[doc.type]}`}>
+      <FileText size={24} />
     </div>
     <div className="flex-1 min-w-0">
-      <div className="flex items-center gap-2">
-        <p className="text-sm font-bold text-brand-dark truncate group-hover:text-brand-blue transition-colors cursor-pointer">{doc.name}</p>
-        <span className="px-1.5 py-0.5 rounded-md bg-page-bg text-[9px] font-bold text-text-muted border border-border-base">
+      <div className="flex items-center gap-3">
+        <p className="text-[15px] font-bold text-brand-dark truncate group-hover:text-brand-blue transition-colors cursor-pointer">{doc.name}</p>
+        <span className="px-2 py-0.5 rounded-lg bg-page-bg text-[9px] font-black text-text-muted border border-border-base/50 uppercase tracking-wider">
           {doc.type}
         </span>
       </div>
-      <p className="text-xs text-text-muted mt-1 font-medium">{doc.size} · Uploaded {doc.uploadedAt} by {doc.uploadedBy}</p>
+      <p className="text-xs text-text-muted mt-1.5 font-medium opacity-70">
+        <span className="font-bold">{doc.size}</span> · Uploaded <span className="font-bold">{doc.uploadedAt}</span> by <span className="text-brand-dark/80">{doc.uploadedBy}</span>
+      </p>
     </div>
-    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-      <button className="p-2.5 rounded-xl hover:bg-page-bg text-text-muted hover:text-brand-blue transition-all" title="Download">
-        <Download size={16} />
+    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-300">
+      <button className="p-3 rounded-xl bg-page-bg/50 hover:bg-brand-blue/5 text-text-muted hover:text-brand-blue transition-all premium-border" title="Download">
+        <Download size={18} />
       </button>
-      <button className="p-2.5 rounded-xl hover:bg-page-bg text-text-muted hover:text-brand-blue transition-all" title="Share">
-        <Share2 size={16} />
+      <button className="p-3 rounded-xl bg-page-bg/50 hover:bg-brand-blue/5 text-text-muted hover:text-brand-blue transition-all premium-border" title="Share">
+        <Share2 size={18} />
       </button>
     </div>
   </div>
@@ -126,7 +129,6 @@ const NoteCard = ({ note, index }: { note: CaseNote; index: number }) => (
 function InviteCollaboratorModal({ onClose, onInvite }: { onClose: () => void; onInvite: (member: TeamMember) => void }) {
   const [search, setSearch] = useState('');
   const [selectedRole, setSelectedRole] = useState('Assistant Counsel');
-  const [isInviting, setIsInviting] = useState(false);
 
   const filteredUsers = USERS.filter(u => 
     u.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -134,14 +136,12 @@ function InviteCollaboratorModal({ onClose, onInvite }: { onClose: () => void; o
   ).slice(0, 5);
 
   const handleInvite = (user: any) => {
-    setIsInviting(true);
     setTimeout(() => {
       onInvite({
         name: user.name,
         role: selectedRole,
         initials: user.initials
       });
-      setIsInviting(false);
       onClose();
     }, 800);
   };
@@ -475,51 +475,85 @@ export default function CaseDetailPage() {
             <span className="uppercase tracking-widest text-[11px]">Back to Litigation View</span>
           </button>
 
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
-            <div className="space-y-6 flex-1">
-              <div className="flex items-center gap-3 flex-wrap">
-                <span className="bg-brand-blue/10 text-brand-blue font-bold text-[10px] px-3 py-1.5 rounded-xl tracking-[0.1em] border border-brand-blue/10 shadow-sm">
+          <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-10">
+            <div className="space-y-8 flex-1">
+              <div className="flex items-center gap-4 flex-wrap">
+                <span className="bg-brand-blue/5 text-brand-blue font-bold text-[10px] px-4 py-2 rounded-xl tracking-[0.15em] border border-brand-blue/10 shadow-sm backdrop-blur-sm">
                   {caseData.id}
                 </span>
-                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${STATUS_STYLES[caseData.status]} border-current/10 shadow-sm`}>
+                <div className={`inline-flex items-center gap-2.5 px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-[0.15em] border ${STATUS_STYLES[caseData.status]} border-current/10 shadow-sm backdrop-blur-sm`}>
                   <div className={`w-2 h-2 rounded-full ${STATUS_DOT[caseData.status]} animate-pulse`} />
                   {caseData.status}
                 </div>
-                <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border border-current/10 shadow-sm ${PRIORITY_STYLES[caseData.priority]}`}>
+                <span className={`text-[10px] font-bold uppercase tracking-[0.15em] px-4 py-2 rounded-full border border-current/10 shadow-sm backdrop-blur-sm ${PRIORITY_STYLES[caseData.priority]}`}>
                   {caseData.priority} Priority
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted bg-white border border-border-base px-3 py-1.5 rounded-full shadow-sm">
+                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-text-muted bg-white/50 border border-border-base/50 px-4 py-2 rounded-full shadow-sm backdrop-blur-sm">
                   {caseData.type}
                 </span>
               </div>
               
-              <div className="space-y-2">
-                <h1 className="text-3xl md:text-4xl font-bold text-brand-dark tracking-tight leading-tight">
+              <div className="space-y-4">
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-brand-dark tracking-tight leading-[1.1] max-w-4xl">
                   {caseData.title}
                 </h1>
-                <div className="flex items-center gap-6 pt-1">
-                  <div className="flex items-center gap-2 text-text-secondary">
-                    <History size={16} className="text-brand-blue" />
-                    <span className="text-sm font-bold">Opened {caseData.filedDate}</span>
+                <div className="flex flex-wrap items-center gap-x-8 gap-y-4 pt-2">
+                  <div className="flex items-center gap-2.5 text-text-secondary group cursor-help">
+                    <div className="w-8 h-8 rounded-lg bg-brand-blue/5 flex items-center justify-center text-brand-blue transition-colors group-hover:bg-brand-blue group-hover:text-white">
+                      <History size={16} />
+                    </div>
+                    <span className="text-sm font-semibold">Opened {caseData.filedDate}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-text-secondary">
-                    <Clock size={16} className="text-brand-blue" />
-                    <span className="text-sm font-bold">Updated {caseData.updated}</span>
+                  <div className="flex items-center gap-2.5 text-text-secondary group cursor-help">
+                    <div className="w-8 h-8 rounded-lg bg-brand-blue/5 flex items-center justify-center text-brand-blue transition-colors group-hover:bg-brand-blue group-hover:text-white">
+                      <Clock size={16} />
+                    </div>
+                    <span className="text-sm font-semibold">Updated {caseData.updated}</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-text-secondary group cursor-help">
+                    <div className="w-8 h-8 rounded-lg bg-brand-blue/5 flex items-center justify-center text-brand-blue transition-colors group-hover:bg-brand-blue group-hover:text-white">
+                      <User size={16} />
+                    </div>
+                    <span className="text-sm font-semibold">Lead: <span className="text-brand-dark">{caseData.attorney}</span></span>
                   </div>
                 </div>
+              </div>
+
+              {/* Team Avatar Stack */}
+              <div 
+                onClick={() => document.getElementById('case-team-widget')?.scrollIntoView({ behavior: 'smooth' })}
+                className="flex items-center gap-3 pt-2 cursor-pointer group w-fit"
+              >
+                <div className="flex -space-x-3 overflow-hidden">
+                  {caseData.team.map((member: any, i: number) => (
+                    <div 
+                      key={member.name}
+                      className="inline-block h-8 w-8 rounded-full ring-2 ring-white bg-brand-dark text-white text-[10px] font-bold flex items-center justify-center transition-transform group-hover:translate-y-[-2px]"
+                      style={{ zIndex: 10 - i }}
+                      title={`${member.name} - ${member.role}`}
+                    >
+                      {member.initials}
+                    </div>
+                  ))}
+                </div>
+                <span className="text-xs font-bold text-text-muted group-hover:text-brand-blue transition-colors">
+                  {caseData.team.length} Team Members
+                </span>
               </div>
             </div>
 
             {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 gap-4 shrink-0">
+            <div className="grid grid-cols-2 gap-5 shrink-0">
               {[
-                { label: 'Days Active',   value: daysOpen,                    icon: Clock,       color: 'text-brand-blue',    bg: 'bg-brand-light'   },
-                { label: 'Next Deadline', value: caseData.deadline,           icon: Calendar,    color: 'text-red-500',     bg: 'bg-red-50'      },
+                { label: 'Days Active',   value: daysOpen,                    icon: Clock,       color: 'text-brand-blue',    bg: 'bg-brand-blue/5'   },
+                { label: 'Next Deadline', value: caseData.deadline,           icon: Calendar,    color: 'text-red-500',     bg: 'bg-red-500/5'      },
               ].map((s) => (
-                <div key={s.label} className="bg-white rounded-[1.75rem] border border-border-base p-6 shadow-sm min-w-[180px] hover:shadow-md transition-shadow">
-                  <div className={`w-10 h-10 rounded-xl ${s.bg} ${s.color} flex items-center justify-center mb-4 shadow-inner`}><s.icon size={20} /></div>
-                  <p className="text-xl font-bold text-brand-dark tracking-tight">{s.value}</p>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted mt-1">{s.label}</p>
+                <div key={s.label} className="glass-card rounded-[2.5rem] p-8 min-w-[200px] hover:shadow-xl hover:-translate-y-1 transition-all duration-500 group premium-border">
+                  <div className={`w-14 h-14 rounded-2xl ${s.bg} ${s.color} flex items-center justify-center mb-6 shadow-inner transition-transform group-hover:scale-110`}>
+                    <s.icon size={28} />
+                  </div>
+                  <p className="text-3xl font-bold text-brand-dark tracking-tight mb-1">{s.value}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-text-muted">{s.label}</p>
                 </div>
               ))}
             </div>
@@ -683,30 +717,36 @@ export default function CaseDetailPage() {
           <div className="w-full lg:w-[420px] space-y-8 animate-in-right">
             
             {/* Team Widget */}
-            <SectionCard title="Case Team">
-              <div className="space-y-5">
-                {caseData.team.map((member, i) => (
-                  <div key={member.name} className="flex items-center gap-4 group animate-in-up" style={{ animationDelay: `${i * 100}ms` }}>
-                    <div className="w-12 h-12 rounded-2xl bg-brand-dark text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-lg shadow-brand-dark/10 group-hover:scale-110 transition-transform">
-                      {member.initials}
+            <div id="case-team-widget">
+              <SectionCard title="Case Team">
+                <div className="space-y-6">
+                  {caseData.team.map((member: any, i: number) => (
+                    <div key={member.name} className="flex items-center gap-5 group animate-in-up" style={{ animationDelay: `${i * 100}ms` }}>
+                      <div className="relative">
+                        <div className="w-14 h-14 rounded-[1.25rem] bg-brand-dark text-white font-bold text-base flex items-center justify-center shrink-0 shadow-xl shadow-brand-dark/20 group-hover:scale-110 transition-all duration-500 premium-border">
+                          {member.initials}
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-lg bg-emerald-500 border-2 border-white shadow-sm" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[15px] font-bold text-brand-dark truncate group-hover:text-brand-blue transition-colors">{member.name}</p>
+                        <p className="text-[10px] font-bold text-text-muted uppercase tracking-[0.15em] mt-1">{member.role}</p>
+                      </div>
+                      <button className="p-3 rounded-xl bg-page-bg/50 hover:bg-brand-blue/5 text-text-muted hover:text-brand-blue transition-all premium-border opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
+                        <Mail size={18} />
+                      </button>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-brand-dark truncate">{member.name}</p>
-                      <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-0.5">{member.role}</p>
-                    </div>
-                    <button className="p-2 rounded-lg hover:bg-page-bg text-text-muted hover:text-brand-blue transition-colors">
-                      <Mail size={16} />
-                    </button>
-                  </div>
-                ))}
-                <button 
-                  onClick={() => setShowInviteModal(true)}
-                  className="w-full py-4 mt-2 rounded-[1.25rem] border-2 border-dashed border-border-base text-xs font-bold text-text-muted hover:border-brand-blue hover:text-brand-blue hover:bg-brand-light transition-all flex items-center justify-center gap-2"
-                >
-                  <Plus size={16} /> Add Collaborator
-                </button>
-              </div>
-            </SectionCard>
+                  ))}
+                  <button 
+                    onClick={() => setShowInviteModal(true)}
+                    className="w-full py-5 mt-4 rounded-[1.5rem] border-2 border-dashed border-border-base/60 text-xs font-bold text-text-muted hover:border-brand-blue hover:text-brand-blue hover:bg-brand-blue/5 transition-all flex items-center justify-center gap-3 shimmer"
+                  >
+                    <Plus size={18} /> Add Collaborator
+                  </button>
+                </div>
+              </SectionCard>
+            </div>
+          </div>
 
             {/* Client Context Card */}
             <SectionCard title="Client Overview">
@@ -748,33 +788,36 @@ export default function CaseDetailPage() {
             </SectionCard>
 
             {/* Quick Actions Panel */}
-            <div className="bg-brand-blue rounded-[2.5rem] p-8 text-white shadow-xl shadow-brand-blue/20 relative overflow-hidden group">
-              <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-700">
-                <Flag size={140} />
+            <div className="glass-dark rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden group premium-shadow">
+              <div className="absolute -right-6 -bottom-6 opacity-20 group-hover:scale-125 transition-transform duration-1000 rotate-12">
+                <Flag size={180} />
               </div>
-              <h3 className="font-bold text-lg uppercase tracking-widest mb-6">Execution</h3>
-              <div className="space-y-3 relative z-10">
-                {[
-                  { label: 'File Motion',    icon: FileText    },
-                  { label: 'Schedule Depo',  icon: Calendar    },
-                  { label: 'Export Brief',   icon: Download, onClick: handleExport },
-                ].map((action) => (
-                  <button
-                    key={action.label}
-                    onClick={action.onClick}
-                    className="w-full flex items-center justify-between px-5 py-4 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10 transition-all text-sm font-bold"
-                  >
-                    <div className="flex items-center gap-3">
-                      <action.icon size={18} />
-                      {action.label}
-                    </div>
-                    <Plus size={16} />
-                  </button>
-                ))}
+              <div className="relative z-10">
+                <h3 className="font-bold text-lg uppercase tracking-[0.25em] mb-8 text-white/90">Execution</h3>
+                <div className="space-y-4">
+                  {[
+                    { label: 'File Motion',    icon: FileText    },
+                    { label: 'Schedule Depo',  icon: Calendar    },
+                    { label: 'Export Brief',   icon: Download, onClick: handleExport },
+                  ].map((action) => (
+                    <button
+                      key={action.label}
+                      onClick={action.onClick}
+                      className="w-full flex items-center justify-between px-6 py-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all duration-300 text-sm font-bold group/btn active:scale-95"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center group-hover/btn:bg-brand-blue group-hover/btn:text-white transition-colors">
+                          <action.icon size={18} />
+                        </div>
+                        <span className="tracking-wide">{action.label}</span>
+                      </div>
+                      <Plus size={18} className="opacity-40 group-hover/btn:opacity-100 transition-opacity" />
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
-          </div>
         </div>
       </div>
     </AppLayout>

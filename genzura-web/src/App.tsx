@@ -18,6 +18,7 @@ import AnalyticsPage  from './pages/AnalyticsPage';
 import SettingsPage   from './pages/SettingsPage';
 import CaseDetailPage from './pages/CaseDetailPage';
 import LegalPage      from './pages/LegalPage';
+import FeedbackPage   from './pages/FeedbackPage';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -46,6 +47,7 @@ function App() {
           <Route path="/clients/:id"   element={<ProtectedRoute><ClientDetailPage /></ProtectedRoute>}  />
           <Route path="/analytics"  element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
           <Route path="/settings"   element={<ProtectedRoute><SettingsPage /></ProtectedRoute>}  />
+          <Route path="/feedback"   element={<ProtectedRoute><FeedbackPage /></ProtectedRoute>}  />
           
           {/* Admin Routes */}
           <Route path="/admin"          element={<AdminRoute><AdminDashboard /></AdminRoute>} />
