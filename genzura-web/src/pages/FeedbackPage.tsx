@@ -7,8 +7,7 @@ import {
   AlertCircle, 
   CheckCircle2, 
   Clock,
-  ArrowRight,
-  Plus
+  ArrowRight
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import AppLayout from '../components/AppLayout';

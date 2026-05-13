@@ -19,6 +19,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Menu,
+  MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import NewCaseModal from './NewCaseModal';
