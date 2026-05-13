@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  Admin
+  Senior_Attorney
+  Attorney
+  Paralegal
+  Support
+}
+
+enum UserStatus {
+  Active
+  Invited
+  Suspended
+}
+
+enum CaseStatus {
+  Active
+  Pending
+  Resolved
+  Archived
+}
+
+enum CasePriority {
+  High
+  Medium
+  Low
+}
+
+enum CaseType {
+  Litigation
+  Corporate
+  Compliance
+  IP
+  Employment
+  MA
+  Real_Estate
+}
+
+enum TimelineEventType {
+  filed
+  status
+  meeting
+  document
+  note
+  milestone
+}
+
+enum DocumentType {
+  PDF
+  DOCX
+  XLSX
+  IMG
+}
+
+enum FeedbackStatus {
+  Pending
+  Reviewed
+  In_Progress
+  Resolved
+}
+
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  role         UserRole   @default(Attorney)
+  status       UserStatus @default(Active)
+  lastActive   DateTime   @default(now())
+  initials     String
+  cases        Case[]     @relation("AttorneyCases")
+  teamMemberships CaseTeam[]
+  timelineEvents TimelineEvent[]
+  uploadedDocs CaseDocument[]
+  notes        CaseNote[]
+  feedback     Feedback[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Case {
+  id            String       @id @default(cuid())
+  title         String
+  client        String
+  clientEmail   String
+  clientPhone   String
+  clientCompany String
+  attorney      User         @relation("AttorneyCases", fields: [attorneyId], references: [id])
+  attorneyId    String
+  status        CaseStatus   @default(Pending)
+  priority      CasePriority @default(Medium)
+  type          CaseType
+  deadline      DateTime?
+  filedDate     DateTime     @default(now())
+  description   String       @db.Text
+  team          CaseTeam[]
+  timeline      TimelineEvent[]
+  documents     CaseDocument[]
+  notes         CaseNote[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model CaseTeam {
+  id      String @id @default(cuid())
+  case    Case   @relation(fields: [caseId], references: [id])
+  caseId  String
+  user    User   @relation(fields: [userId], references: [id])
+  userId  String
+  role    String // Specific role in this case
+
+  @@unique([caseId, userId])
+}
+
+model TimelineEvent {
+  id          String            @id @default(cuid())
+  case        Case              @relation(fields: [caseId], references: [id])
+  caseId      String
+  type        TimelineEventType
+  description String
+  author      User              @relation(fields: [authorId], references: [id])
+  authorId    String
+  timestamp   DateTime          @default(now())
+}
+
+model CaseDocument {
+  id           String       @id @default(cuid())
+  case         Case         @relation(fields: [caseId], references: [id])
+  caseId       String
+  name         String
+  type         DocumentType
+  size         String
+  uploadedBy   User         @relation(fields: [uploadedById], references: [id])
+  uploadedById String
+  uploadedAt   DateTime     @default(now())
+}
+
+model CaseNote {
+  id        String   @id @default(cuid())
+  case      Case     @relation(fields: [caseId], references: [id])
+  caseId    String
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  String
+  text      String   @db.Text
+  timestamp DateTime @default(now())
+}
+
+model Feedback {
+  id        String         @id @default(cuid())
+  user      User           @relation(fields: [userId], references: [id])
+  userId    String
+  subject   String
+  category  String
+  message   String         @db.Text
+  status    FeedbackStatus @default(Pending)
+  createdAt DateTime       @default(now())
+}
