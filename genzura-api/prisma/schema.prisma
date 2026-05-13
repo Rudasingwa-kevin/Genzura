@@ -147,6 +147,7 @@ model CaseDocument {
   name         String
   type         DocumentType
   size         String
+  fileUrl      String?
   uploadedBy   User         @relation(fields: [uploadedById], references: [id])
   uploadedById String
   uploadedAt   DateTime     @default(now())

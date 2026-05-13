@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import path from 'path';
 import { DocumentService } from '../services/documentService.js';
 
 export class DocumentController {
@@ -14,13 +15,27 @@ export class DocumentController {
 
   static async create(req: any, res: Response) {
     try {
-      const { caseId, name, type, size } = req.body;
+      const { caseId } = req.body;
+      const file = req.file;
+
+      if (!file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+
+      // Map extension to DocumentType
+      let type: any = 'PDF';
+      const ext = path.extname(file.originalname).toLowerCase();
+      if (ext === '.docx' || ext === '.doc') type = 'DOCX';
+      if (ext === '.xlsx' || ext === '.xls') type = 'XLSX';
+      if (ext === '.png' || ext === '.jpg' || ext === '.jpeg') type = 'IMG';
+
       const document = await DocumentService.createDocument({
         caseId,
-        name,
+        name: file.originalname,
         type,
-        size,
-        uploadedById: req.user.id
+        size: (file.size / 1024 / 1024).toFixed(2) + ' MB',
+        uploadedById: req.user.id,
+        fileUrl: `/uploads/${file.filename}`
       });
       res.status(201).json(document);
     } catch (error: any) {

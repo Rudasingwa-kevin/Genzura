@@ -16,6 +16,7 @@ export class DocumentService {
     name: string;
     type: DocumentType;
     size: string;
+    fileUrl?: string;
     uploadedById: string;
   }) {
     return prisma.caseDocument.create({

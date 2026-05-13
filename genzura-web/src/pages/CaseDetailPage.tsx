@@ -13,6 +13,7 @@ import {
   type TimelineEvent, type CaseDocument, type CaseNote, type TeamMember
 } from '../data/cases';
 import { caseService } from '../api/services/case.service';
+import { documentService } from '../api/services/document.service';
 import { USERS } from '../data/users';
 import EmptyState from '../components/EmptyState';
 
@@ -77,32 +78,46 @@ const TimelineItem = ({ event, isLast, index }: { event: TimelineEvent; isLast: 
   );
 };
 
-const DocumentRow = ({ doc, index }: { doc: CaseDocument; index: number }) => (
-  <div className="flex items-center gap-5 py-5 border-b border-border-base last:border-0 group animate-in-up" style={{ animationDelay: `${index * 50}ms` }}>
-    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-sm border border-white ${docTypeStyle[doc.type]}`}>
-      <FileText size={24} />
-    </div>
-    <div className="flex-1 min-w-0">
-      <div className="flex items-center gap-3">
-        <p className="text-[15px] font-bold text-brand-dark truncate group-hover:text-brand-blue transition-colors cursor-pointer">{doc.name}</p>
-        <span className="px-2 py-0.5 rounded-lg bg-page-bg text-[9px] font-black text-text-muted border border-border-base/50 uppercase tracking-wider">
-          {doc.type}
-        </span>
+const DocumentRow = ({ doc, index }: { doc: CaseDocument & { fileUrl?: string }; index: number }) => {
+  const handleDownload = () => {
+    if (doc.fileUrl) {
+      const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+      window.open(`${baseUrl}${doc.fileUrl}`, '_blank');
+    } else {
+      toast.error('Download link not available');
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-5 py-5 border-b border-border-base last:border-0 group animate-in-up" style={{ animationDelay: `${index * 50}ms` }}>
+      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-sm border border-white ${docTypeStyle[doc.type]}`}>
+        <FileText size={24} />
       </div>
-      <p className="text-xs text-text-muted mt-1.5 font-medium opacity-70">
-        <span className="font-bold">{doc.size}</span> · Uploaded <span className="font-bold">{doc.uploadedAt}</span> by <span className="text-brand-dark/80">{doc.uploadedBy}</span>
-      </p>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-3">
+          <p className="text-[15px] font-bold text-brand-dark truncate group-hover:text-brand-blue transition-colors cursor-pointer">{doc.name}</p>
+          <span className="px-2 py-0.5 rounded-lg bg-page-bg text-[9px] font-black text-text-muted border border-border-base/50 uppercase tracking-wider">
+            {doc.type}
+          </span>
+        </div>
+        <p className="text-xs text-text-muted mt-1.5 font-medium opacity-70">
+          <span className="font-bold">{doc.size}</span> · Uploaded <span className="font-bold">{new Date(doc.uploadedAt).toLocaleDateString()}</span>
+        </p>
+      </div>
+      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-300">
+        <button 
+          onClick={handleDownload}
+          className="p-3 rounded-xl bg-page-bg/50 hover:bg-brand-blue/5 text-text-muted hover:text-brand-blue transition-all premium-border" title="Download"
+        >
+          <Download size={18} />
+        </button>
+        <button className="p-3 rounded-xl bg-page-bg/50 hover:bg-brand-blue/5 text-text-muted hover:text-brand-blue transition-all premium-border" title="Share">
+          <Share2 size={18} />
+        </button>
+      </div>
     </div>
-    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-300">
-      <button className="p-3 rounded-xl bg-page-bg/50 hover:bg-brand-blue/5 text-text-muted hover:text-brand-blue transition-all premium-border" title="Download">
-        <Download size={18} />
-      </button>
-      <button className="p-3 rounded-xl bg-page-bg/50 hover:bg-brand-blue/5 text-text-muted hover:text-brand-blue transition-all premium-border" title="Share">
-        <Share2 size={18} />
-      </button>
-    </div>
-  </div>
-);
+  );
+};
 
 const NoteCard = ({ note, index }: { note: CaseNote; index: number }) => (
   <div className="flex gap-4 group animate-in-up" style={{ animationDelay: `${index * 100}ms` }}>
@@ -667,9 +682,29 @@ export default function CaseDetailPage() {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between mb-6">
                       <h4 className="text-sm font-bold text-brand-dark uppercase tracking-widest">Case Documents ({caseData.documents.length})</h4>
-                      <button className="text-xs font-bold text-brand-blue flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-brand-light transition-all">
+                      <label className="text-xs font-bold text-brand-blue flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-brand-light transition-all cursor-pointer">
                         <Plus size={14} /> Upload New
-                      </button>
+                        <input
+                          type="file"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            
+                            const loadId = toast.loading('Uploading document...');
+                            try {
+                              const newDoc = await documentService.upload(caseData.id, file);
+                              setCurrentCase({
+                                ...caseData,
+                                documents: [newDoc, ...caseData.documents]
+                              });
+                              toast.success('Document uploaded successfully', { id: loadId });
+                            } catch (error) {
+                              toast.error('Upload failed', { id: loadId });
+                            }
+                          }}
+                        />
+                      </label>
                     </div>
                     <div className="grid gap-2">
                       {caseData.documents.length === 0 ? (
