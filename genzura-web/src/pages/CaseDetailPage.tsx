@@ -9,9 +9,10 @@ import {
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import {
-  getCaseById, STATUS_STYLES, STATUS_DOT, PRIORITY_STYLES,
+  STATUS_STYLES, STATUS_DOT, PRIORITY_STYLES,
   type TimelineEvent, type CaseDocument, type CaseNote, type TeamMember
 } from '../data/cases';
+import { caseService } from '../api/services/case.service';
 import { USERS } from '../data/users';
 import EmptyState from '../components/EmptyState';
 
@@ -301,13 +302,34 @@ export default function CaseDetailPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const data = getCaseById(id ?? '');
-    if (data) setCurrentCase(data);
+    const fetchCase = async () => {
+      if (!id) return;
+      try {
+        const data = await caseService.getById(id);
+        setCurrentCase(data);
+      } catch (error) {
+        console.error('Failed to fetch case:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchCase();
   }, [id]);
 
   const caseData = currentCase;
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center py-32">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-blue"></div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   if (!caseData) {
     return (
@@ -701,6 +723,19 @@ export default function CaseDetailPage() {
                         />
                         <button
                           disabled={!newNote.trim()}
+                          onClick={async () => {
+                            try {
+                              const note = await caseService.addNote(caseData.id, newNote);
+                              setCurrentCase({
+                                ...caseData,
+                                notes: [note, ...caseData.notes]
+                              });
+                              setNewNote('');
+                              toast.success('Note posted successfully');
+                            } catch (error) {
+                              toast.error('Failed to post note');
+                            }
+                          }}
                           className="absolute bottom-4 right-4 bg-brand-blue text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:shadow-lg transition-all disabled:opacity-40 disabled:scale-100 active:scale-95 shadow-md shadow-brand-blue/20"
                         >
                           Post Note <Send size={14} />

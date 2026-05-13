@@ -2,6 +2,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowRight, Lock, Mail, Scale } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-hot-toast';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -17,11 +18,13 @@ const LoginPage = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const user = await login(email || 'user@genzura.com');
-      const targetPath = user?.role === 'admin' && from === '/dashboard' ? '/admin' : from;
+      const user = await login({ email, password });
+      toast.success(`Welcome back, ${user.name}!`);
+      const targetPath = user?.role === 'Admin' && from === '/dashboard' ? '/admin' : from;
       navigate(targetPath, { replace: true });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to login', error);
+      toast.error(error.response?.data?.error || 'Invalid credentials');
       setIsLoading(false);
     }
   };

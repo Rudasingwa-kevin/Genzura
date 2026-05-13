@@ -48,4 +48,26 @@ export class AuthController {
       res.status(500).json({ error: error.message });
     }
   }
+  static async register(req: Request, res: Response) {
+    try {
+      const { email, password, name, role } = req.body;
+      const user = await UserService.createUser({
+        email,
+        password,
+        name,
+        role: role || 'Attorney'
+      });
+
+      const token = jwt.sign(
+        { id: user.id, email: user.email, role: user.role },
+        process.env.JWT_SECRET || 'fallback_secret',
+        { expiresIn: '24h' }
+      );
+
+      const { passwordHash, ...userWithoutPassword } = user;
+      res.status(201).json({ user: userWithoutPassword, token });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
 }

@@ -6,6 +6,8 @@ import authRoutes from './routes/authRoutes.js';
 import caseRoutes from './routes/caseRoutes.js';
 import feedbackRoutes from './routes/feedbackRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
+import documentRoutes from './routes/documentRoutes.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 
 dotenv.config();
@@ -22,6 +24,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/cases', caseRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/documents', documentRoutes);
 
 // Error Handling
 app.use(errorHandler);

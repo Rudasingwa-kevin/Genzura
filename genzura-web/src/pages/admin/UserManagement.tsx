@@ -16,7 +16,8 @@ import { TableSkeleton } from '../../components/Skeleton';
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 
-import { USERS, type UserRole, type UserStatus } from '../../data/users';
+import { userService } from '../../api/services/user.service';
+import { type UserRole, type UserStatus } from '../../data/users';
 
 const ROLE_STYLES: Record<UserRole, string> = {
   'Admin': 'text-brand-blue bg-brand-light',
@@ -91,13 +92,23 @@ export default function UserManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [users, setUsers] = useState<any[]>([]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1000);
-    return () => clearTimeout(timer);
+    const fetchUsers = async () => {
+      try {
+        const data = await userService.getAll();
+        setUsers(data);
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchUsers();
   }, []);
 
-  const filtered = USERS.filter(t => 
+  const filtered = users.filter(t => 
     t.name.toLowerCase().includes(search.toLowerCase()) || 
     t.email.toLowerCase().includes(search.toLowerCase()) ||
     t.role.toLowerCase().includes(search.toLowerCase())

@@ -1,112 +1,77 @@
-/* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { authService } from '../api/services/auth.service';
 
-// Basic User type
-export interface User {
+interface User {
   id: string;
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
+  role: string;
   initials: string;
-  role: 'admin' | 'user';
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string) => Promise<User>;
-  register: (firstName: string, lastName: string, email: string) => Promise<void>;
-  updateUser: (updates: Partial<User>) => void;
+  login: (credentials: { email: string; password?: string }) => Promise<User>;
+  register: (data: any) => Promise<User>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load user from localStorage on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem('genzura_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    const initAuth = async () => {
+      const token = localStorage.getItem('genzura_token');
+      if (token) {
+        try {
+          const userData = await authService.getMe();
+          setUser(userData);
+        } catch (error) {
+          console.error('Failed to restore session:', error);
+          localStorage.removeItem('genzura_token');
+        }
+      }
+      setIsLoading(false);
+    };
+
+    initAuth();
   }, []);
 
-  const login = async (email: string) => {
-    // Mock login delay
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    
-    const mockUser: User = {
-      id: 'usr_' + Math.random().toString(36).substring(2, 9),
-      firstName: 'James',
-      lastName: 'Wilson',
-      email,
-      initials: 'JW',
-      role: email.toLowerCase() === 'admin@genzura.law' ? 'admin' : 'user',
-    };
-    
-    setUser(mockUser);
-    localStorage.setItem('genzura_user', JSON.stringify(mockUser));
-    return mockUser;
+  const login = async (credentials: { email: string; password?: string }) => {
+    const data = await authService.login(credentials);
+    setUser(data.user);
+    return data.user;
   };
 
-  const register = async (firstName: string, lastName: string, email: string) => {
-    // Mock register delay
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    
-    const mockUser: User = {
-      id: 'usr_' + Math.random().toString(36).substring(2, 9),
-      firstName,
-      lastName,
-      email,
-      initials: `${firstName[0]}${lastName[0]}`.toUpperCase(),
-      role: email.toLowerCase() === 'admin@genzura.law' ? 'admin' : 'user',
-    };
-    
-    setUser(mockUser);
-    localStorage.setItem('genzura_user', JSON.stringify(mockUser));
+  const register = async (data: any) => {
+    const response = await authService.register(data);
+    setUser(response.user);
+    return response.user;
   };
 
   const logout = () => {
+    authService.logout();
     setUser(null);
-    localStorage.removeItem('genzura_user');
   };
 
-  const updateUser = (updates: Partial<User>) => {
-    if (!user) return;
-    const updatedUser = { ...user, ...updates };
-    if (updates.firstName || updates.lastName) {
-      updatedUser.initials = `${updatedUser.firstName[0]}${updatedUser.lastName[0]}`.toUpperCase();
-    }
-    setUser(updatedUser);
-    localStorage.setItem('genzura_user', JSON.stringify(updatedUser));
-  };
+  const isAuthenticated = !!user;
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: !!user,
-        isLoading,
-        login,
-        register,
-        updateUser,
-        logout,
-      }}
-    >
+    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
+};

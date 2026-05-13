@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum UserRole {
@@ -66,6 +67,14 @@ enum FeedbackStatus {
   Resolved
 }
 
+enum NotificationType {
+  case
+  deadline
+  document
+  alert
+  resolved
+}
+
 model User {
   id           String     @id @default(cuid())
   name         String
@@ -81,6 +90,7 @@ model User {
   uploadedDocs CaseDocument[]
   notes        CaseNote[]
   feedback     Feedback[]
+  notifications Notification[]
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 }
@@ -161,4 +171,16 @@ model Feedback {
   message   String         @db.Text
   status    FeedbackStatus @default(Pending)
   createdAt DateTime       @default(now())
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  user      User             @relation(fields: [userId], references: [id])
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  read      Boolean          @default(false)
+  link      String?
+  createdAt DateTime         @default(now())
 }

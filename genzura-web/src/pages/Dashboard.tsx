@@ -9,7 +9,8 @@ import {
   MoreHorizontal,
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
-import { CASES, type CaseStatus } from '../data/cases';
+import { type CaseStatus } from '../data/cases';
+import { caseService } from '../api/services/case.service';
 import { CardSkeleton, TableSkeleton, Skeleton } from '../components/Skeleton';
 
 const CaseRow = ({ id, title, client, status, date }: { id: string; title: string; client: string; status: CaseStatus; date: string }) => {
@@ -65,18 +66,28 @@ const Dashboard = () => {
   const [priority, setPriority] = useState<'All' | 'High' | 'Medium' | 'Low'>('All');
   const [statusFilter, setStatusFilter] = useState<CaseStatus | 'High'>('Active');
   const [isLoading, setIsLoading] = useState(true);
+  const [cases, setCases] = useState<any[]>([]);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1200);
-    return () => clearTimeout(timer);
+    const fetchCases = async () => {
+      try {
+        const data = await caseService.getAll();
+        setCases(data);
+      } catch (error) {
+        console.error('Failed to fetch cases:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchCases();
   }, []);
   
-  const activeCases = CASES.filter(c => c.status === 'Active');
-  const pendingCases = CASES.filter(c => c.status === 'Pending');
-  const resolvedCases = CASES.filter(c => c.status === 'Resolved');
-  const highPriorityCases = CASES.filter(c => c.priority === 'High' && c.status !== 'Archived');
+  const activeCases = cases.filter(c => c.status === 'Active');
+  const pendingCases = cases.filter(c => c.status === 'Pending');
+  const resolvedCases = cases.filter(c => c.status === 'Resolved');
+  const highPriorityCases = cases.filter(c => c.priority === 'High' && c.status !== 'Archived');
   
-  const displayCases = CASES.filter(c => {
+  const displayCases = cases.filter(c => {
     if (statusFilter === 'High') return c.priority === 'High' && c.status !== 'Archived';
     return c.status === statusFilter;
   });
@@ -243,9 +254,9 @@ const Dashboard = () => {
           ) : (
             <div className="space-y-4">
               {[
-                { label: 'Active',   count: activeCases.length,   pct: Math.round((activeCases.length / CASES.length) * 100),   color: 'bg-brand-blue'  },
-                { label: 'Pending',  count: pendingCases.length,  pct: Math.round((pendingCases.length / CASES.length) * 100),  color: 'bg-amber-400'   },
-                { label: 'Resolved', count: resolvedCases.length, pct: Math.round((resolvedCases.length / CASES.length) * 100), color: 'bg-emerald-400' },
+                { label: 'Active',   count: activeCases.length,   pct: Math.round((activeCases.length / (cases.length || 1)) * 100),   color: 'bg-brand-blue'  },
+                { label: 'Pending',  count: pendingCases.length,  pct: Math.round((pendingCases.length / (cases.length || 1)) * 100),  color: 'bg-amber-400'   },
+                { label: 'Resolved', count: resolvedCases.length, pct: Math.round((resolvedCases.length / (cases.length || 1)) * 100), color: 'bg-emerald-400' },
               ].map((s) => (
                 <div key={s.label}>
                   <div className="flex justify-between text-xs mb-1.5">

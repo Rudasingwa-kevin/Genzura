@@ -1,8 +1,8 @@
-
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { ArrowLeft, User, Mail, Lock, Building, ShieldCheck, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'react-hot-toast';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -18,10 +18,16 @@ const RegisterPage = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await register(firstName || 'James', lastName || 'Wilson', email || 'user@genzura.com');
+      await register({
+        name: `${firstName} ${lastName}`,
+        email,
+        password
+      });
+      toast.success('Account created successfully!');
       navigate('/dashboard', { replace: true });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to register', error);
+      toast.error(error.response?.data?.error || 'Failed to create account');
       setIsLoading(false);
     }
   };

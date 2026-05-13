@@ -89,12 +89,24 @@ const AuditLogItem = ({ action, user, time, status }: any) => (
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
+import { userService } from '../../api/services/user.service';
+
 export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
+  const [userCount, setUserCount] = useState(0);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1000);
-    return () => clearTimeout(timer);
+    const fetchData = async () => {
+      try {
+        const users = await userService.getAll();
+        setUserCount(users.length);
+      } catch (error) {
+        console.error('Failed to fetch admin data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
   return (
@@ -121,7 +133,7 @@ export default function AdminDashboard() {
           <>
             <AdminKpiCard 
               label="Firm Workforce" 
-              value="42" 
+              value={userCount.toString()} 
               sub="Active team members" 
               icon={Users} 
               color="text-brand-blue" 
