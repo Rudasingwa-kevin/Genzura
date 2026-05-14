@@ -25,6 +25,15 @@ export class FeedbackController {
     }
   }
 
+  static async getMyFeedback(req: any, res: Response) {
+    try {
+      const feedback = await FeedbackService.getUserFeedback(req.user.id);
+      res.json(feedback);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   static async updateStatus(req: Request, res: Response) {
     try {
       const { id } = req.params;

@@ -57,4 +57,23 @@ export class CaseController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  static async getAnalytics(req: Request, res: Response) {
+    try {
+      const analytics = await CaseService.getAnalytics();
+      res.json(analytics);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+  static async addTeamMember(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { userId } = req.body;
+      const caseItem = await CaseService.addTeamMember(id, userId);
+      res.json(caseItem);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 }

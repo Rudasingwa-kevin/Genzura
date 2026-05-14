@@ -9,6 +9,8 @@ import userRoutes from './routes/userRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import documentRoutes from './routes/documentRoutes.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
+import { createServer } from 'http';
+import { initSocket } from './socket.js';
 
 dotenv.config();
 
@@ -42,7 +44,10 @@ app.get('/', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+const httpServer = createServer(app);
+initSocket(httpServer);
+
+httpServer.listen(PORT, () => {
   console.log(`🚀 Genzura API running on http://localhost:${PORT}`);
 });
 

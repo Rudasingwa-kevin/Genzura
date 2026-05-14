@@ -22,6 +22,7 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotifications } from '../contexts/NotificationContext';
 import NewCaseModal from './NewCaseModal';
 import Breadcrumbs from './Breadcrumbs';
 import EmptyState from './EmptyState';
@@ -71,24 +72,32 @@ const INITIAL_NOTIFICATIONS: Notification[] = [
   },
 ];
 
-const notifIcon: Record<Notification['type'], { icon: React.ElementType; bg: string; color: string }> = {
+const notifIcon: Record<string, { icon: React.ElementType; bg: string; color: string }> = {
   alert:    { icon: AlertTriangle, bg: 'bg-red-50',     color: 'text-red-500'      },
   deadline: { icon: CalIcon,       bg: 'bg-amber-50',   color: 'text-amber-500'    },
   document: { icon: FileText,      bg: 'bg-blue-50',    color: 'text-blue-500'     },
   case:     { icon: CaseIcon,      bg: 'bg-brand-light', color: 'text-brand-blue'  },
   resolved: { icon: CheckCircle2,  bg: 'bg-emerald-50', color: 'text-emerald-500'  },
+  info:     { icon: Bell,          bg: 'bg-brand-light', color: 'text-brand-blue'  },
+  success:  { icon: CheckCircle2,  bg: 'bg-emerald-50', color: 'text-emerald-500'  },
+  warning:  { icon: AlertTriangle, bg: 'bg-amber-50',   color: 'text-amber-500'    },
 };
 
 // ─── Notification Panel ────────────────────────────────────────────────────────
-function NotificationPanel({ onClose }: { onClose: () => void }) {
-  const [notifs, setNotifs] = useState<Notification[]>(INITIAL_NOTIFICATIONS);
+function NotificationPanel({ 
+  onClose, 
+  notifs, 
+  unreadCount, 
+  markRead, 
+  markAllRead 
+}: { 
+  onClose: () => void, 
+  notifs: any[], 
+  unreadCount: number, 
+  markRead: (id: string) => void, 
+  markAllRead: () => void 
+}) {
   const navigate = useNavigate();
-
-  const markAllRead = () => setNotifs(n => n.map(x => ({ ...x, read: true })));
-  const markRead = (id: string) => setNotifs(n => n.map(x => x.id === id ? { ...x, read: true } : x));
-  const dismiss = (id: string) => setNotifs(n => n.filter(x => x.id !== id));
-
-  const unreadCount = notifs.filter(n => !n.read).length;
 
   return (
     <div className="absolute top-[calc(100%+8px)] right-0 w-[400px] bg-white rounded-[1.5rem] border border-border-base shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
@@ -150,16 +159,9 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className={`text-sm leading-snug ${notif.read ? 'font-semibold text-text-secondary' : 'font-bold text-brand-dark'}`}>
-                      {notif.title}
-                    </p>
-                    {!notif.read && (
-                      <div className="w-2 h-2 rounded-full bg-brand-blue shrink-0 mt-1.5" />
-                    )}
-                  </div>
-                  <p className="text-xs text-text-muted mt-0.5 leading-relaxed">{notif.body}</p>
-                  <p className="text-[10px] text-text-muted mt-1.5 font-medium">{notif.time}</p>
+                  <p className="font-bold text-brand-dark text-sm leading-tight">{notif.title}</p>
+                  <p className="text-xs text-text-muted mt-1 font-medium leading-relaxed">{notif.message || notif.body}</p>
+                  <p className="text-[10px] text-text-muted mt-2 font-bold uppercase tracking-wider">{notif.time}</p>
                 </div>
 
                 {/* Dismiss */}
@@ -300,7 +302,7 @@ export default function AppLayout({ children, title, action }: AppLayoutProps) {
       ).slice(0, 6)
     : [];
 
-  const unreadCount = INITIAL_NOTIFICATIONS.filter(n => !n.read).length;
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
 
   // Close panel when clicking outside
   useEffect(() => {
@@ -465,7 +467,15 @@ export default function AppLayout({ children, title, action }: AppLayoutProps) {
                   <div className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
                 )}
               </button>
-              {notifOpen && <NotificationPanel onClose={() => setNotifOpen(false)} />}
+              {notifOpen && (
+                <NotificationPanel 
+                  onClose={() => setNotifOpen(false)} 
+                  notifs={notifications}
+                  unreadCount={unreadCount}
+                  markRead={markAsRead}
+                  markAllRead={markAllAsRead}
+                />
+              )}
             </div>
 
             {action ?? (

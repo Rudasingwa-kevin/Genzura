@@ -24,6 +24,13 @@ export class FeedbackService {
     });
   }
 
+  static async getUserFeedback(userId: string) {
+    return prisma.feedback.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
   static async updateStatus(id: string, status: FeedbackStatus) {
     return prisma.feedback.update({
       where: { id },

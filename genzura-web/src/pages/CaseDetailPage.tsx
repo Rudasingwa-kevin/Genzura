@@ -5,16 +5,17 @@ import {
   ArrowLeft, Clock, Calendar, AlertTriangle, User, Mail, Phone,
   FileText, Download, Paperclip, MessageSquare, Send, CheckCircle2,
   Edit3, Archive, Share2, Flag, MoreHorizontal, Plus, Search,
-  Filter, ChevronRight, History, X, Copy, Trash2, FileDown
+  Filter, ChevronRight, History, X, Copy, Trash2, FileDown,
+  Loader2
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import {
   STATUS_STYLES, STATUS_DOT, PRIORITY_STYLES,
-  type TimelineEvent, type CaseDocument, type CaseNote, type TeamMember
+  type TimelineEvent, type CaseDocument, type CaseNote
 } from '../data/cases';
 import { caseService } from '../api/services/case.service';
 import { documentService } from '../api/services/document.service';
-import { USERS } from '../data/users';
+import { userService } from '../api/services/user.service';
 import EmptyState from '../components/EmptyState';
 
 // ─── Timeline icon map ────────────────────────────────────────────────────────
@@ -142,97 +143,7 @@ const NoteCard = ({ note, index }: { note: CaseNote; index: number }) => (
   </div>
 );
 
-function InviteCollaboratorModal({ onClose, onInvite }: { onClose: () => void; onInvite: (member: TeamMember) => void }) {
-  const [search, setSearch] = useState('');
-  const [selectedRole, setSelectedRole] = useState('Assistant Counsel');
 
-  const filteredUsers = USERS.filter(u => 
-    u.name.toLowerCase().includes(search.toLowerCase()) || 
-    u.email.toLowerCase().includes(search.toLowerCase())
-  ).slice(0, 5);
-
-  const handleInvite = (user: any) => {
-    setTimeout(() => {
-      onInvite({
-        name: user.name,
-        role: selectedRole,
-        initials: user.initials
-      });
-      onClose();
-    }, 800);
-  };
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-brand-dark/20 backdrop-blur-sm animate-in fade-in duration-300" onClick={onClose} />
-      <div className="relative bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl border border-border-base p-8 animate-in zoom-in-95 fade-in duration-300">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-xl font-bold text-brand-dark">Invite Collaborator</h2>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-page-bg text-text-muted transition-colors">
-            <X size={20} />
-          </button>
-        </div>
-
-        <div className="space-y-6">
-          <div>
-            <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Search Firm Members</label>
-            <div className="relative">
-              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
-              <input 
-                type="text" 
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Name or email..."
-                className="w-full h-12 pl-11 pr-4 rounded-xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold"
-              />
-            </div>
-          </div>
-
-          {search && (
-            <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-              {filteredUsers.map(user => (
-                <button 
-                  key={user.id}
-                  onClick={() => handleInvite(user)}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-page-bg transition-all group border border-transparent hover:border-border-base"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-brand-blue text-white font-bold text-[10px] flex items-center justify-center">
-                    {user.initials}
-                  </div>
-                  <div className="text-left flex-1">
-                    <p className="text-xs font-bold text-brand-dark group-hover:text-brand-blue transition-colors">{user.name}</p>
-                    <p className="text-[10px] text-text-muted">{user.email}</p>
-                  </div>
-                  <Plus size={14} className="text-text-muted" />
-                </button>
-              ))}
-            </div>
-          )}
-
-          <div>
-            <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Assign Case Role</label>
-            <select 
-              value={selectedRole}
-              onChange={e => setSelectedRole(e.target.value)}
-              className="w-full h-12 px-4 rounded-xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-sm"
-            >
-              <option>Assistant Counsel</option>
-              <option>Reviewer</option>
-              <option>Co-Counsel</option>
-              <option>Expert Witness</option>
-              <option>Paralegal</option>
-            </select>
-          </div>
-
-          <div className="pt-4 flex items-center gap-2 text-[10px] font-bold text-text-muted uppercase tracking-widest bg-page-bg/50 p-4 rounded-2xl border border-dashed border-border-base">
-            <Mail size={14} className="text-brand-blue" />
-            Invitation will be sent via secure link
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function EditCaseModal({ caseData, onClose, onSave }: { caseData: any; onClose: () => void; onSave: (updated: any) => void }) {
   const [title, setTitle] = useState(caseData.title);
@@ -488,18 +399,7 @@ export default function CaseDetailPage() {
           }}
         />
       )}
-      {showInviteModal && (
-        <InviteCollaboratorModal
-          onClose={() => setShowInviteModal(false)}
-          onInvite={(member) => {
-            setCurrentCase({ ...caseData, team: [...caseData.team, member] });
-            toast.success(`${member.name} added to the case team!`, {
-              icon: '👥',
-              style: { borderRadius: '1rem', background: '#1e293b', color: '#fff', fontWeight: 'bold' }
-            });
-          }}
-        />
-      )}
+
       <div className="space-y-10 pb-12">
         
         {/* Header Section */}
@@ -890,6 +790,126 @@ export default function CaseDetailPage() {
 
         </div>
       </div>
+      {/* Invite Modal */}
+      <InviteCollaboratorModal 
+        isOpen={showInviteModal} 
+        onClose={() => setShowInviteModal(false)}
+        existingTeam={caseData.team}
+        onInvite={async (userId) => {
+          try {
+            const updatedCase = await caseService.addTeamMember(caseData.id, userId);
+            setCurrentCase(updatedCase);
+            setShowInviteModal(false);
+            toast.success('Team member added successfully');
+          } catch (error) {
+            toast.error('Failed to add team member');
+          }
+        }}
+      />
     </AppLayout>
   );
 }
+
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
+const InviteCollaboratorModal = ({ 
+  isOpen, 
+  onClose, 
+  onInvite, 
+  existingTeam 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  onInvite: (userId: string) => void;
+  existingTeam: any[];
+}) => {
+  const [users, setUsers] = useState<any[]>([]);
+  const [search, setSearch] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      const fetchUsers = async () => {
+        setIsLoading(true);
+        try {
+          const allUsers = await userService.getAll();
+          // Filter out users already in the team
+          const filtered = allUsers.filter((u: any) => !existingTeam.find(m => m.id === u.id));
+          setUsers(filtered);
+        } catch (error) {
+          console.error('Failed to fetch users:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchUsers();
+    }
+  }, [isOpen, existingTeam]);
+
+  if (!isOpen) return null;
+
+  const filteredUsers = users.filter(u => 
+    u.name.toLowerCase().includes(search.toLowerCase()) || 
+    u.email.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-brand-dark/40 backdrop-blur-md animate-in-fade" onClick={onClose} />
+      <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl relative z-10 overflow-hidden animate-in-up premium-border">
+        <div className="p-8 border-b border-border-base">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xl font-bold text-brand-dark">Invite Collaborator</h3>
+            <button onClick={onClose} className="p-2 rounded-xl hover:bg-page-bg text-text-muted transition-colors">
+              <X size={20} />
+            </button>
+          </div>
+          <p className="text-xs font-bold text-text-muted uppercase tracking-widest">Add an attorney or paralegal to this case</p>
+        </div>
+
+        <div className="p-8 space-y-6">
+          <div className="relative group">
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-brand-blue transition-colors" />
+            <input 
+              autoFocus
+              type="text" 
+              placeholder="Search by name or email..." 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full h-12 pl-12 pr-5 rounded-2xl border border-border-base focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/5 outline-none transition-all font-medium text-sm"
+            />
+          </div>
+
+          <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+            {isLoading ? (
+              <div className="py-10 text-center"><Loader2 className="animate-spin mx-auto text-brand-blue" /></div>
+            ) : filteredUsers.length === 0 ? (
+              <div className="py-10 text-center text-text-muted font-bold text-xs uppercase tracking-widest">No users found</div>
+            ) : (
+              filteredUsers.map(user => (
+                <div 
+                  key={user.id} 
+                  onClick={() => onInvite(user.id)}
+                  className="flex items-center gap-4 p-4 rounded-2xl hover:bg-brand-light/50 border border-transparent hover:border-brand-blue/10 transition-all cursor-pointer group"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-brand-dark text-white font-bold text-xs flex items-center justify-center group-hover:scale-110 transition-transform">
+                    {user.initials}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-brand-dark text-sm truncate group-hover:text-brand-blue transition-colors">{user.name}</p>
+                    <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{user.role}</p>
+                  </div>
+                  <button className="text-[10px] font-black text-brand-blue uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">Invite</button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="p-8 bg-page-bg/30 flex justify-end">
+          <button onClick={onClose} className="px-6 py-2.5 rounded-xl font-bold text-xs text-text-muted uppercase tracking-widest hover:text-brand-dark transition-colors">Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+};

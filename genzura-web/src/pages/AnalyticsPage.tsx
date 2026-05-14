@@ -9,7 +9,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
-import { CASES } from '../data/cases';
+import { caseService } from '../api/services/case.service';
 import { CardSkeleton, Skeleton } from '../components/Skeleton';
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -108,64 +108,53 @@ const AreaChart = ({ data }: { data: { label: string; value: number }[] }) => {
 export default function AnalyticsPage() {
   const [range, setRange] = useState<Range>('90d');
   const [isLoading, setIsLoading] = useState(true);
+  const [data, setData] = useState<any>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const { kpi, velocityData, leaderboard } = useMemo(() => {
-    const cutoffDate = getCutoffDate(range);
-    const rangeCases = CASES.filter(c => parseDateStr(c.filedDate) >= cutoffDate);
-    
-    // KPI Calculation (Original Logic)
-    const opened = rangeCases.length;
-    const closed = rangeCases.filter(c => c.status === 'Resolved').length;
-    
-    let totalDays = 0;
-    const resolvedCases = CASES.filter(c => c.status === 'Resolved');
-    resolvedCases.forEach(c => {
-      const days = c.priority === 'High' ? 14 : c.priority === 'Medium' ? 30 : 45;
-      totalDays += days;
-    });
-    const avgDays = resolvedCases.length > 0 ? Math.round(totalDays / resolvedCases.length) : 0;
-    const winRate = resolvedCases.length > 0 ? 85 : 0;
-
-    // Velocity Chart Data (keeping the new data logic for the area chart)
-    const buckets = range === '7d' ? 7 : range === '30d' ? 4 : range === '90d' ? 3 : 12;
-    const velocityData = Array.from({ length: buckets }).map((_, i) => {
-      let label = "";
-      if (range === '7d') label = `Day ${i+1}`;
-      else if (range === '30d') label = `Week ${i+1}`;
-      else {
-        const d = new Date(getToday());
-        d.setMonth(d.getMonth() - (buckets - 1 - i));
-        label = d.toLocaleString('default', { month: 'short' });
+    const fetchAnalytics = async () => {
+      setIsLoading(true);
+      try {
+        const result = await caseService.getAnalytics();
+        setData(result);
+      } catch (error) {
+        console.error('Failed to fetch analytics:', error);
+      } finally {
+        setIsLoading(false);
       }
-      return { label, value: Math.floor(Math.random() * 15) + 5 };
-    });
-
-    // Leaderboard (Original Logic)
-    const attorneyMap: Record<string, { cases: number; resolved: number; rate: number; initials: string }> = {};
-    CASES.forEach(c => {
-      if (!attorneyMap[c.attorney]) {
-        attorneyMap[c.attorney] = { 
-          cases: 0, 
-          resolved: 0, 
-          rate: 0, 
-          initials: c.attorney.split(' ').map(n => n[0]).join('') 
-        };
-      }
-      attorneyMap[c.attorney].cases++;
-      if (c.status === 'Resolved') attorneyMap[c.attorney].resolved++;
-    });
-    
-    const leaderboard = Object.entries(attorneyMap).map(([name, data]) => ({
-      name, ...data, rate: data.resolved > 0 ? Math.round((data.resolved / data.cases) * 100) : 75 + Math.floor(Math.random() * 15)
-    })).sort((a, b) => b.rate - a.rate);
-
-    return { kpi: { opened, closed, avgDays, winRate }, velocityData, leaderboard };
+    };
+    fetchAnalytics();
   }, [range]);
+
+  const kpi = useMemo(() => {
+    if (!data) return { opened: 0, closed: 0, avgDays: 0, winRate: 0 };
+    
+    const statusCounts = data.statusCounts || [];
+    const closed = statusCounts.find((s: any) => s.status === 'Resolved')?._count || 0;
+    
+    return {
+      opened: data.totalCases || 0,
+      closed,
+      avgDays: 28, // Hardcoded for now until more complex logic added
+      winRate: 85
+    };
+  }, [data]);
+
+  const velocityData = useMemo(() => {
+    if (!data?.volumeByMonth) return [];
+    return data.volumeByMonth.map((d: any) => ({
+      label: d.month,
+      value: d.count
+    }));
+  }, [data]);
+
+  const leaderboard = useMemo(() => {
+    // Keep mock leaderboard for now as we don't have attorney stats in simple analytics yet
+    return [
+      { name: 'Sarah Miller', cases: 14, resolved: 12, rate: 92, initials: 'SM' },
+      { name: 'James Wilson', cases: 22, resolved: 18, rate: 88, initials: 'JW' },
+      { name: 'David Chen', cases: 9, resolved: 7, rate: 82, initials: 'DC' },
+    ];
+  }, []);
 
   return (
     <AppLayout>

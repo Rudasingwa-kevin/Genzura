@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute     from './components/AdminRoute';
 
@@ -29,33 +30,35 @@ import AuditLogPage   from './pages/admin/AuditLogPage';
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/"           element={<LandingPage />}   />
-          <Route path="/login"      element={<LoginPage />}     />
-          <Route path="/register"   element={<RegisterPage />}  />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/legal/:documentId" element={<LegalPage />} />
-          
-          <Route path="/dashboard"  element={<ProtectedRoute><Dashboard /></ProtectedRoute>}     />
-          <Route path="/cases"      element={<ProtectedRoute><CasesPage /></ProtectedRoute>}     />
-          <Route path="/cases/:id"  element={<ProtectedRoute><CaseDetailPage /></ProtectedRoute>} />
-          <Route path="/calendar"   element={<ProtectedRoute><CalendarPage /></ProtectedRoute>}  />
-          <Route path="/documents"  element={<ProtectedRoute><DocumentsPage /></ProtectedRoute>} />
-          <Route path="/clients"      element={<ProtectedRoute><ClientsPage /></ProtectedRoute>}       />
-          <Route path="/clients/:id"   element={<ProtectedRoute><ClientDetailPage /></ProtectedRoute>}  />
-          <Route path="/analytics"  element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
-          <Route path="/settings"   element={<ProtectedRoute><SettingsPage /></ProtectedRoute>}  />
-          <Route path="/feedback"   element={<ProtectedRoute><FeedbackPage /></ProtectedRoute>}  />
-          
-          {/* Admin Routes */}
-          <Route path="/admin"          element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-          <Route path="/admin/users"    element={<AdminRoute><UserManagement /></AdminRoute>} />
-          <Route path="/admin/settings" element={<AdminRoute><SystemSettings /></AdminRoute>} />
-          <Route path="/admin/audit"    element={<AdminRoute><AuditLogPage /></AdminRoute>} />
-        </Routes>
-      </Router>
+      <NotificationProvider>
+        <Router>
+          <Routes>
+            <Route path="/"           element={<LandingPage />}   />
+            <Route path="/login"      element={<LoginPage />}     />
+            <Route path="/register"   element={<RegisterPage />}  />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/legal/:documentId" element={<LegalPage />} />
+            
+            <Route path="/dashboard"  element={<ProtectedRoute><Dashboard /></ProtectedRoute>}     />
+            <Route path="/cases"      element={<ProtectedRoute><CasesPage /></ProtectedRoute>}     />
+            <Route path="/cases/:id"  element={<ProtectedRoute><CaseDetailPage /></ProtectedRoute>} />
+            <Route path="/calendar"   element={<ProtectedRoute><CalendarPage /></ProtectedRoute>}  />
+            <Route path="/documents"  element={<ProtectedRoute><DocumentsPage /></ProtectedRoute>} />
+            <Route path="/clients"      element={<ProtectedRoute><ClientsPage /></ProtectedRoute>}       />
+            <Route path="/clients/:id"   element={<ProtectedRoute><ClientDetailPage /></ProtectedRoute>}  />
+            <Route path="/analytics"  element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
+            <Route path="/settings"   element={<ProtectedRoute><SettingsPage /></ProtectedRoute>}  />
+            <Route path="/feedback"   element={<ProtectedRoute><FeedbackPage /></ProtectedRoute>}  />
+            
+            {/* Admin Routes */}
+            <Route path="/admin"          element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+            <Route path="/admin/users"    element={<AdminRoute><UserManagement /></AdminRoute>} />
+            <Route path="/admin/settings" element={<AdminRoute><SystemSettings /></AdminRoute>} />
+            <Route path="/admin/audit"    element={<AdminRoute><AuditLogPage /></AdminRoute>} />
+          </Routes>
+        </Router>
+      </NotificationProvider>
     </AuthProvider>
   );
 }

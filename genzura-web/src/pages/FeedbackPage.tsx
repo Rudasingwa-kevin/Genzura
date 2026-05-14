@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   MessageSquare, 
   Send, 
@@ -13,19 +13,32 @@ import { toast } from 'react-hot-toast';
 import AppLayout from '../components/AppLayout';
 import { 
   FEEDBACK_CATEGORIES, 
-  MOCK_FEEDBACK_HISTORY, 
   STATUS_COLORS,
   type FeedbackCategory 
 } from '../data/feedback';
+import { feedbackService } from '../api/services/feedback.service';
 
 export default function FeedbackPage() {
   const [subject, setSubject] = useState('');
   const [category, setCategory] = useState<FeedbackCategory>('General Suggestion');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [history, setHistory] = useState(MOCK_FEEDBACK_HISTORY);
+  const [history, setHistory] = useState<any[]>([]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const fetchHistory = async () => {
+    try {
+      const data = await feedbackService.getMyFeedback();
+      setHistory(data);
+    } catch (error) {
+      console.error('Failed to fetch feedback history', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!subject || !message) {
       toast.error('Please fill in all required fields');
@@ -34,25 +47,17 @@ export default function FeedbackPage() {
 
     setIsSubmitting(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      const newSubmission = {
-        id: `FB-${Math.floor(1000 + Math.random() * 9000)}`,
-        userId: 'u1',
-        userName: 'James Wilson',
+    try {
+      await feedbackService.submitFeedback({
         subject,
         category,
-        message,
-        status: 'Pending' as const,
-        createdAt: new Date().toISOString().split('T')[0],
-        priority: 'Medium' as const
-      };
-
-      setHistory([newSubmission, ...history]);
-      setIsSubmitting(false);
+        message
+      });
+      
       setSubject('');
       setMessage('');
       setCategory('General Suggestion');
+      fetchHistory();
       
       toast.success('Feedback submitted! The system owner will review it soon.', {
         icon: '🚀',
@@ -63,7 +68,11 @@ export default function FeedbackPage() {
           fontWeight: 'bold'
         }
       });
-    }, 1500);
+    } catch (error) {
+      toast.error('Failed to submit feedback');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -192,7 +201,7 @@ export default function FeedbackPage() {
                     <div className="flex items-center justify-between pt-4 border-t border-border-base/50">
                       <div className="flex items-center gap-2 text-text-muted">
                         <Clock size={12} />
-                        <span className="text-[10px] font-bold">{item.createdAt}</span>
+                        <span className="text-[10px] font-bold">{new Date(item.createdAt).toLocaleDateString()}</span>
                       </div>
                       <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider flex items-center gap-1 group-hover:text-brand-blue transition-colors cursor-pointer">
                         Details <ArrowRight size={12} />

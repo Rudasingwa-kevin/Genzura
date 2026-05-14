@@ -6,8 +6,9 @@ const router = Router();
 
 router.use(authenticate);
 
-// Regular users can submit feedback
+// Regular users can submit feedback and get their own
 router.post('/', FeedbackController.create);
+router.get('/my', FeedbackController.getMyFeedback);
 
 // Only admins can view and manage all feedback
 router.get('/', authorize(['Admin']), FeedbackController.getAll);

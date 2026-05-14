@@ -21,8 +21,18 @@ export const caseService = {
     return response.data;
   },
 
+  getAnalytics: async () => {
+    const response = await apiClient.get('/cases/analytics');
+    return response.data;
+  },
+
   addNote: async (id: string, text: string) => {
     const response = await apiClient.post(`/cases/${id}/notes`, { text });
+    return response.data;
+  },
+
+  addTeamMember: async (caseId: string, userId: string) => {
+    const response = await apiClient.post(`/cases/${caseId}/team`, { userId });
     return response.data;
   },
 };
