@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import {
@@ -17,6 +17,7 @@ import { caseService } from '../api/services/case.service';
 import { documentService } from '../api/services/document.service';
 import { userService } from '../api/services/user.service';
 import EmptyState from '../components/EmptyState';
+import { CaseSummaryPDF } from '../components/CaseSummaryPDF';
 
 // ─── Timeline icon map ────────────────────────────────────────────────────────
 const timelineIcon = (type: TimelineEvent['type']) => {
@@ -303,8 +304,52 @@ export default function CaseDetailPage() {
     );
   };
 
-  const handleExport = () => {
-    toast.success('Exporting case bundle... Check downloads.', { icon: '🚀' });
+  const [isExporting, setIsExporting] = useState(false);
+  const pdfRef = useRef<HTMLDivElement>(null);
+
+  const handleExport = async () => {
+    if (!pdfRef.current) return;
+    setIsExporting(true);
+    const toastId = toast.loading('Generating PDF summary...', { style: { borderRadius: '1rem', background: '#1e293b', color: '#fff', fontWeight: 'bold' } });
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const jsPDF = (await import('jspdf')).default;
+
+      const canvas = await html2canvas(pdfRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        windowWidth: 1200,
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      // Multi-page support
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      let heightLeft = pdfHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`Case_Summary_${caseData.id}.pdf`);
+      toast.success('PDF downloaded successfully!', { id: toastId, icon: '📄', style: { borderRadius: '1rem', background: '#1e293b', color: '#fff', fontWeight: 'bold' } });
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+      toast.error('Failed to generate PDF. Please try again.', { id: toastId });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleDelete = () => {
@@ -357,8 +402,8 @@ export default function CaseDetailPage() {
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowMoreMenu(false)} />
               <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-border-base p-2 z-50 animate-in fade-in zoom-in-95 duration-200">
-                <button onClick={() => { setShowMoreMenu(false); toast.success('History downloaded'); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-page-bg text-sm font-bold text-text-secondary hover:text-brand-blue transition-all">
-                  <FileDown size={16} /> Download History
+                <button onClick={() => { setShowMoreMenu(false); handleExport(); }} disabled={isExporting} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-page-bg text-sm font-bold text-text-secondary hover:text-brand-blue transition-all disabled:opacity-60">
+                  {isExporting ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />} Export PDF Summary
                 </button>
                 <button onClick={() => { setShowMoreMenu(false); toast.success('Case duplicated'); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-page-bg text-sm font-bold text-text-secondary hover:text-brand-blue transition-all">
                   <Copy size={16} /> Duplicate Case
@@ -372,6 +417,14 @@ export default function CaseDetailPage() {
           )}
         </div>
       </div>
+      <button
+        onClick={handleExport}
+        disabled={isExporting}
+        className="flex items-center gap-2 px-6 py-3 rounded-2xl border border-border-base bg-white text-brand-dark font-bold hover:shadow-md hover:-translate-y-0.5 transition-all active:scale-95 disabled:opacity-60"
+      >
+        {isExporting ? <Loader2 size={18} className="animate-spin" /> : <FileDown size={18} />}
+        {isExporting ? 'Generating...' : 'Export PDF'}
+      </button>
       <button
         onClick={() => setShowInviteModal(true)}
         className="flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-brand-blue text-brand-blue font-bold hover:bg-brand-blue hover:text-white hover:shadow-lg hover:shadow-brand-blue/20 hover:-translate-y-0.5 transition-all active:scale-95"
@@ -399,6 +452,9 @@ export default function CaseDetailPage() {
           }}
         />
       )}
+
+      {/* Hidden PDF render target */}
+      <CaseSummaryPDF ref={pdfRef} caseData={caseData} />
 
       <div className="space-y-10 pb-12">
         

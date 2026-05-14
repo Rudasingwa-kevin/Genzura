@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckSquare, Plus, Clock, MoreVertical, AlertCircle, X, ExternalLink, MapPin } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { EVENTS, TASKS, type CalendarEvent, type Task, type EventType } from '../data/calendar';
+import { caseService } from '../api/services/case.service';
 
 // ─── Modals ───────────────────────────────────────────────────────────────────
 
@@ -197,6 +198,40 @@ export default function CalendarPage() {
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [taskFilter, setTaskFilter] = useState<'All' | 'Overdue' | 'My Tasks'>('All');
+
+  useEffect(() => {
+    const fetchCases = async () => {
+      try {
+        const data = await caseService.getAll();
+        const deadlineEvents: CalendarEvent[] = data
+          .filter((c: any) => c.deadline)
+          .map((c: any) => ({
+            id: `deadline-${c.id}`,
+            title: `${c.title} Deadline`,
+            date: new Date(c.deadline).toISOString().split('T')[0],
+            time: '11:59 PM',
+            type: 'Deadline',
+            color: 'bg-amber-500',
+            caseId: c.id,
+            description: `Case deadline for ${c.client}`
+          }));
+        
+        // Merge with mock events, avoiding duplicates by id if any
+        setEvents(prev => {
+          const newEvents = [...prev];
+          deadlineEvents.forEach(de => {
+            if (!newEvents.find(e => e.id === de.id)) {
+              newEvents.push(de);
+            }
+          });
+          return newEvents;
+        });
+      } catch (error) {
+        console.error('Failed to sync case deadlines', error);
+      }
+    };
+    fetchCases();
+  }, []);
 
   const filteredTasks = tasks.filter(t => {
     if (taskFilter === 'My Tasks') return t.assignee.includes('James');
