@@ -121,7 +121,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
             <div className="flex items-center gap-4 border-l border-slate-200 pl-6">
               <div className="text-right hidden sm:block">
                 <p className="text-xs font-bold text-brand-dark leading-none">
-                  {user ? `${user.firstName} ${user.lastName}` : 'Administrator'}
+                  {user?.name || 'Administrator'}
                 </p>
                 <p className="text-[10px] font-bold text-brand-blue uppercase mt-1 tracking-widest">Superuser</p>
               </div>

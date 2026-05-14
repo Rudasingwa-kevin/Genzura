@@ -4,6 +4,8 @@ import { authService } from '../api/services/auth.service';
 interface User {
   id: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   role: string;
   initials: string;
@@ -15,6 +17,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (credentials: { email: string; password?: string }) => Promise<User>;
   register: (data: any) => Promise<User>;
+  updateUser: (data: Partial<User>) => Promise<void>;
   logout: () => void;
 }
 
@@ -24,13 +27,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const processUser = (u: any): User => {
+    if (!u) return u;
+    const names = u.name?.split(' ') || [];
+    return {
+      ...u,
+      firstName: u.firstName || names[0] || '',
+      lastName: u.lastName || names.slice(1).join(' ') || ''
+    };
+  };
+
   useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem('genzura_token');
       if (token) {
         try {
           const userData = await authService.getMe();
-          setUser(userData);
+          setUser(processUser(userData));
         } catch (error) {
           console.error('Failed to restore session:', error);
           localStorage.removeItem('genzura_token');
@@ -44,14 +57,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (credentials: { email: string; password?: string }) => {
     const data = await authService.login(credentials);
-    setUser(data.user);
-    return data.user;
+    const processedUser = processUser(data.user);
+    setUser(processedUser);
+    return processedUser;
   };
 
   const register = async (data: any) => {
     const response = await authService.register(data);
-    setUser(response.user);
-    return response.user;
+    const processedUser = processUser(response.user);
+    setUser(processedUser);
+    return processedUser;
+  };
+
+  const updateUser = async (data: Partial<User>) => {
+    // For now, update local state. In a real app, call API.
+    if (user) {
+      const updated = processUser({ ...user, ...data });
+      setUser(updated);
+    }
   };
 
   const logout = () => {
@@ -62,7 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isAuthenticated = !!user;
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, register, updateUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

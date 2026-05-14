@@ -51,11 +51,19 @@ export class AuthController {
   static async register(req: Request, res: Response) {
     try {
       const { email, password, name, role } = req.body;
+      
+      const initials = name
+        .split(' ')
+        .map((n: string) => n[0])
+        .join('')
+        .toUpperCase();
+
       const user = await UserService.createUser({
         email,
         password,
         name,
-        role: role || 'Attorney'
+        role: role || 'Attorney',
+        initials
       });
 
       const token = jwt.sign(

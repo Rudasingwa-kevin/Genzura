@@ -398,7 +398,7 @@ export default function AppLayout({ children, title, action }: AppLayoutProps) {
               {user?.initials || 'JW'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-brand-dark text-sm truncate">{user ? `${user.firstName} ${user.lastName}` : 'James Wilson'}</p>
+              <p className="font-bold text-brand-dark text-sm truncate">{user?.name || 'James Wilson'}</p>
               <button
                 onClick={handleLogout}
                 className="text-xs text-text-muted truncate underline cursor-pointer hover:text-brand-blue transition-colors block text-left"
