@@ -25,8 +25,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import NewCaseModal from './NewCaseModal';
 import Breadcrumbs from './Breadcrumbs';
-import EmptyState from './EmptyState';
-import { CASES } from '../data/cases';
+import CommandPalette from './CommandPalette';
 
 // ─── Notifications Data ────────────────────────────────────────────────────────
 interface Notification {
@@ -39,38 +38,7 @@ interface Notification {
   link?: string;
 }
 
-const INITIAL_NOTIFICATIONS: Notification[] = [
-  {
-    id: 'n1', type: 'alert', read: false,
-    title: 'Court Date Tomorrow',
-    body: 'Initial Hearing for Apex Global (CZ-882) is scheduled for 9:00 AM.',
-    time: '2 hours ago', link: '/cases/CZ-882',
-  },
-  {
-    id: 'n2', type: 'deadline', read: false,
-    title: 'Filing Deadline in 3 Days',
-    body: 'Submit Briefing Docs for Nexus Tech (CZ-875) by May 22.',
-    time: '5 hours ago', link: '/cases/CZ-875',
-  },
-  {
-    id: 'n3', type: 'document', read: false,
-    title: 'New Document Uploaded',
-    body: 'Client Intake Form was uploaded for BlueOak Corp.',
-    time: 'Yesterday', link: '/documents',
-  },
-  {
-    id: 'n4', type: 'case', read: true,
-    title: 'Case Status Updated',
-    body: 'Fund Audit (CZ-860) has been marked as Resolved.',
-    time: '2 days ago', link: '/cases/CZ-860',
-  },
-  {
-    id: 'n5', type: 'resolved', read: true,
-    title: 'Task Completed',
-    body: 'File extension request for CZ-875 was marked complete by James W.',
-    time: '3 days ago',
-  },
-];
+
 
 const notifIcon: Record<string, { icon: React.ElementType; bg: string; color: string }> = {
   alert:    { icon: AlertTriangle, bg: 'bg-red-50',     color: 'text-red-500'      },
@@ -166,7 +134,7 @@ function NotificationPanel({
 
                 {/* Dismiss */}
                 <button
-                  onClick={(e) => { e.stopPropagation(); dismiss(notif.id); }}
+                  onClick={(e) => { e.stopPropagation(); markRead(notif.id); }}
                   className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-border-base text-text-muted transition-all shrink-0 mt-0.5"
                 >
                   <X size={13} />
@@ -290,21 +258,24 @@ export default function AppLayout({ children, title, action }: AppLayoutProps) {
   const [notifOpen, setNotifOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNewCase, setShowNewCase] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLDivElement>(null);
 
-  const filteredResults = searchQuery.trim().length > 1
-    ? CASES.filter(c =>
-        c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.client.toLowerCase().includes(searchQuery.toLowerCase())
-      ).slice(0, 6)
-    : [];
+  // Global Ctrl+K / Cmd+K shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
 
-  // Close panel when clicking outside
+  // Close notification panel when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
@@ -315,26 +286,6 @@ export default function AppLayout({ children, title, action }: AppLayoutProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [notifOpen]);
 
-  // Handle click outside and Esc for Search
-  useEffect(() => {
-    const handleEvents = (e: any) => {
-      if (e.key === 'Escape') {
-        setSearchQuery('');
-      }
-      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
-        setSearchQuery('');
-      }
-    };
-    if (searchQuery) {
-      document.addEventListener('mousedown', handleEvents);
-      document.addEventListener('keydown', handleEvents);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleEvents);
-      document.removeEventListener('keydown', handleEvents);
-    };
-  }, [searchQuery]);
-
   const handleLogout = () => {
     logout();
     navigate('/login', { replace: true });
@@ -342,6 +293,9 @@ export default function AppLayout({ children, title, action }: AppLayoutProps) {
 
   return (
     <div className="flex min-h-screen bg-page-bg font-sans">
+      {/* Command Palette */}
+      <CommandPalette isOpen={paletteOpen} onClose={() => setPaletteOpen(false)} />
+
       {/* Global New Case Modal */}
       {showNewCase && <NewCaseModal onClose={() => setShowNewCase(false)} />}
 
@@ -426,31 +380,17 @@ export default function AppLayout({ children, title, action }: AppLayoutProps) {
               <Menu size={24} />
             </button>
             
-            {/* Search */}
-            <div className="relative w-full max-w-[160px] sm:max-w-xs group hidden md:block" ref={searchRef}>
-              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-brand-blue transition-colors" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Quick search..."
-                className="w-full h-10 pl-10 pr-10 rounded-xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue/30 focus:ring-4 focus:ring-brand-blue/5 outline-none transition-all text-sm"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-page-bg text-text-muted transition-colors"
-                >
-                  <X size={14} />
-                </button>
-              )}
-              
-              <SearchResultDropdown 
-                results={filteredResults} 
-                onClose={() => setSearchQuery('')}
-                onClear={() => setSearchQuery('')}
-              />
-            </div>
+            {/* Command Palette Trigger (replaces old search) */}
+            <button
+              onClick={() => setPaletteOpen(true)}
+              className="hidden md:flex items-center gap-3 w-64 h-10 px-4 rounded-xl bg-page-bg border border-transparent hover:border-brand-blue/30 hover:bg-white transition-all text-text-muted group"
+            >
+              <Search size={15} className="shrink-0 group-hover:text-brand-blue transition-colors" />
+              <span className="text-sm flex-1 text-left">Search everything...</span>
+              <kbd className="flex items-center gap-0.5 text-[10px] font-bold bg-white border border-border-base rounded-md px-1.5 py-0.5 shrink-0">
+                <span>⌘</span><span>K</span>
+              </kbd>
+            </button>
           </div>
 
           {/* Right actions */}

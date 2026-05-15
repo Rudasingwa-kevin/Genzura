@@ -17,18 +17,7 @@ type Range = '7d' | '30d' | '90d' | '1y';
 const RANGES: Range[] = ['7d', '30d', '90d', '1y'];
 
 // ─── Helper Functions ────────────────────────────────────────────────────────
-const getToday = () => new Date('2026-05-10');
-const parseDateStr = (dateStr: string) => new Date(dateStr);
-
-const getCutoffDate = (range: Range): Date => {
-  const today = getToday();
-  const cutoff = new Date(today);
-  if (range === '7d') cutoff.setDate(cutoff.getDate() - 7);
-  else if (range === '30d') cutoff.setDate(cutoff.getDate() - 30);
-  else if (range === '90d') cutoff.setDate(cutoff.getDate() - 90);
-  else if (range === '1y') cutoff.setFullYear(cutoff.getFullYear() - 1);
-  return cutoff;
-};
+// getToday kept for future date-filtering when range-based API params are added
 
 // ─── Components ───────────────────────────────────────────────────────────────
 

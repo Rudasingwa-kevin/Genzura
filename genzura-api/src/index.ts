@@ -8,6 +8,7 @@ import feedbackRoutes from './routes/feedbackRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import documentRoutes from './routes/documentRoutes.js';
+import searchRoutes from './routes/searchRoutes.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 import { createServer } from 'http';
 import { initSocket } from './socket.js';
@@ -29,6 +30,7 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/documents', documentRoutes);
+app.use('/api/search', searchRoutes);
 
 // Error Handling
 app.use(errorHandler);

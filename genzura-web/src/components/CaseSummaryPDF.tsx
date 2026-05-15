@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Calendar, User, Phone, Mail, CheckCircle2, Clock } from 'lucide-react';
+import { FileText, User, Phone, Mail, CheckCircle2, Clock } from 'lucide-react';
 
 interface CaseSummaryPDFProps {
   caseData: any;
