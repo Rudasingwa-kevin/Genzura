@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckSquare, Plus, Clock, MoreVertical, AlertCircle, X, ExternalLink, MapPin } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckSquare, Plus, Clock, MoreVertical, AlertCircle, X, ExternalLink, MapPin, Download } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { EVENTS, TASKS, type CalendarEvent, type Task, type EventType } from '../data/calendar';
 import { caseService } from '../api/services/case.service';
@@ -197,6 +198,7 @@ export default function CalendarPage() {
   const [showEventModal, setShowEventModal] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [draggedEvent, setDraggedEvent] = useState<CalendarEvent | null>(null);
   const [taskFilter, setTaskFilter] = useState<'All' | 'Overdue' | 'My Tasks'>('All');
 
   useEffect(() => {
@@ -260,6 +262,65 @@ export default function CalendarPage() {
     setTasks(tasks.map(t => t.id === taskId ? { ...t, completed: !t.completed } : t));
   };
 
+  const handleDragStart = (e: React.DragEvent, event: CalendarEvent) => {
+    setDraggedEvent(event);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', event.id);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, targetDateStr: string) => {
+    e.preventDefault();
+    if (!draggedEvent) return;
+    
+    // Don't update if dropped on the same day
+    if (draggedEvent.date === targetDateStr) {
+      setDraggedEvent(null);
+      return;
+    }
+
+    setEvents(prev => prev.map(evt => 
+      evt.id === draggedEvent.id ? { ...evt, date: targetDateStr } : evt
+    ));
+    
+    toast.success(`Rescheduled to ${new Date(targetDateStr).toLocaleDateString()}`);
+    setDraggedEvent(null);
+  };
+
+  const generateICS = () => {
+    let icsString = "BEGIN:VCALENDAR\\nVERSION:2.0\\nPRODID:-//Genzura//Calendar//EN\\n";
+    
+    events.forEach(evt => {
+      // Basic formatting for ICS (simplistic)
+      const startDate = evt.date.replace(/-/g, '');
+      const uid = evt.id + "@genzura.com";
+      const dtstamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      
+      icsString += "BEGIN:VEVENT\\n";
+      icsString += `UID:${uid}\\n`;
+      icsString += `DTSTAMP:${dtstamp}\\n`;
+      icsString += `DTSTART;VALUE=DATE:${startDate}\\n`;
+      icsString += `SUMMARY:${evt.title}\\n`;
+      if (evt.description) icsString += `DESCRIPTION:${evt.description}\\n`;
+      icsString += "END:VEVENT\\n";
+    });
+
+    icsString += "END:VCALENDAR";
+
+    const blob = new Blob([icsString], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'genzura-calendar.ics';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Calendar exported successfully!");
+  };
+
   const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
   const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const goToToday = () => setCurrentDate(new Date());
@@ -275,6 +336,12 @@ export default function CalendarPage() {
       title="Calendar & Tasks"
       action={
         <div className="flex items-center gap-3">
+          <button 
+            onClick={generateICS}
+            className="flex items-center gap-2 bg-white text-brand-dark px-4 py-2.5 rounded-xl font-bold border border-border-base shadow-sm hover:shadow-md transition-all active:scale-95 hidden sm:flex"
+          >
+            <Download size={18} className="text-brand-blue" /> Export
+          </button>
           <button 
             onClick={() => setShowTaskModal(true)}
             className="flex items-center gap-2 bg-white text-brand-dark px-4 py-2.5 rounded-xl font-bold border border-border-base shadow-sm hover:shadow-md transition-all active:scale-95"
@@ -348,6 +415,8 @@ export default function CalendarPage() {
             {days.map((dayObj, index) => (
               <div 
                 key={index} 
+                onDragOver={dayObj ? handleDragOver : undefined}
+                onDrop={dayObj ? (e) => handleDrop(e, dayObj.dateStr) : undefined}
                 className={`min-h-[140px] bg-white p-3 border-t border-transparent hover:border-brand-blue/30 transition-colors relative group ${!dayObj ? 'bg-page-bg/30' : ''}`}
               >
                 {dayObj && (
@@ -364,6 +433,8 @@ export default function CalendarPage() {
                       {dayObj.events.map(evt => (
                         <div 
                           key={evt.id} 
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, evt)}
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedEvent(evt);
