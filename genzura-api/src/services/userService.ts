@@ -45,4 +45,38 @@ export class UserService {
       data: { status },
     });
   }
+
+  static async getUserAnalytics() {
+    const users = await prisma.user.findMany({
+      include: {
+        _count: {
+          select: { cases: true, teamMemberships: true, uploadedDocs: true, timelineEvents: true }
+        },
+        cases: {
+          select: { id: true, title: true, status: true, priority: true }
+        }
+      }
+    });
+
+    const recentActivity = await prisma.timelineEvent.findMany({
+      take: 20,
+      orderBy: { timestamp: 'desc' },
+      include: { author: { select: { id: true, name: true, initials: true } }, case: { select: { id: true, title: true } } }
+    });
+
+    return {
+      workload: users.map(u => ({
+        id: u.id,
+        name: u.name,
+        initials: u.initials,
+        role: u.role,
+        totalCases: u._count.cases + u._count.teamMemberships,
+        activeCases: u.cases.filter(c => c.status === 'Active' || c.status === 'Pending').length,
+        resolvedCases: u.cases.filter(c => c.status === 'Resolved' || c.status === 'Archived').length,
+        docsUploaded: u._count.uploadedDocs,
+        timelineEvents: u._count.timelineEvents
+      })).sort((a, b) => b.totalCases - a.totalCases),
+      recentActivity
+    };
+  }
 }

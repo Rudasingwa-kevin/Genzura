@@ -15,4 +15,9 @@ export const userService = {
     const response = await apiClient.patch(`/users/${id}/status`, { status });
     return response.data;
   },
+
+  getAnalytics: async () => {
+    const response = await apiClient.get('/users/analytics');
+    return response.data;
+  },
 };

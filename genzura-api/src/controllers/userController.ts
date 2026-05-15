@@ -43,4 +43,13 @@ export class UserController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  static async getAnalytics(req: Request, res: Response) {
+    try {
+      const analytics = await UserService.getUserAnalytics();
+      res.json(analytics);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 }
