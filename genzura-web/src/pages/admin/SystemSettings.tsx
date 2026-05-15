@@ -20,24 +20,59 @@ import {
   FileCheck
 } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import { settingsService } from '../../api/services/settings.service';
 
 type Tab = 'branding' | 'practice' | 'security' | 'integrations' | 'infra';
 
 export default function SystemSettings() {
   const [activeTab, setActiveTab] = useState<Tab>('branding');
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleSave = () => {
+  // Settings State
+  const [settings, setSettings] = useState<Record<string, string>>({
+    entityName: 'Genzura Litigation Group',
+    supportEmail: 'admin@genzura.law',
+    mfaEnabled: 'true',
+    sessionTimeout: 'true',
+    ipRestriction: 'false',
+  });
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const data = await settingsService.getAll();
+        if (Object.keys(data).length > 0) {
+          setSettings(prev => ({ ...prev, ...data }));
+        }
+      } catch (error) {
+        console.error('Failed to load settings', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const handleChange = (key: string, value: string) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
+    try {
+      await settingsService.update(settings);
       toast.success('System configurations updated firm-wide.', {
         icon: '⚙️',
         style: { borderRadius: '1.25rem', fontWeight: 'bold' }
       });
-    }, 1200);
+    } catch (error) {
+      toast.error('Failed to update settings');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -106,11 +141,21 @@ export default function SystemSettings() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold text-brand-dark uppercase tracking-widest ml-1">Legal Entity Name</label>
-                      <input type="text" defaultValue="Genzura Litigation Group" className="w-full h-14 px-6 rounded-2xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-brand-dark" />
+                      <input 
+                        type="text" 
+                        value={settings.entityName || ''} 
+                        onChange={(e) => handleChange('entityName', e.target.value)}
+                        className="w-full h-14 px-6 rounded-2xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-brand-dark" 
+                      />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-bold text-brand-dark uppercase tracking-widest ml-1">Support Email</label>
-                      <input type="email" defaultValue="admin@genzura.law" className="w-full h-14 px-6 rounded-2xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-brand-dark" />
+                      <input 
+                        type="email" 
+                        value={settings.supportEmail || ''} 
+                        onChange={(e) => handleChange('supportEmail', e.target.value)}
+                        className="w-full h-14 px-6 rounded-2xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-brand-dark" 
+                      />
                     </div>
                   </div>
                 </section>
@@ -165,23 +210,29 @@ export default function SystemSettings() {
                 
                 <div className="space-y-6">
                   {[
-                    { label: 'Multi-Factor Authentication (MFA)', desc: 'Enforce 2FA for all team members upon login.', icon: Lock, active: true },
-                    { label: 'Session Timeout', desc: 'Automatically logout users after 30 minutes of inactivity.', icon: Clock, active: true },
-                    { label: 'IP Access Restriction', desc: 'Limit dashboard access to known office IP ranges.', icon: Globe, active: false },
-                  ].map(sec => (
-                    <div key={sec.label} className="flex items-start justify-between p-6 rounded-3xl border border-border-base hover:bg-page-bg/30 transition-all">
-                      <div className="flex gap-5">
-                        <div className="p-3 rounded-2xl bg-brand-light text-brand-blue"><sec.icon size={22} /></div>
-                        <div>
-                          <p className="font-bold text-brand-dark mb-1">{sec.label}</p>
-                          <p className="text-xs text-text-muted font-medium">{sec.desc}</p>
+                    { key: 'mfaEnabled', label: 'Multi-Factor Authentication (MFA)', desc: 'Enforce 2FA for all team members upon login.', icon: Lock },
+                    { key: 'sessionTimeout', label: 'Session Timeout', desc: 'Automatically logout users after 30 minutes of inactivity.', icon: Clock },
+                    { key: 'ipRestriction', label: 'IP Access Restriction', desc: 'Limit dashboard access to known office IP ranges.', icon: Globe },
+                  ].map(sec => {
+                    const isActive = settings[sec.key] === 'true';
+                    return (
+                      <div key={sec.key} className="flex items-start justify-between p-6 rounded-3xl border border-border-base hover:bg-page-bg/30 transition-all">
+                        <div className="flex gap-5">
+                          <div className="p-3 rounded-2xl bg-brand-light text-brand-blue"><sec.icon size={22} /></div>
+                          <div>
+                            <p className="font-bold text-brand-dark mb-1">{sec.label}</p>
+                            <p className="text-xs text-text-muted font-medium">{sec.desc}</p>
+                          </div>
+                        </div>
+                        <div 
+                          onClick={() => handleChange(sec.key, isActive ? 'false' : 'true')}
+                          className={`w-12 h-6 rounded-full relative cursor-pointer transition-colors ${isActive ? 'bg-brand-blue' : 'bg-slate-200'}`}
+                        >
+                          <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${isActive ? 'left-7' : 'left-1'}`} />
                         </div>
                       </div>
-                      <div className={`w-12 h-6 rounded-full relative cursor-pointer transition-colors ${sec.active ? 'bg-brand-blue' : 'bg-slate-200'}`}>
-                        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${sec.active ? 'left-7' : 'left-1'}`} />
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

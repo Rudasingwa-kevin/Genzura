@@ -25,6 +25,8 @@ const AUDIT_LOGS = [
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
+import { toast } from 'react-hot-toast';
+
 export default function AuditLogPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -39,6 +41,45 @@ export default function AuditLogPage() {
     l.user.toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleExportCSV = () => {
+    try {
+      // 1. Define CSV headers
+      const headers = ['Event ID', 'Action', 'Initiator', 'Role', 'IP Address', 'Timestamp', 'Status'];
+      
+      // 2. Map data to CSV rows
+      const csvRows = filtered.map(log => 
+        [
+          log.id,
+          `"${log.action.replace(/"/g, '""')}"`, // Escape quotes
+          `"${log.user}"`,
+          log.role,
+          log.ip,
+          `"${log.time}"`,
+          log.status
+        ].join(',')
+      );
+      
+      // 3. Combine headers and rows
+      const csvContent = [headers.join(','), ...csvRows].join('\\n');
+      
+      // 4. Create Blob and download link
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `audit-log-export-${new Date().toISOString().split('T')[0]}.csv`;
+      
+      // 5. Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success('Audit log exported successfully');
+    } catch (error) {
+      console.error('Export failed', error);
+      toast.error('Failed to export audit log');
+    }
+  };
+
   return (
     <AdminLayout title="System Audit Trail">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
@@ -46,7 +87,10 @@ export default function AuditLogPage() {
           <h1 className="text-3xl font-bold text-brand-dark tracking-tight">Audit Trail</h1>
           <p className="text-sm text-text-muted mt-1">Detailed immutable log of all administrative and system-wide activities.</p>
         </div>
-        <button className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white border border-border-base font-bold text-brand-dark hover:bg-page-bg transition-all shadow-sm">
+        <button 
+          onClick={handleExportCSV}
+          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white border border-border-base font-bold text-brand-dark hover:bg-page-bg transition-all shadow-sm active:scale-95"
+        >
           <Download size={18} /> Export CSV
         </button>
       </div>

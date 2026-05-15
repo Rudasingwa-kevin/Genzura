@@ -185,3 +185,10 @@ model Notification {
   link      String?
   createdAt DateTime         @default(now())
 }
+
+model SystemSetting {
+  key       String   @id
+  value     String   @db.Text
+  category  String
+  updatedAt DateTime @updatedAt
+}
