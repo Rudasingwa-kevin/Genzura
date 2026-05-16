@@ -20,7 +20,7 @@ export default function AdminRoute({ children }: { children: ReactNode }) {
   }
 
   // Logged in but not an admin -> Dashboard
-  if (user?.role !== 'admin') {
+  if (user?.role.toLowerCase() !== 'admin') {
     return <Navigate to="/dashboard" replace />;
   }
 

@@ -1,22 +1,30 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Mail, ArrowRight, CheckCircle2, Lock } from 'lucide-react';
+import apiClient from '../api/client';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
+    setError('');
     
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setIsLoading(false);
-    setIsSubmitted(true);
+    try {
+      await apiClient.post('/auth/forgot-password', { email });
+      setIsSubmitted(true);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
+
 
   return (
     <div className="min-h-screen flex font-sans">
@@ -56,6 +64,10 @@ export default function ForgotPasswordPage() {
                     autoFocus
                   />
                 </div>
+                
+                {error && (
+                  <p className="text-red-500 text-sm font-medium ml-1 animate-in fade-in">{error}</p>
+                )}
                 
                 <button 
                   type="submit"

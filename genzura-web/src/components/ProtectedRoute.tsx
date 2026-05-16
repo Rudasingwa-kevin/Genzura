@@ -20,7 +20,7 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
   }
 
   // Prevent Admins from accessing Litigation views
-  if (user?.role === 'admin') {
+  if (user?.role.toLowerCase() === 'admin') {
     return <Navigate to="/admin" replace />;
   }
 

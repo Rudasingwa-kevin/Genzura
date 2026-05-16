@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { UserService } from '../services/userService.js';
+import { EmailService } from '../services/emailService.js';
 export class AuthController {
     static async login(req, res) {
         try {
@@ -8,12 +9,15 @@ export class AuthController {
             if (!email || !password) {
                 return res.status(400).json({ error: 'Email and password are required' });
             }
-            const user = await UserService.getUserByEmail(email);
+            const normalizedEmail = email.trim().toLowerCase();
+            const user = await UserService.getUserByEmail(normalizedEmail);
             if (!user) {
+                console.warn(`[Login] Attempt failed: User not found for email "${normalizedEmail}"`);
                 return res.status(401).json({ error: 'Invalid credentials' });
             }
             const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
             if (!isPasswordValid) {
+                console.warn(`[Login] Attempt failed: Incorrect password for user "${normalizedEmail}"`);
                 return res.status(401).json({ error: 'Invalid credentials' });
             }
             const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '24h' });
@@ -58,6 +62,49 @@ export class AuthController {
         }
         catch (error) {
             res.status(400).json({ error: error.message });
+        }
+    }
+    static async forgotPassword(req, res) {
+        try {
+            const { email } = req.body;
+            if (!email) {
+                return res.status(400).json({ error: 'Email is required' });
+            }
+            const user = await UserService.getUserByEmail(email);
+            // We return success even if user doesn't exist for security reasons
+            if (user) {
+                const resetToken = jwt.sign({ id: user.id, purpose: 'password_reset' }, process.env.JWT_SECRET || 'fallback_secret', { expiresIn: '1h' });
+                await EmailService.sendPasswordResetEmail(user.email, resetToken);
+            }
+            res.json({ message: 'If an account with that email exists, we have sent reset instructions.' });
+        }
+        catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+    static async resetPassword(req, res) {
+        try {
+            const { token, password } = req.body;
+            if (!token || !password) {
+                return res.status(400).json({ error: 'Token and password are required' });
+            }
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+            if (!decoded || decoded.purpose !== 'password_reset') {
+                return res.status(400).json({ error: 'Invalid or expired token' });
+            }
+            const user = await UserService.getUserById(decoded.id);
+            if (!user) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+            const passwordHash = await bcrypt.hash(password, 10);
+            await UserService.updatePassword(user.id, passwordHash);
+            res.json({ message: 'Password has been reset successfully' });
+        }
+        catch (error) {
+            if (error.name === 'TokenExpiredError') {
+                return res.status(400).json({ error: 'Reset link has expired' });
+            }
+            res.status(400).json({ error: 'Invalid token' });
         }
     }
 }

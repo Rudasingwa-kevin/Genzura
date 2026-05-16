@@ -66,5 +66,11 @@ export class UserService {
             recentActivity
         };
     }
+    static async updatePassword(id, passwordHash) {
+        return prisma.user.update({
+            where: { id },
+            data: { passwordHash },
+        });
+    }
 }
 //# sourceMappingURL=userService.js.map

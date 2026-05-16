@@ -1,9 +1,13 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Lock, ArrowRight, CheckCircle2 } from 'lucide-react';
+import apiClient from '../api/client';
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
+  
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -14,6 +18,11 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     setError('');
     
+    if (!token) {
+      setError('Invalid or missing reset token.');
+      return;
+    }
+
     if (password.length < 8) {
       setError('Password must be at least 8 characters long.');
       return;
@@ -25,16 +34,21 @@ export default function ResetPasswordPage() {
     }
     
     setIsLoading(true);
-    // Simulate API call to reset password
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsLoading(false);
-    setIsSubmitted(true);
-    
-    // Auto-redirect to login after success
-    setTimeout(() => {
-      navigate('/login');
-    }, 3000);
+    try {
+      await apiClient.post('/auth/reset-password', { token, password });
+      setIsSubmitted(true);
+      
+      // Auto-redirect to login after success
+      setTimeout(() => {
+        navigate('/login');
+      }, 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to reset password. The link may be expired.');
+    } finally {
+      setIsLoading(false);
+    }
   };
+
 
   return (
     <div className="min-h-screen flex font-sans">
