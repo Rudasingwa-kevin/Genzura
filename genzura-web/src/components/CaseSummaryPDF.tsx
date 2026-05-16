@@ -111,20 +111,20 @@ export const CaseSummaryPDF = React.forwardRef<HTMLDivElement, CaseSummaryPDFPro
             <div className="grid grid-cols-2 gap-6">
               <div className="flex items-center gap-4 p-4 rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div className="w-14 h-14 bg-slate-800 text-white rounded-xl flex items-center justify-center font-bold text-xl">
-                  {caseData.attorney.split(' ').map((w: string) => w[0]).join('')}
+                  {caseData.attorney?.initials || caseData.attorney?.name?.split(' ').map((n: string) => n[0]).join('') || '??'}
                 </div>
                 <div>
-                  <p className="font-bold text-xl text-slate-800">{caseData.attorney}</p>
+                  <p className="font-bold text-xl text-slate-800">{caseData.attorney?.name || 'Unassigned'}</p>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Lead Counsel</p>
                 </div>
               </div>
               {caseData.team?.map((member: any, i: number) => (
                 <div key={i} className="flex items-center gap-4 p-4 rounded-2xl border border-slate-200 bg-white shadow-sm">
                   <div className="w-14 h-14 bg-slate-100 text-slate-600 border border-slate-200 rounded-xl flex items-center justify-center font-bold text-xl">
-                    {member.initials || member.name.split(' ').map((w: string) => w[0]).join('')}
+                    {member.user?.initials || member.user?.name?.split(' ').map((w: string) => w[0]).join('') || member.initials || member.name?.split(' ').map((w: string) => w[0]).join('') || '??'}
                   </div>
                   <div>
-                    <p className="font-bold text-xl text-slate-800">{member.name}</p>
+                    <p className="font-bold text-xl text-slate-800">{member.user?.name || member.name}</p>
                     <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">{member.role || 'Team Member'}</p>
                   </div>
                 </div>
@@ -147,7 +147,7 @@ export const CaseSummaryPDF = React.forwardRef<HTMLDivElement, CaseSummaryPDFPro
                     <div>
                       <p className="text-lg font-bold text-slate-800">{evt.description}</p>
                       <p className="text-sm font-semibold text-slate-500 mt-1">
-                        By {evt.author} • {new Date(evt.timestamp).toLocaleDateString()}
+                        By {evt.author?.name || evt.author || 'System'} • {new Date(evt.timestamp).toLocaleDateString()}
                       </p>
                     </div>
                   </div>

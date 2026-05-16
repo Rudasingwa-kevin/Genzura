@@ -23,8 +23,8 @@ const CaseRow = ({ id, title, client, status, date }: { id: string; title: strin
     >
       <td className="py-5 px-8">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-brand-light flex items-center justify-center text-brand-blue font-bold text-xs">
-            {id}
+          <div className="w-10 h-10 rounded-lg bg-brand-light flex items-center justify-center text-brand-blue font-bold text-[10px] overflow-hidden whitespace-nowrap">
+            {id.substring(id.length - 4).toUpperCase()}
           </div>
           <div>
             <p className="font-bold text-brand-dark text-sm group-hover:text-brand-blue transition-colors">{title}</p>
@@ -47,9 +47,9 @@ const CaseRow = ({ id, title, client, status, date }: { id: string; title: strin
         </div>
       </td>
       <td className="py-5 px-8">
-        <div className="flex items-center gap-2 text-sm text-text-secondary">
+        <div className="flex items-center gap-2 text-sm text-text-secondary font-medium">
           <Clock size={14} className="text-text-muted" />
-          {date}
+          {new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
         </div>
       </td>
       <td className="py-5 px-8 text-center" onClick={(e) => e.stopPropagation()}>
@@ -123,7 +123,7 @@ const Dashboard = () => {
                 <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color}`}>
                   <stat.icon size={26} />
                 </div>
-                <span className="text-emerald-600 text-xs font-bold bg-emerald-50 px-2.5 py-1 rounded-lg">+12%</span>
+                <span className="text-emerald-600 text-xs font-bold bg-emerald-50 px-2.5 py-1 rounded-lg">+{Math.floor(Math.random() * 15) + 5}%</span>
               </div>
               <p className="text-text-muted text-[10px] font-bold uppercase tracking-[0.1em] mb-2">{stat.label}</p>
               <p className="text-4xl font-bold text-brand-dark tracking-tighter">{stat.value}</p>
@@ -196,7 +196,7 @@ const Dashboard = () => {
                       title={c.title} 
                       client={c.client} 
                       status={c.status} 
-                      date={c.updated} 
+                      date={c.updatedAt} 
                     />
                   ))}
                 </tbody>

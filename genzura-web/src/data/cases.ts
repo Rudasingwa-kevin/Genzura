@@ -3,16 +3,23 @@ export type CaseStatus   = 'Active' | 'Pending' | 'Resolved' | 'Archived';
 export type CasePriority = 'High' | 'Medium' | 'Low';
 export type CaseType     = 'Litigation' | 'Corporate' | 'Compliance' | 'IP' | 'Employment' | 'M&A' | 'Real Estate';
 
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  initials: string;
+}
+
 export interface TimelineEvent {
-  id: number;
+  id: string | number;
   type: 'filed' | 'status' | 'meeting' | 'document' | 'note' | 'milestone';
   description: string;
-  author: string;
+  author: User | string;
   timestamp: string;
 }
 
 export interface CaseDocument {
-  id: number;
+  id: string | number;
   name: string;
   type: 'PDF' | 'DOCX' | 'XLSX' | 'IMG';
   size: string;
@@ -21,28 +28,30 @@ export interface CaseDocument {
 }
 
 export interface CaseNote {
-  id: number;
-  author: string;
-  initials: string;
-  color: string;
+  id: string | number;
+  author: User | string;
+  initials?: string;
+  color?: string;
   text: string;
   timestamp: string;
 }
 
 export interface TeamMember {
-  name: string;
+  user?: User;
+  name?: string;
   role: string;
-  initials: string;
+  initials?: string;
 }
 
 export interface CaseDetail {
   id: string;
+  caseNumber: string;
   title: string;
   client: string;
   clientEmail: string;
   clientPhone: string;
   clientCompany: string;
-  attorney: string;
+  attorney: User | string;
   status: CaseStatus;
   priority: CasePriority;
   type: CaseType;

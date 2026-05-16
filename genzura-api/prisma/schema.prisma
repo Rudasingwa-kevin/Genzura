@@ -97,6 +97,7 @@ model User {
 
 model Case {
   id            String       @id @default(cuid())
+  caseNumber    String       @unique
   title         String
   client        String
   clientEmail   String

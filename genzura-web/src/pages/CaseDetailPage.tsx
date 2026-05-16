@@ -16,6 +16,7 @@ import {
 import { caseService } from '../api/services/case.service';
 import { documentService } from '../api/services/document.service';
 import { userService } from '../api/services/user.service';
+import { useAuth } from '../contexts/AuthContext';
 import EmptyState from '../components/EmptyState';
 import { CaseSummaryPDF } from '../components/CaseSummaryPDF';
 
@@ -64,16 +65,20 @@ const TimelineItem = ({ event, isLast, index }: { event: TimelineEvent; isLast: 
       <div className="pb-10 pt-1.5 flex-1">
         <div className="flex items-center justify-between gap-4 mb-2">
           <p className="text-[15px] font-bold text-brand-dark leading-snug group-hover:text-brand-blue transition-colors">{event.description}</p>
-          <span className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em] whitespace-nowrap bg-page-bg px-2 py-1 rounded-md">{event.timestamp.split('·')[1]}</span>
+          <span className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em] whitespace-nowrap bg-page-bg px-2 py-1 rounded-md">
+            {new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </span>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-page-bg/50 border border-border-base/50 hover:border-brand-blue/30 transition-colors cursor-default">
             <div className="w-5 h-5 rounded-lg bg-brand-blue text-white flex items-center justify-center text-[9px] font-black shadow-sm">
-              {event.author.split(' ').map(n => n[0]).join('')}
+              {typeof event.author === 'object' ? (event.author?.initials || event.author?.name?.split(' ').map((n: string) => n[0]).join('')) : event.author?.split(' ').map(n => n[0]).join('')}
             </div>
-            <span className="text-xs font-bold text-brand-dark/70">{event.author}</span>
+            <span className="text-xs font-bold text-brand-dark/70">{typeof event.author === 'object' ? event.author?.name : event.author}</span>
           </div>
-          <span className="text-xs text-text-muted font-medium opacity-60 tracking-tight">{event.timestamp.split('·')[0]}</span>
+          <span className="text-xs text-text-muted font-medium opacity-60 tracking-tight">
+            {new Date(event.timestamp).toLocaleDateString()}
+          </span>
         </div>
       </div>
     </div>
@@ -123,13 +128,13 @@ const DocumentRow = ({ doc, index }: { doc: CaseDocument & { fileUrl?: string };
 
 const NoteCard = ({ note, index }: { note: CaseNote; index: number }) => (
   <div className="flex gap-4 group animate-in-up" style={{ animationDelay: `${index * 100}ms` }}>
-    <div className={`w-10 h-10 rounded-2xl ${note.color} text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-lg shadow-brand-blue/10`}>
-      {note.initials}
+    <div className={`w-10 h-10 rounded-2xl bg-brand-blue text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-lg shadow-brand-blue/10`}>
+      {typeof note.author === 'object' ? (note.author?.initials || note.author?.name?.split(' ').map((n: string) => n[0]).join('')) : (note.initials || note.author?.split(' ').map(n => n[0]).join(''))}
     </div>
     <div className="flex-1 bg-white border border-border-base rounded-[1.5rem] p-5 hover:border-brand-blue/30 hover:shadow-md transition-all">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-bold text-brand-dark">{note.author}</span>
-        <span className="text-xs font-bold text-text-muted tracking-tight">{note.timestamp}</span>
+        <span className="text-sm font-bold text-brand-dark">{typeof note.author === 'object' ? note.author?.name : note.author}</span>
+        <span className="text-xs font-bold text-text-muted tracking-tight">{new Date(note.timestamp).toLocaleString()}</span>
       </div>
       <p className="text-sm text-text-secondary leading-relaxed font-medium">{note.text}</p>
       <div className="flex items-center gap-3 mt-4 pt-4 border-t border-border-base/50">
@@ -147,6 +152,7 @@ const NoteCard = ({ note, index }: { note: CaseNote; index: number }) => (
 
 
 function EditCaseModal({ caseData, onClose, onSave }: { caseData: any; onClose: () => void; onSave: (updated: any) => void }) {
+  const [caseNumber, setCaseNumber] = useState(caseData.caseNumber);
   const [title, setTitle] = useState(caseData.title);
   const [description, setDescription] = useState(caseData.description);
   const [status, setStatus] = useState(caseData.status);
@@ -163,12 +169,21 @@ function EditCaseModal({ caseData, onClose, onSave }: { caseData: any; onClose: 
           </button>
         </div>
         <div className="space-y-6">
-          <div>
-            <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Case Title</label>
-            <input
-              type="text" value={title} onChange={e => setTitle(e.target.value)}
-              className="w-full h-12 px-4 rounded-xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Government Case #</label>
+              <input
+                type="text" value={caseNumber} onChange={e => setCaseNumber(e.target.value)}
+                className="w-full h-12 px-4 rounded-xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Case Title</label>
+              <input
+                type="text" value={title} onChange={e => setTitle(e.target.value)}
+                className="w-full h-12 px-4 rounded-xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-sm"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Description</label>
@@ -207,7 +222,19 @@ function EditCaseModal({ caseData, onClose, onSave }: { caseData: any; onClose: 
               Cancel
             </button>
             <button
-              onClick={() => { onSave({ ...caseData, title, description, status, priority }); onClose(); }}
+              onClick={() => { 
+                const updatedData = {
+                  ...caseData,
+                  caseNumber,
+                  title,
+                  description,
+                  status,
+                  priority,
+                  deadline: caseData.deadline ? new Date(caseData.deadline).toISOString() : null
+                };
+                onSave(updatedData); 
+                onClose(); 
+              }}
               className="flex-1 h-14 bg-brand-blue text-white rounded-2xl font-bold shadow-lg shadow-brand-blue/20 hover:shadow-xl hover:-translate-y-0.5 transition-all"
             >
               Save Changes
@@ -223,6 +250,7 @@ function EditCaseModal({ caseData, onClose, onSave }: { caseData: any; onClose: 
 export default function CaseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [newNote, setNewNote] = useState('');
   const [activeTab, setActiveTab] = useState<'timeline' | 'documents' | 'notes'>('timeline');
   const [currentCase, setCurrentCase] = useState<any>(null);
@@ -230,6 +258,8 @@ export default function CaseDetailPage() {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchCase = async () => {
@@ -304,8 +334,6 @@ export default function CaseDetailPage() {
     );
   };
 
-  const [isExporting, setIsExporting] = useState(false);
-  const pdfRef = useRef<HTMLDivElement>(null);
 
   const handleExport = async () => {
     if (!pdfRef.current) return;
@@ -472,7 +500,7 @@ export default function CaseDetailPage() {
             <div className="space-y-8 flex-1">
               <div className="flex items-center gap-4 flex-wrap">
                 <span className="bg-brand-blue/5 text-brand-blue font-bold text-[10px] px-4 py-2 rounded-xl tracking-[0.15em] border border-brand-blue/10 shadow-sm backdrop-blur-sm">
-                  {caseData.id}
+                  {caseData.caseNumber}
                 </span>
                 <div className={`inline-flex items-center gap-2.5 px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-[0.15em] border ${STATUS_STYLES[caseData.status]} border-current/10 shadow-sm backdrop-blur-sm`}>
                   <div className={`w-2 h-2 rounded-full ${STATUS_DOT[caseData.status]} animate-pulse`} />
@@ -487,7 +515,7 @@ export default function CaseDetailPage() {
               </div>
               
               <div className="space-y-4">
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-brand-dark tracking-tight leading-[1.1] max-w-4xl">
+                <h1 className="text-4xl md:text-5xl font-bold text-brand-dark tracking-tight leading-[1.1] max-w-4xl">
                   {caseData.title}
                 </h1>
                 <div className="flex flex-wrap items-center gap-x-8 gap-y-4 pt-2">
@@ -495,19 +523,19 @@ export default function CaseDetailPage() {
                     <div className="w-8 h-8 rounded-lg bg-brand-blue/5 flex items-center justify-center text-brand-blue transition-colors group-hover:bg-brand-blue group-hover:text-white">
                       <History size={16} />
                     </div>
-                    <span className="text-sm font-semibold">Opened {caseData.filedDate}</span>
+                    <span className="text-sm font-semibold">Opened {new Date(caseData.filedDate).toLocaleDateString()}</span>
                   </div>
                   <div className="flex items-center gap-2.5 text-text-secondary group cursor-help">
                     <div className="w-8 h-8 rounded-lg bg-brand-blue/5 flex items-center justify-center text-brand-blue transition-colors group-hover:bg-brand-blue group-hover:text-white">
                       <Clock size={16} />
                     </div>
-                    <span className="text-sm font-semibold">Updated {caseData.updated}</span>
+                    <span className="text-sm font-semibold">Updated {new Date(caseData.updatedAt).toLocaleDateString()}</span>
                   </div>
                   <div className="flex items-center gap-2.5 text-text-secondary group cursor-help">
                     <div className="w-8 h-8 rounded-lg bg-brand-blue/5 flex items-center justify-center text-brand-blue transition-colors group-hover:bg-brand-blue group-hover:text-white">
                       <User size={16} />
                     </div>
-                    <span className="text-sm font-semibold">Lead: <span className="text-brand-dark">{caseData.attorney}</span></span>
+                    <span className="text-sm font-semibold">Lead: <span className="text-brand-dark">{typeof caseData.attorney === 'object' ? caseData.attorney?.name : caseData.attorney}</span></span>
                   </div>
                 </div>
               </div>
@@ -518,14 +546,14 @@ export default function CaseDetailPage() {
                 className="flex items-center gap-3 pt-2 cursor-pointer group w-fit"
               >
                 <div className="flex -space-x-3 overflow-hidden">
-                  {caseData.team.map((member: any, i: number) => (
+                  {(caseData.team || []).map((member: any, i: number) => (
                     <div 
-                      key={member.name}
+                      key={member.user?.name || i}
                       className="inline-block h-8 w-8 rounded-full ring-2 ring-white bg-brand-dark text-white text-[10px] font-bold flex items-center justify-center transition-transform group-hover:translate-y-[-2px]"
                       style={{ zIndex: 10 - i }}
-                      title={`${member.name} - ${member.role}`}
+                      title={`${member.user?.name} - ${member.role}`}
                     >
-                      {member.initials}
+                      {member.user?.initials || member.user?.name?.split(' ').map((n: string) => n[0]).join('')}
                     </div>
                   ))}
                 </div>
@@ -538,10 +566,10 @@ export default function CaseDetailPage() {
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-2 gap-5 shrink-0">
               {[
-                { label: 'Days Active',   value: daysOpen,                    icon: Clock,       color: 'text-brand-blue',    bg: 'bg-brand-blue/5'   },
-                { label: 'Next Deadline', value: caseData.deadline,           icon: Calendar,    color: 'text-red-500',     bg: 'bg-red-500/5'      },
+                { label: 'Days Active',   value: daysOpen === 0 ? 'Today' : daysOpen, icon: Clock, color: 'text-brand-blue', bg: 'bg-brand-blue/5' },
+                { label: 'Next Deadline', value: caseData.deadline ? new Date(caseData.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'None', icon: Calendar, color: 'text-red-500', bg: 'bg-red-500/5' },
               ].map((s) => (
-                <div key={s.label} className="glass-card rounded-[2.5rem] p-8 min-w-[200px] hover:shadow-xl hover:-translate-y-1 transition-all duration-500 group premium-border">
+                <div key={s.label} className="glass-card rounded-[2.5rem] p-6 min-w-[160px] hover:shadow-xl hover:-translate-y-1 transition-all duration-500 group premium-border">
                   <div className={`w-14 h-14 rounded-2xl ${s.bg} ${s.color} flex items-center justify-center mb-6 shadow-inner transition-transform group-hover:scale-110`}>
                     <s.icon size={28} />
                   </div>
@@ -701,7 +729,9 @@ export default function CaseDetailPage() {
                     {/* Enhanced Post Note */}
                     <div className="bg-page-bg/50 rounded-[2rem] p-6 border border-border-base mt-8">
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="w-8 h-8 rounded-xl bg-brand-blue text-white font-bold text-xs flex items-center justify-center">JW</div>
+                        <div className="w-8 h-8 rounded-xl bg-brand-blue text-white font-bold text-xs flex items-center justify-center">
+                          {user?.initials || '??'}
+                        </div>
                         <span className="text-xs font-bold text-brand-dark uppercase tracking-widest">New Case Note</span>
                       </div>
                       <div className="relative">
@@ -746,16 +776,16 @@ export default function CaseDetailPage() {
             <div id="case-team-widget">
               <SectionCard title="Case Team">
                 <div className="space-y-6">
-                  {caseData.team.map((member: any, i: number) => (
-                    <div key={member.name} className="flex items-center gap-5 group animate-in-up" style={{ animationDelay: `${i * 100}ms` }}>
+                  {(caseData.team || []).map((member: any, i: number) => (
+                    <div key={member.user?.id || i} className="flex items-center gap-5 group animate-in-up" style={{ animationDelay: `${i * 100}ms` }}>
                       <div className="relative">
                         <div className="w-14 h-14 rounded-[1.25rem] bg-brand-dark text-white font-bold text-base flex items-center justify-center shrink-0 shadow-xl shadow-brand-dark/20 group-hover:scale-110 transition-all duration-500 premium-border">
-                          {member.initials}
+                          {member.user?.initials || member.user?.name?.split(' ').map((n: string) => n[0]).join('')}
                         </div>
                         <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-lg bg-emerald-500 border-2 border-white shadow-sm" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[15px] font-bold text-brand-dark truncate group-hover:text-brand-blue transition-colors">{member.name}</p>
+                        <p className="text-[15px] font-bold text-brand-dark truncate group-hover:text-brand-blue transition-colors">{member.user?.name}</p>
                         <p className="text-[10px] font-bold text-text-muted uppercase tracking-[0.15em] mt-1">{member.role}</p>
                       </div>
                       <button className="p-3 rounded-xl bg-page-bg/50 hover:bg-brand-blue/5 text-text-muted hover:text-brand-blue transition-all premium-border opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
