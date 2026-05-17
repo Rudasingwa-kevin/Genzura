@@ -80,6 +80,12 @@ export class AuthController {
       );
 
       const { passwordHash, ...userWithoutPassword } = user;
+
+      // Send welcome email (don't wait for it)
+      EmailService.sendWelcomeEmail(user.email, user.name).catch(err =>
+        console.error('Welcome email failed:', err)
+      );
+
       res.status(201).json({ user: userWithoutPassword, token });
     } catch (error: any) {
       res.status(400).json({ error: error.message });

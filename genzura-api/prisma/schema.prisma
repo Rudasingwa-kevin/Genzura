@@ -76,23 +76,25 @@ enum NotificationType {
 }
 
 model User {
-  id           String     @id @default(cuid())
-  name         String
-  email        String     @unique
-  passwordHash String
-  role         UserRole   @default(Attorney)
-  status       UserStatus @default(Active)
-  lastActive   DateTime   @default(now())
-  initials     String
-  cases        Case[]     @relation("AttorneyCases")
+  id              String          @id @default(cuid())
+  name            String
+  email           String          @unique
+  passwordHash    String
+  role            UserRole        @default(Attorney)
+  status          UserStatus      @default(Active)
+  lastActive      DateTime        @default(now())
+  initials        String
+  cases           Case[]          @relation("AttorneyCases")
   teamMemberships CaseTeam[]
-  timelineEvents TimelineEvent[]
-  uploadedDocs CaseDocument[]
-  notes        CaseNote[]
-  feedback     Feedback[]
-  notifications Notification[]
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  timelineEvents  TimelineEvent[]
+  uploadedDocs    CaseDocument[]
+  notes           CaseNote[]
+  feedback        Feedback[]
+  notifications   Notification[]
+  calendarEvents  CalendarEvent[]
+  eventAttendees  EventAttendee[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 }
 
 model Client {
@@ -110,25 +112,26 @@ model Client {
 }
 
 model Case {
-  id            String       @id @default(cuid())
-  caseNumber    String       @unique
+  id            String          @id @default(cuid())
+  caseNumber    String          @unique
   title         String
-  client        Client       @relation(fields: [clientId], references: [id])
+  client        Client          @relation(fields: [clientId], references: [id])
   clientId      String
-  attorney      User         @relation("AttorneyCases", fields: [attorneyId], references: [id])
+  attorney      User            @relation("AttorneyCases", fields: [attorneyId], references: [id])
   attorneyId    String
-  status        CaseStatus   @default(Pending)
-  priority      CasePriority @default(Medium)
+  status        CaseStatus      @default(Pending)
+  priority      CasePriority    @default(Medium)
   type          CaseType
   deadline      DateTime?
-  filedDate     DateTime     @default(now())
-  description   String       @db.Text
+  filedDate     DateTime        @default(now())
+  description   String          @db.Text
   team          CaseTeam[]
   timeline      TimelineEvent[]
   documents     CaseDocument[]
   notes         CaseNote[]
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  events        CalendarEvent[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 }
 
 model CaseTeam {
@@ -204,4 +207,60 @@ model SystemSetting {
   value     String   @db.Text
   category  String
   updatedAt DateTime @updatedAt
+}
+
+enum CalendarEventType {
+  CourtDate
+  Hearing
+  Filing
+  Deadline
+  Meeting
+  ClientMeeting
+  Consultation
+  Other
+}
+
+model CalendarEvent {
+  id          String            @id @default(cuid())
+  title       String
+  description String?           @db.Text
+  eventType   CalendarEventType
+  startDate   DateTime
+  endDate     DateTime?
+  location    String?
+  caseId      String?
+  case        Case?             @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  attendees   EventAttendee[]
+  reminders   EventReminder[]
+  createdBy   User              @relation(fields: [createdById], references: [id])
+  createdById String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model EventAttendee {
+  id      String        @id @default(cuid())
+  event   CalendarEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId String
+  user    User          @relation(fields: [userId], references: [id])
+  userId  String
+
+  @@unique([eventId, userId])
+}
+
+enum ReminderMethod {
+  Email
+  SMS
+  InApp
+}
+
+model EventReminder {
+  id             String          @id @default(cuid())
+  event          CalendarEvent   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId        String
+  reminderTime   DateTime
+  method         ReminderMethod
+  sent           Boolean         @default(false)
+  sentAt         DateTime?
+  createdAt      DateTime        @default(now())
 }

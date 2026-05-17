@@ -11,6 +11,7 @@ import documentRoutes from './routes/documentRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
 import clientRoutes from './routes/clientRoutes.js';
+import calendarRoutes from './routes/calendarRoutes.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 import { createServer } from 'http';
 import { initSocket } from './socket.js';
@@ -37,17 +38,24 @@ app.use('/api/documents', documentRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/clients', clientRoutes);
+app.use('/api/calendar', calendarRoutes);
 
 // Error Handling
 app.use(errorHandler);
 
 // Enhanced health check with system clock validation
-app.get('/health', (req, res) => {
+app.get('/health', async (req, res) => {
   const clockHealth = DateService.systemClockHealthCheck();
+
+  // Test email connection
+  const { EmailService } = await import('./services/emailService.js');
+  const emailConnected = await EmailService.testConnection();
+
   res.json({
-    status: clockHealth.healthy ? 'ok' : 'warning',
+    status: clockHealth.healthy && emailConnected ? 'ok' : 'warning',
     timestamp: DateService.now().toISOString(),
-    systemClock: clockHealth
+    systemClock: clockHealth,
+    emailService: emailConnected ? 'connected' : 'disconnected'
   });
 });
 
