@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   FileText, 
   Search as SearchIcon, 
@@ -12,39 +12,62 @@ import {
   Share2,
   Trash2,
   Plus,
-  Clock
+  Clock,
+  Loader2
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
-import { DOCUMENTS, type DocType } from '../data/documents';
+import { documentService } from '../api/services/document.service';
+import { caseService } from '../api/services/case.service';
+import { TableSkeleton } from '../components/Skeleton';
+import toast from 'react-hot-toast';
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-const UploadModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
-  const [files, setFiles] = useState<{ name: string; size: string; progress: number; status: 'uploading' | 'complete' }[]>([]);
+const UploadModal = ({ isOpen, onClose, onUploadComplete }: { isOpen: boolean; onClose: () => void; onUploadComplete: () => void }) => {
+  const [cases, setCases] = useState<any[]>([]);
+  const [selectedCaseId, setSelectedCaseId] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
-  const simulateUpload = (fileName: string, size: string) => {
-    const newFile = { name: fileName, size, progress: 0, status: 'uploading' as const };
-    setFiles(prev => [...prev, newFile]);
-
-    let p = 0;
-    const interval = setInterval(() => {
-      p += Math.random() * 30;
-      if (p >= 100) {
-        p = 100;
-        clearInterval(interval);
-        setFiles(prev => prev.map(f => f.name === fileName ? { ...f, progress: 100, status: 'complete' } : f));
-      } else {
-        setFiles(prev => prev.map(f => f.name === fileName ? { ...f, progress: p } : f));
-      }
-    }, 400);
-  };
+  useEffect(() => {
+    if (isOpen) {
+      caseService.getAll().then(setCases).catch(console.error);
+    }
+  }, [isOpen]);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    const fileName = "Legal_Brief_Draft.pdf"; // Mock file name
-    simulateUpload(fileName, "2.4 MB");
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!selectedCaseId || !file) {
+      toast.error('Please select a case and a file');
+      return;
+    }
+    setIsUploading(true);
+    try {
+      await documentService.upload(selectedCaseId, file);
+      toast.success('Document uploaded successfully');
+      onUploadComplete();
+      onClose();
+      setFile(null);
+      setSelectedCaseId('');
+    } catch (error) {
+      toast.error('Failed to upload document');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -55,12 +78,26 @@ const UploadModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
       <div className="relative bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl border border-border-base p-10 animate-in slide-in-from-bottom-20 fade-in duration-500 ease-out">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-brand-dark tracking-tight">Upload Documents</h2>
-            <p className="text-text-secondary font-medium text-sm mt-1">Add new files to your legal workspace.</p>
+            <h2 className="text-2xl font-bold text-brand-dark tracking-tight">Upload Document</h2>
+            <p className="text-text-secondary font-medium text-sm mt-1">Add new files to a specific case.</p>
           </div>
           <button onClick={onClose} className="p-2.5 rounded-2xl hover:bg-page-bg text-text-muted transition-all">
             <X size={20} />
           </button>
+        </div>
+
+        <div className="mb-6">
+          <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">Select Case</label>
+          <select 
+            className="w-full h-12 px-5 mt-2 rounded-2xl border border-border-base focus:border-brand-blue outline-none transition-all font-bold text-sm bg-page-bg/30 appearance-none cursor-pointer"
+            value={selectedCaseId}
+            onChange={(e) => setSelectedCaseId(e.target.value)}
+          >
+            <option value="" disabled>Choose a case...</option>
+            {cases.map(c => (
+              <option key={c.id} value={c.id}>{c.caseNumber} - {c.title}</option>
+            ))}
+          </select>
         </div>
 
         {/* Drag & Drop Area */}
@@ -72,48 +109,43 @@ const UploadModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
             isDragging ? 'border-brand-blue bg-brand-light/50 scale-[0.99]' : 'border-border-base bg-page-bg/30 hover:border-brand-blue/30'
           }`}
         >
-          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm border border-border-base">
-            <Upload className={`transition-all duration-500 ${isDragging ? 'text-brand-blue -translate-y-1' : 'text-text-muted'}`} size={32} />
-          </div>
-          <h3 className="text-lg font-bold text-brand-dark mb-2">Drag & drop files here</h3>
-          <p className="text-sm text-text-secondary font-medium mb-8">Maximum file size 50MB. Supported: PDF, DOCX, XLSX, JPG</p>
-          <button className="bg-white border border-border-base px-6 py-2.5 rounded-xl text-sm font-bold text-brand-dark hover:bg-page-bg transition-all shadow-sm">
-            Or select files
-          </button>
+          {file ? (
+            <div>
+              <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm border border-border-base text-brand-blue">
+                <FileText size={32} />
+              </div>
+              <p className="font-bold text-brand-dark">{file.name}</p>
+              <p className="text-xs text-text-muted">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+              <button onClick={() => setFile(null)} className="mt-4 text-xs font-bold text-red-500 hover:underline">Remove</button>
+            </div>
+          ) : (
+            <>
+              <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm border border-border-base">
+                <Upload className={`transition-all duration-500 ${isDragging ? 'text-brand-blue -translate-y-1' : 'text-text-muted'}`} size={32} />
+              </div>
+              <h3 className="text-lg font-bold text-brand-dark mb-2">Drag & drop files here</h3>
+              <p className="text-sm text-text-secondary font-medium mb-8">Maximum file size 50MB. Supported: PDF, DOCX, XLSX, JPG</p>
+              <label className="bg-white border border-border-base px-6 py-2.5 rounded-xl text-sm font-bold text-brand-dark hover:bg-page-bg transition-all shadow-sm cursor-pointer inline-block">
+                Or select files
+                <input type="file" className="hidden" onChange={handleFileChange} />
+              </label>
+            </>
+          )}
         </div>
 
-        {/* File Progress List */}
-        {files.length > 0 && (
-          <div className="mt-8 space-y-4 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-            {files.map((file, idx) => (
-              <div key={idx} className="bg-page-bg/50 rounded-2xl p-4 border border-border-base/50 flex items-center gap-4 animate-in slide-in-from-top-2 duration-300">
-                <div className="w-10 h-10 rounded-xl bg-white border border-border-base flex items-center justify-center shadow-sm">
-                  <FileText size={18} className="text-brand-blue" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <p className="text-xs font-bold text-brand-dark truncate">{file.name}</p>
-                    <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">{file.status === 'complete' ? 'Success' : `${Math.round(file.progress)}%`}</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-white rounded-full overflow-hidden border border-border-base/30">
-                    <div className="h-full bg-brand-blue transition-all duration-300" style={{ width: `${file.progress}%` }} />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
         <div className="mt-10 flex gap-3">
-          <button onClick={onClose} className="flex-1 h-12 rounded-xl border border-border-base font-bold text-text-muted hover:bg-page-bg transition-all">Cancel</button>
-          <button onClick={onClose} className="flex-1 h-12 rounded-xl bg-brand-blue text-white font-bold shadow-lg shadow-brand-blue/20 hover:shadow-xl hover:-translate-y-0.5 transition-all">Done</button>
+          <button onClick={onClose} disabled={isUploading} className="flex-1 h-12 rounded-xl border border-border-base font-bold text-text-muted hover:bg-page-bg transition-all">Cancel</button>
+          <button onClick={handleUpload} disabled={isUploading || !file || !selectedCaseId} className="flex-1 h-12 rounded-xl bg-brand-blue text-white font-bold shadow-lg shadow-brand-blue/20 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50 flex justify-center items-center gap-2">
+            {isUploading && <Loader2 size={16} className="animate-spin" />}
+            {isUploading ? 'Uploading...' : 'Upload'}
+          </button>
         </div>
       </div>
     </div>
   );
 };
 
-const DocumentDrawer = ({ doc, isOpen, onClose }: { doc: any; isOpen: boolean; onClose: () => void }) => {
+const DocumentDrawer = ({ doc, isOpen, onClose, onDelete }: { doc: any; isOpen: boolean; onClose: () => void; onDelete: (id: string) => void }) => {
   if (!doc) return null;
 
   return (
@@ -126,7 +158,7 @@ const DocumentDrawer = ({ doc, isOpen, onClose }: { doc: any; isOpen: boolean; o
           </button>
           <div className="flex items-center gap-3">
             <button className="p-3 rounded-2xl hover:bg-page-bg text-text-muted transition-all"><Share2 size={20} /></button>
-            <button className="p-3 rounded-2xl bg-brand-blue text-white shadow-lg shadow-brand-blue/20 hover:-translate-y-0.5 transition-all"><Download size={20} /></button>
+            <a href={`http://localhost:5000${doc.fileUrl}`} download target="_blank" rel="noreferrer" className="p-3 rounded-2xl bg-brand-blue text-white shadow-lg shadow-brand-blue/20 hover:-translate-y-0.5 transition-all inline-block"><Download size={20} /></a>
           </div>
         </div>
 
@@ -145,11 +177,15 @@ const DocumentDrawer = ({ doc, isOpen, onClose }: { doc: any; isOpen: boolean; o
           <div className="grid grid-cols-2 gap-4">
             <div className="p-6 rounded-[2rem] bg-page-bg/50 border border-border-base">
               <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1">Uploaded</p>
-              <p className="text-sm font-bold text-brand-dark">{doc.uploadDate}</p>
+              <p className="text-sm font-bold text-brand-dark">{new Date(doc.uploadedAt).toLocaleDateString()}</p>
             </div>
             <div className="p-6 rounded-[2rem] bg-page-bg/50 border border-border-base">
               <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1">Author</p>
-              <p className="text-sm font-bold text-brand-dark">{doc.uploader}</p>
+              <p className="text-sm font-bold text-brand-dark">{doc.uploadedBy?.name}</p>
+            </div>
+            <div className="col-span-2 p-6 rounded-[2rem] bg-page-bg/50 border border-border-base">
+              <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1">Case Association</p>
+              <p className="text-sm font-bold text-brand-dark">{doc.case?.caseNumber} - {doc.case?.title}</p>
             </div>
           </div>
 
@@ -159,13 +195,19 @@ const DocumentDrawer = ({ doc, isOpen, onClose }: { doc: any; isOpen: boolean; o
               <div>
                 <FileIcon size={40} className="mx-auto text-text-muted mb-4 opacity-30" />
                 <p className="text-sm font-bold text-text-muted">Preview not available for this file type</p>
-                <button className="mt-4 text-xs font-bold text-brand-blue hover:underline">Download to view</button>
+                <a href={`http://localhost:5000${doc.fileUrl}`} target="_blank" rel="noreferrer" className="mt-4 text-xs font-bold text-brand-blue hover:underline block">Download to view</a>
               </div>
             </div>
           </div>
 
           <div className="pt-8 border-t border-border-base">
-            <button className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-red-50 text-red-600 font-bold text-xs uppercase tracking-widest hover:bg-red-100 transition-all">
+            <button 
+              onClick={() => {
+                onDelete(doc.id);
+                onClose();
+              }}
+              className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-red-50 text-red-600 font-bold text-xs uppercase tracking-widest hover:bg-red-100 transition-all"
+            >
               <Trash2 size={16} /> Delete Permanently
             </button>
           </div>
@@ -179,30 +221,59 @@ const DocumentDrawer = ({ doc, isOpen, onClose }: { doc: any; isOpen: boolean; o
 
 export default function DocumentsPage() {
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<DocType | 'All'>('All');
+  const [filter, setFilter] = useState<string | 'All'>('All');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<any>(null);
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredDocs = DOCUMENTS.filter(doc => {
-    const matchesSearch = doc.name.toLowerCase().includes(search.toLowerCase()) || 
-                         (doc.caseId && doc.caseId.toLowerCase().includes(search.toLowerCase()));
+  const fetchDocuments = async () => {
+    try {
+      setIsLoading(true);
+      const data = await documentService.getAll();
+      setDocuments(data);
+    } catch (error) {
+      console.error('Failed to fetch documents:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDocuments();
+  }, []);
+
+  const handleDelete = async (id: string) => {
+    try {
+      await documentService.remove(id);
+      setDocuments(prev => prev.filter(d => d.id !== id));
+      toast.success('Document deleted');
+    } catch (error) {
+      toast.error('Failed to delete document');
+    }
+  };
+
+  const filteredDocs = documents.filter(doc => {
+    const searchString = `${doc.name} ${doc.case?.caseNumber} ${doc.case?.title}`.toLowerCase();
+    const matchesSearch = searchString.includes(search.toLowerCase());
     const matchesFilter = filter === 'All' || doc.type === filter;
     return matchesSearch && matchesFilter;
   });
 
-  const getIcon = (type: DocType) => {
+  const getIcon = (type: string) => {
     switch (type) {
       case 'PDF': return <FileText className="text-red-500" />;
       case 'DOCX': return <FileIcon className="text-blue-500" />;
       case 'XLSX': return <FileSpreadsheet className="text-emerald-500" />;
-      case 'JPG': return <ImageIcon className="text-violet-500" />;
+      case 'IMG': return <ImageIcon className="text-violet-500" />;
+      default: return <FileText className="text-text-muted" />;
     }
   };
 
   return (
     <AppLayout>
-      <UploadModal isOpen={isUploadOpen} onClose={() => setIsUploadOpen(false)} />
-      <DocumentDrawer doc={selectedDoc} isOpen={!!selectedDoc} onClose={() => setSelectedDoc(null)} />
+      <UploadModal isOpen={isUploadOpen} onClose={() => setIsUploadOpen(false)} onUploadComplete={fetchDocuments} />
+      <DocumentDrawer doc={selectedDoc} isOpen={!!selectedDoc} onClose={() => setSelectedDoc(null)} onDelete={handleDelete} />
 
       <div className="space-y-8 pb-12">
         {/* Header */}
@@ -234,7 +305,7 @@ export default function DocumentsPage() {
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex p-1 bg-page-bg rounded-xl border border-border-base">
-              {(['All', 'PDF', 'DOCX', 'XLSX', 'JPG'] as const).map((t) => (
+              {(['All', 'PDF', 'DOCX', 'XLSX', 'IMG'] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setFilter(t)}
@@ -255,77 +326,83 @@ export default function DocumentsPage() {
         {/* Documents Grid/Table */}
         <div className="bg-white rounded-[2rem] border border-border-base shadow-sm overflow-hidden animate-in-up">
           <div className="overflow-x-auto">
-            <table className="w-full text-left whitespace-nowrap">
-              <thead>
-                <tr className="bg-page-bg/40 border-b border-border-base">
-                  <th className="px-8 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest">Document</th>
-                  <th className="px-8 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest">Case Association</th>
-                  <th className="px-8 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest">Last Updated</th>
-                  <th className="px-8 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-base/50">
-                {filteredDocs.length > 0 ? (
-                  filteredDocs.map((doc, i) => (
-                    <tr 
-                      key={doc.id} 
-                      className="group hover:bg-page-bg/30 transition-all cursor-pointer animate-in-up" 
-                      style={{ animationDelay: `${i * 50}ms` }}
-                      onClick={() => setSelectedDoc(doc)}
-                    >
-                      <td className="px-8 py-5">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-page-bg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                            {getIcon(doc.type)}
+            {isLoading ? (
+              <div className="p-8">
+                <TableSkeleton />
+              </div>
+            ) : (
+              <table className="w-full text-left whitespace-nowrap">
+                <thead>
+                  <tr className="bg-page-bg/40 border-b border-border-base">
+                    <th className="px-8 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest">Document</th>
+                    <th className="px-8 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest">Case Association</th>
+                    <th className="px-8 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest">Last Updated</th>
+                    <th className="px-8 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-base/50">
+                  {filteredDocs.length > 0 ? (
+                    filteredDocs.map((doc, i) => (
+                      <tr 
+                        key={doc.id} 
+                        className="group hover:bg-page-bg/30 transition-all cursor-pointer animate-in-up" 
+                        style={{ animationDelay: `${(i % 10) * 50}ms` }}
+                        onClick={() => setSelectedDoc(doc)}
+                      >
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-page-bg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                              {getIcon(doc.type)}
+                            </div>
+                            <div>
+                              <p className="font-bold text-brand-dark text-sm leading-tight group-hover:text-brand-blue transition-colors">{doc.name}</p>
+                              <p className="text-xs text-text-muted mt-1 font-medium">{doc.size} · {doc.type}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-bold text-brand-dark text-sm leading-tight group-hover:text-brand-blue transition-colors">{doc.name}</p>
-                            <p className="text-xs text-text-muted mt-1 font-medium">{doc.size} · {doc.type}</p>
+                        </td>
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-2">
+                            <span className="px-3 py-1 rounded-lg bg-brand-light text-brand-blue text-[10px] font-bold border border-brand-blue/10">
+                              {doc.case?.caseNumber || 'Unknown'}
+                            </span>
                           </div>
+                        </td>
+                        <td className="px-8 py-5">
+                          <div className="flex items-center gap-2 text-xs text-text-secondary font-medium">
+                            <Clock size={14} className="text-text-muted" />
+                            {new Date(doc.uploadedAt).toLocaleDateString()}
+                          </div>
+                        </td>
+                        <td className="px-8 py-5" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <a href={`http://localhost:5000${doc.fileUrl}`} download target="_blank" rel="noreferrer" className="p-2.5 rounded-xl hover:bg-white hover:shadow-sm text-text-muted hover:text-brand-blue transition-all" title="Download">
+                              <Download size={16} />
+                            </a>
+                            <button className="p-2.5 rounded-xl hover:bg-white hover:shadow-sm text-text-muted hover:text-brand-blue transition-all" title="Share">
+                              <Share2 size={16} />
+                            </button>
+                            <div className="w-px h-4 bg-border-base mx-1" />
+                            <button onClick={() => handleDelete(doc.id)} className="p-2.5 rounded-xl hover:bg-red-50 text-text-muted hover:text-red-500 transition-all" title="Delete">
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="py-20 text-center">
+                        <div className="w-16 h-16 bg-page-bg rounded-2xl flex items-center justify-center mx-auto mb-4 border border-dashed border-border-base">
+                          <FileText size={24} className="text-text-muted opacity-30" />
                         </div>
-                      </td>
-                      <td className="px-8 py-5">
-                        <div className="flex items-center gap-2">
-                          <span className="px-2 py-1 rounded-lg bg-brand-light text-brand-blue text-[10px] font-bold border border-brand-blue/10">
-                            {doc.caseId || 'Personal'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-8 py-5">
-                        <div className="flex items-center gap-2 text-xs text-text-secondary font-medium">
-                          <Clock size={14} className="text-text-muted" />
-                          {doc.uploadDate}
-                        </div>
-                      </td>
-                      <td className="px-8 py-5" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button className="p-2.5 rounded-xl hover:bg-white hover:shadow-sm text-text-muted hover:text-brand-blue transition-all" title="Download">
-                            <Download size={16} />
-                          </button>
-                          <button className="p-2.5 rounded-xl hover:bg-white hover:shadow-sm text-text-muted hover:text-brand-blue transition-all" title="Share">
-                            <Share2 size={16} />
-                          </button>
-                          <div className="w-px h-4 bg-border-base mx-1" />
-                          <button className="p-2.5 rounded-xl hover:bg-red-50 text-text-muted hover:text-red-500 transition-all" title="Delete">
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
+                        <p className="text-sm font-bold text-text-muted">No documents found</p>
+                        <button onClick={() => { setSearch(''); setFilter('All'); }} className="mt-4 text-xs font-bold text-brand-blue hover:underline">Clear filters</button>
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={4} className="py-20 text-center">
-                      <div className="w-16 h-16 bg-page-bg rounded-2xl flex items-center justify-center mx-auto mb-4 border border-dashed border-border-base">
-                        <FileText size={24} className="text-text-muted opacity-30" />
-                      </div>
-                      <p className="text-sm font-bold text-text-muted">No documents matching your search</p>
-                      <button onClick={() => { setSearch(''); setFilter('All'); }} className="mt-4 text-xs font-bold text-brand-blue hover:underline">Clear all filters</button>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </div>

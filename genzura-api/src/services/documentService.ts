@@ -3,6 +3,16 @@ import { PrismaClient, DocumentType } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export class DocumentService {
+  static async getAllDocuments() {
+    return prisma.caseDocument.findMany({
+      include: { 
+        uploadedBy: true,
+        case: { select: { caseNumber: true, title: true } }
+      },
+      orderBy: { uploadedAt: 'desc' }
+    });
+  }
+
   static async getCaseDocuments(caseId: string) {
     return prisma.caseDocument.findMany({
       where: { caseId },

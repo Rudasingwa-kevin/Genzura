@@ -1,6 +1,11 @@
 import apiClient from '../client';
 
 export const documentService = {
+  getAll: async () => {
+    const response = await apiClient.get('/documents');
+    return response.data;
+  },
+
   getByCase: async (caseId: string) => {
     const response = await apiClient.get(`/documents/case/${caseId}`);
     return response.data;
