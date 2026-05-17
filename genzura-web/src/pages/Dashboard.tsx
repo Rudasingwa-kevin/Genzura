@@ -72,7 +72,13 @@ const Dashboard = () => {
     const fetchCases = async () => {
       try {
         const data = await caseService.getAll();
-        setCases(data);
+        // Transform API response to match expected format
+        const transformedCases = data.map((c: any) => ({
+          ...c,
+          client: c.client?.name || c.clientName || 'Unknown Client',
+          attorney: c.attorney?.name || c.attorneyName || 'Unknown Attorney',
+        }));
+        setCases(transformedCases);
       } catch (error) {
         console.error('Failed to fetch cases:', error);
       } finally {

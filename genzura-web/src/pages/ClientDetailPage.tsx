@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Mail, Phone, MapPin, Briefcase,
   FileText, MessageSquare, ExternalLink, AlertCircle, Plus, Clock
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import AppLayout from '../components/AppLayout';
-import { CLIENTS } from '../data/clients';
-import { DOCUMENTS } from '../data/documents';
+import { clientService } from '../api/services/client.service';
+import { documentService } from '../api/services/document.service';
+import { CardSkeleton } from '../components/Skeleton';
 
 type TabKey = 'cases' | 'documents' | 'notes';
 
@@ -23,10 +25,49 @@ export default function ClientDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabKey>('cases');
+  const [client, setClient] = useState<any>(null);
+  const [clientDocs, setClientDocs] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
-  const client = CLIENTS.find((c) => c.id === Number(id));
+  useEffect(() => {
+    const fetchClientData = async () => {
+      if (!id) return;
 
-  if (!client) {
+      try {
+        setIsLoading(true);
+        const [clientData, documents] = await Promise.all([
+          clientService.getById(id),
+          documentService.getAll()
+        ]);
+
+        setClient(clientData);
+        // Filter documents for this client
+        setClientDocs(documents.filter((d: any) => d.caseId && clientData.cases?.some((c: any) => c.id === d.caseId)));
+      } catch (error) {
+        console.error('Failed to fetch client:', error);
+        setNotFound(true);
+        toast.error('Failed to load client details');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchClientData();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="space-y-6">
+          <CardSkeleton />
+          <CardSkeleton />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (notFound || !client) {
     return (
       <AppLayout>
         <div className="flex flex-col items-center justify-center py-32 text-center">
@@ -43,13 +84,10 @@ export default function ClientDetailPage() {
     );
   }
 
-  // Filter documents for this client
-  const clientDocs = DOCUMENTS.filter((d) => d.clientName === client.name);
-
   const tabs: { key: TabKey; label: string; icon: React.ElementType; count: number }[] = [
-    { key: 'cases',     label: 'Cases',     icon: Briefcase,    count: client.recentCases.length },
+    { key: 'cases',     label: 'Cases',     icon: Briefcase,    count: client.cases?.length || 0 },
     { key: 'documents', label: 'Documents', icon: FileText,     count: clientDocs.length },
-    { key: 'notes',     label: 'Notes',     icon: MessageSquare, count: client.notes.length },
+    { key: 'notes',     label: 'Notes',     icon: MessageSquare, count: 0 },
   ];
 
   return (
@@ -65,22 +103,24 @@ export default function ClientDetailPage() {
       {/* ── Profile Header ── */}
       <div className="bg-white rounded-[2rem] border border-border-base p-8 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center gap-6">
-          <div className={`w-20 h-20 rounded-[1.25rem] ${client.color} text-white font-bold text-2xl flex items-center justify-center shadow-xl shrink-0`}>
-            {client.initials}
+          <div className="w-20 h-20 rounded-[1.25rem] bg-brand-blue text-white font-bold text-2xl flex items-center justify-center shadow-xl shrink-0">
+            {client.name?.substring(0, 2).toUpperCase() || 'CL'}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-3 mb-1">
               <h1 className="text-3xl font-bold text-brand-dark">{client.name}</h1>
-              <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-brand-light text-brand-blue">
-                {client.industry}
-              </span>
-              {client.activeCases > 0 && (
+              {client.industry && (
+                <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-brand-light text-brand-blue">
+                  {client.industry}
+                </span>
+              )}
+              {client.cases?.filter((c: any) => c.status === 'Active').length > 0 && (
                 <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700">
-                  {client.activeCases} Active Case{client.activeCases > 1 ? 's' : ''}
+                  {client.cases.filter((c: any) => c.status === 'Active').length} Active Case{client.cases.filter((c: any) => c.status === 'Active').length > 1 ? 's' : ''}
                 </span>
               )}
             </div>
-            <p className="text-text-secondary">{client.company} · Client since {client.since}</p>
+            <p className="text-text-secondary">{client.company || client.name} · Client since {new Date(client.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
           </div>
           <div className="flex gap-3 shrink-0">
             <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border-base text-sm font-bold text-brand-dark hover:bg-page-bg transition-colors">
@@ -123,9 +163,9 @@ export default function ClientDetailPage() {
             <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted mb-5">Case Overview</h3>
             <div className="grid grid-cols-3 gap-3">
               {[
-                { label: 'Total', value: client.cases },
-                { label: 'Active', value: client.activeCases },
-                { label: 'Resolved', value: client.cases - client.activeCases },
+                { label: 'Total', value: client.cases?.length || 0 },
+                { label: 'Active', value: client.cases?.filter((c: any) => c.status === 'Active').length || 0 },
+                { label: 'Resolved', value: client.cases?.filter((c: any) => c.status === 'Resolved').length || 0 },
               ].map((s) => (
                 <div key={s.label} className="text-center bg-page-bg rounded-xl py-4">
                   <p className="text-2xl font-bold text-brand-dark">{s.value}</p>
@@ -171,9 +211,9 @@ export default function ClientDetailPage() {
             {/* Cases Tab */}
             {activeTab === 'cases' && (
               <div className="p-6">
-                {client.recentCases.length > 0 ? (
+                {client.cases && client.cases.length > 0 ? (
                   <div className="space-y-3">
-                    {client.recentCases.map((rc) => (
+                    {client.cases.map((rc: any) => (
                       <Link
                         key={rc.id}
                         to={`/cases/${rc.id}`}
@@ -181,12 +221,12 @@ export default function ClientDetailPage() {
                       >
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-xl bg-white border border-border-base text-brand-blue font-bold text-[9px] flex items-center justify-center shadow-sm">
-                            {rc.id}
+                            {rc.caseNumber || rc.id.slice(0, 6)}
                           </div>
                           <div>
                             <p className="text-sm font-bold text-brand-dark group-hover:text-brand-blue transition-colors">{rc.title}</p>
                             <p className="text-xs text-text-muted flex items-center gap-1 mt-0.5">
-                              <Clock size={11} /> {rc.date}
+                              <Clock size={11} /> {new Date(rc.filedDate || rc.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                             </p>
                           </div>
                         </div>
@@ -224,12 +264,12 @@ export default function ClientDetailPage() {
                           </div>
                           <div>
                             <p className="text-sm font-bold text-brand-dark group-hover:text-brand-blue transition-colors truncate max-w-[280px]">{doc.name}</p>
-                            <p className="text-xs text-text-muted mt-0.5">{doc.size} · Uploaded {new Date(doc.uploadDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                            <p className="text-xs text-text-muted mt-0.5">{doc.size} · Uploaded {new Date(doc.uploadedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                           </div>
                         </div>
                         {doc.caseId && (
                           <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-brand-light text-brand-blue">
-                            {doc.caseId}
+                            Case Doc
                           </span>
                         )}
                       </div>
@@ -249,24 +289,7 @@ export default function ClientDetailPage() {
                     <Plus size={16} /> Add Note
                   </button>
                 </div>
-                {client.notes.length > 0 ? (
-                  <div className="space-y-4">
-                    {client.notes.map((note) => (
-                      <div key={note.id} className="p-5 bg-page-bg rounded-2xl border-l-4 border-brand-blue/40">
-                        <p className="text-sm text-brand-dark leading-relaxed">{note.text}</p>
-                        <div className="flex items-center gap-3 mt-3">
-                          <div className="w-6 h-6 rounded-full bg-brand-light flex items-center justify-center text-brand-blue font-bold text-[9px]">
-                            {note.author.charAt(0)}
-                          </div>
-                          <span className="text-xs font-semibold text-text-secondary">{note.author}</span>
-                          <span className="text-xs text-text-muted">· {note.date}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 text-text-muted">No notes yet. Add a note to keep track of important details.</div>
-                )}
+                <div className="text-center py-12 text-text-muted">No notes yet. Add a note to keep track of important details.</div>
               </div>
             )}
 

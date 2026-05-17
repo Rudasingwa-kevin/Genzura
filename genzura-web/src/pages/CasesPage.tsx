@@ -34,7 +34,13 @@ export default function CasesPage() {
     const fetchCases = async () => {
       try {
         const data = await caseService.getAll();
-        setLocalCases(data);
+        // Transform API response to match expected format
+        const transformedCases = data.map((c: any) => ({
+          ...c,
+          client: c.client?.name || c.clientName || 'Unknown Client',
+          attorney: c.attorney?.name || c.attorneyName || 'Unknown Attorney',
+        }));
+        setLocalCases(transformedCases);
       } catch (error) {
         console.error('Failed to fetch cases:', error);
         toast.error('Failed to sync case records.');

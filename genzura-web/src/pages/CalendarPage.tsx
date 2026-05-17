@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CheckSquare, Plus, Clock, MoreVertical, AlertCircle, X, ExternalLink, MapPin, Download } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
-import { EVENTS, TASKS, type CalendarEvent, type Task, type EventType } from '../data/calendar';
+import { type CalendarEvent, type Task, type EventType } from '../data/calendar';
 import { caseService } from '../api/services/case.service';
 
 // ─── Modals ───────────────────────────────────────────────────────────────────
@@ -193,17 +193,19 @@ function EventDetailModal({ event, onClose }: { event: CalendarEvent; onClose: (
 
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [tasks, setTasks] = useState(TASKS);
-  const [events, setEvents] = useState(EVENTS);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [showEventModal, setShowEventModal] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [draggedEvent, setDraggedEvent] = useState<CalendarEvent | null>(null);
   const [taskFilter, setTaskFilter] = useState<'All' | 'Overdue' | 'My Tasks'>('All');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchCases = async () => {
       try {
+        setIsLoading(true);
         const data = await caseService.getAll();
         const deadlineEvents: CalendarEvent[] = data
           .filter((c: any) => c.deadline)
@@ -212,24 +214,18 @@ export default function CalendarPage() {
             title: `${c.title} Deadline`,
             date: new Date(c.deadline).toISOString().split('T')[0],
             time: '11:59 PM',
-            type: 'Deadline',
+            type: 'Deadline' as EventType,
             color: 'bg-amber-500',
             caseId: c.id,
-            description: `Case deadline for ${c.client}`
+            description: `Case deadline for ${c.client || 'Client'}`
           }));
-        
-        // Merge with mock events, avoiding duplicates by id if any
-        setEvents(prev => {
-          const newEvents = [...prev];
-          deadlineEvents.forEach(de => {
-            if (!newEvents.find(e => e.id === de.id)) {
-              newEvents.push(de);
-            }
-          });
-          return newEvents;
-        });
+
+        setEvents(deadlineEvents);
       } catch (error) {
         console.error('Failed to sync case deadlines', error);
+        toast.error('Failed to load calendar events');
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchCases();
