@@ -76,4 +76,24 @@ export class CaseController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  static async update(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const updatedCase = await CaseService.updateCase(id, req.body);
+      res.json(updatedCase);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async delete(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      await CaseService.deleteCase(id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 }

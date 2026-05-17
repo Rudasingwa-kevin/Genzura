@@ -79,17 +79,17 @@ export const CaseSummaryPDF = React.forwardRef<HTMLDivElement, CaseSummaryPDFPro
               <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
                 <User size={16} /> Client Information
               </h3>
-              <p className="text-3xl font-bold text-slate-800 leading-tight mb-1">{caseData.client}</p>
-              <p className="text-lg font-bold text-slate-500 mb-6">{caseData.clientCompany}</p>
+              <p className="text-3xl font-bold text-slate-800 leading-tight mb-1">{caseData.client?.name}</p>
+              <p className="text-lg font-bold text-slate-500 mb-6">{caseData.client?.company || 'Private Individual'}</p>
               
               <div className="space-y-4">
                 <div className="flex items-center gap-4 text-slate-600">
                   <Mail size={18} />
-                  <span className="text-lg font-semibold">{caseData.clientEmail}</span>
+                  <span className="text-lg font-semibold">{caseData.client?.email}</span>
                 </div>
                 <div className="flex items-center gap-4 text-slate-600">
                   <Phone size={18} />
-                  <span className="text-lg font-semibold">{caseData.clientPhone}</span>
+                  <span className="text-lg font-semibold">{caseData.client?.phone || 'No phone on record'}</span>
                 </div>
               </div>
             </div>

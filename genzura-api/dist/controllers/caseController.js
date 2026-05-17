@@ -76,5 +76,25 @@ export class CaseController {
             res.status(500).json({ error: error.message });
         }
     }
+    static async update(req, res) {
+        try {
+            const { id } = req.params;
+            const updatedCase = await CaseService.updateCase(id, req.body);
+            res.json(updatedCase);
+        }
+        catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+    static async delete(req, res) {
+        try {
+            const { id } = req.params;
+            await CaseService.deleteCase(id);
+            res.status(204).send();
+        }
+        catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
 }
 //# sourceMappingURL=caseController.js.map

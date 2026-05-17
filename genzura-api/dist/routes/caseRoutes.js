@@ -8,6 +8,8 @@ router.get('/analytics', CaseController.getAnalytics);
 router.get('/:id', CaseController.getOne);
 router.post('/', CaseController.create);
 router.patch('/:id/status', CaseController.updateStatus);
+router.put('/:id', CaseController.update);
+router.delete('/:id', CaseController.delete);
 router.post('/:id/notes', CaseController.addNote);
 router.post('/:id/team', CaseController.addTeamMember);
 export default router;

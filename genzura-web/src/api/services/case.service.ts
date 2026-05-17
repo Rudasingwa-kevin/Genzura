@@ -35,4 +35,14 @@ export const caseService = {
     const response = await apiClient.post(`/cases/${caseId}/team`, { userId });
     return response.data;
   },
+  
+  update: async (id: string, data: any) => {
+    const response = await apiClient.put(`/cases/${id}`, data);
+    return response.data;
+  },
+
+  delete: async (id: string) => {
+    const response = await apiClient.delete(`/cases/${id}`);
+    return response.data;
+  },
 };

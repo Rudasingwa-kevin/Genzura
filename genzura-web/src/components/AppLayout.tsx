@@ -26,17 +26,9 @@ import { useNotifications } from '../contexts/NotificationContext';
 import NewCaseModal from './NewCaseModal';
 import Breadcrumbs from './Breadcrumbs';
 import CommandPalette from './CommandPalette';
+import EmptyState from './EmptyState';
+import { CASES } from '../data/cases';
 
-// ─── Notifications Data ────────────────────────────────────────────────────────
-interface Notification {
-  id: string;
-  type: 'case' | 'deadline' | 'document' | 'alert' | 'resolved';
-  title: string;
-  body: string;
-  time: string;
-  read: boolean;
-  link?: string;
-}
 
 
 
@@ -191,58 +183,6 @@ const SidebarItem = ({ icon: Icon, label, to }: { icon: React.ElementType; label
   );
 };
 
-// ─── Search Results Dropdown ───────────────────────────────────────────────────
-function SearchResultDropdown({
-  results,
-  onClose,
-  onClear
-}: {
-  results: typeof CASES;
-  onClose: () => void;
-  onClear: () => void;
-}) {
-  const navigate = useNavigate();
-
-  if (results.length === 0) return null;
-
-  return (
-    <div className="absolute top-[calc(100%+8px)] left-0 w-full min-w-[320px] bg-white/90 backdrop-blur-xl rounded-[1.5rem] border border-border-base shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-      <div className="px-5 py-3 border-b border-border-base bg-page-bg/30">
-        <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Search Results ({results.length})</p>
-      </div>
-      <div className="max-h-[360px] overflow-y-auto divide-y divide-border-base">
-        {results.map((c) => (
-          <div
-            key={c.id}
-            className="flex items-center gap-4 px-5 py-4 hover:bg-brand-blue hover:text-white group cursor-pointer transition-colors"
-            onClick={() => {
-              navigate(`/cases/${c.id}`);
-              onClose();
-              onClear();
-            }}
-          >
-            <div className="w-10 h-10 rounded-xl bg-brand-light flex items-center justify-center text-brand-blue font-bold text-xs group-hover:bg-white/20 group-hover:text-white shrink-0">
-              {c.id}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-sm truncate">{c.title}</p>
-              <p className="text-xs opacity-70 truncate">{c.client} • {c.attorney}</p>
-            </div>
-            <Plus size={14} className="opacity-0 group-hover:opacity-100 transition-opacity rotate-45" />
-          </div>
-        ))}
-      </div>
-      <div className="px-5 py-3 text-center border-t border-border-base">
-        <button
-          onClick={onClose}
-          className="text-xs font-bold text-text-muted hover:text-brand-blue transition-colors"
-        >
-          Close Results
-        </button>
-      </div>
-    </div>
-  );
-}
 
 // ─── Layout ───────────────────────────────────────────────────────────────────
 
@@ -250,9 +190,10 @@ interface AppLayoutProps {
   children: ReactNode;
   title?: string;
   action?: ReactNode;
+  breadcrumbLabel?: string;
 }
 
-export default function AppLayout({ children, title, action }: AppLayoutProps) {
+export default function AppLayout({ children, title, action, breadcrumbLabel }: AppLayoutProps) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [notifOpen, setNotifOpen] = useState(false);
@@ -431,7 +372,7 @@ export default function AppLayout({ children, title, action }: AppLayoutProps) {
 
         {/* Page Content */}
         <div className="p-4 lg:p-8 space-y-6 lg:space-y-8 flex-1">
-          <Breadcrumbs />
+          <Breadcrumbs customLabel={breadcrumbLabel} />
           {title && (
             <div>
               <h1 className="text-xl lg:text-2xl font-bold text-brand-dark">{title}</h1>

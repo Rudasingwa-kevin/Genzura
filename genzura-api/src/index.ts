@@ -10,6 +10,7 @@ import notificationRoutes from './routes/notificationRoutes.js';
 import documentRoutes from './routes/documentRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
+import clientRoutes from './routes/clientRoutes.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 import { createServer } from 'http';
 import { initSocket } from './socket.js';
@@ -33,6 +34,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/clients', clientRoutes);
 
 // Error Handling
 app.use(errorHandler);

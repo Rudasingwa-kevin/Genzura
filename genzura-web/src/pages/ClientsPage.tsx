@@ -1,51 +1,57 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search as SearchIcon, X, Mail, Phone, Briefcase, Calendar, ChevronRight, ExternalLink } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
-import { CLIENTS, type Client } from '../data/clients';
+import { clientService } from '../api/services/client.service';
+import { TableSkeleton } from '../components/Skeleton';
 
 // ─── Client Card ─────────────────────────────────────────────────────────────
-const ClientCard = ({ client, onSelect }: { client: Client; onSelect: (c: Client) => void }) => (
-  <div
-    onClick={() => onSelect(client)}
-    className="bg-white rounded-[1.5rem] border border-border-base p-6 hover:shadow-xl hover:border-brand-blue/20 transition-all cursor-pointer group animate-in-up"
-  >
-    <div className="flex items-start justify-between mb-5">
-      <div className={`w-14 h-14 rounded-2xl ${client.color} text-white font-bold text-lg flex items-center justify-center shadow-lg`}>
-        {client.initials}
+const ClientCard = ({ client, onSelect }: { client: any; onSelect: (c: any) => void }) => {
+  const initials = client.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+  const color = 'bg-brand-blue'; // Default color for real data
+  
+  return (
+    <div
+      onClick={() => onSelect(client)}
+      className="bg-white rounded-[1.5rem] border border-border-base p-6 hover:shadow-xl hover:border-brand-blue/20 transition-all cursor-pointer group animate-in-up"
+    >
+      <div className="flex items-start justify-between mb-5">
+        <div className={`w-14 h-14 rounded-2xl ${color} text-white font-bold text-lg flex items-center justify-center shadow-lg`}>
+          {initials}
+        </div>
+        <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-brand-light text-brand-blue">
+          {client.industry || 'General'}
+        </span>
       </div>
-      <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-brand-light text-brand-blue">
-        {client.industry}
-      </span>
+      <h3 className="font-bold text-brand-dark text-base group-hover:text-brand-blue transition-colors">{client.name}</h3>
+      <p className="text-xs text-text-muted mt-0.5 mb-5">{client.company || 'Private Individual'}</p>
+      <div className="flex items-center justify-between text-xs border-t border-border-base pt-4">
+        <div className="flex items-center gap-1.5 text-text-secondary">
+          <Briefcase size={13} className="text-text-muted" />
+          <span><span className="font-bold text-brand-dark">{client._count?.cases || 0}</span> cases</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-text-secondary">
+          <Calendar size={13} className="text-text-muted" />
+          <span>{new Date(client.updatedAt).toLocaleDateString()}</span>
+        </div>
+      </div>
     </div>
-    <h3 className="font-bold text-brand-dark text-base group-hover:text-brand-blue transition-colors">{client.name}</h3>
-    <p className="text-xs text-text-muted mt-0.5 mb-5">{client.company}</p>
-    <div className="flex items-center justify-between text-xs border-t border-border-base pt-4">
-      <div className="flex items-center gap-1.5 text-text-secondary">
-        <Briefcase size={13} className="text-text-muted" />
-        <span><span className="font-bold text-brand-dark">{client.cases}</span> cases</span>
-      </div>
-      <div className="flex items-center gap-1.5 text-text-secondary">
-        <Calendar size={13} className="text-text-muted" />
-        <span>{client.lastActivity}</span>
-      </div>
-      <div className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${client.activeCases > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-        {client.activeCases > 0 ? `${client.activeCases} active` : 'No active'}
-      </div>
-    </div>
-  </div>
-);
+  );
+};
 
 // ─── Client Drawer ────────────────────────────────────────────────────────────
 const statusDot: Record<string, string> = {
-  Active: 'bg-emerald-500', Pending: 'bg-amber-500', Resolved: 'bg-slate-400',
+  Active: 'bg-emerald-500', Pending: 'bg-amber-500', Resolved: 'bg-slate-400', Archived: 'bg-slate-400',
 };
 const statusText: Record<string, string> = {
-  Active: 'text-emerald-700 bg-emerald-100/50', Pending: 'text-amber-700 bg-amber-100/50', Resolved: 'text-slate-700 bg-slate-100/50',
+  Active: 'text-emerald-700 bg-emerald-100/50', Pending: 'text-amber-700 bg-amber-100/50', Resolved: 'text-slate-700 bg-slate-100/50', Archived: 'text-slate-700 bg-slate-100/50',
 };
 
-const ClientDrawer = ({ client, onClose }: { client: Client; onClose: () => void }) => {
+const ClientDrawer = ({ client, onClose }: { client: any; onClose: () => void }) => {
   const navigate = useNavigate();
+  const initials = client.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+  const color = 'bg-brand-blue';
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={onClose} />
@@ -59,14 +65,14 @@ const ClientDrawer = ({ client, onClose }: { client: Client; onClose: () => void
             </button>
           </div>
           <div className="flex items-center gap-5">
-            <div className={`w-16 h-16 rounded-2xl ${client.color} text-white font-bold text-xl flex items-center justify-center shadow-lg`}>
-              {client.initials}
+            <div className={`w-16 h-16 rounded-2xl ${color} text-white font-bold text-xl flex items-center justify-center shadow-lg`}>
+              {initials}
             </div>
             <div>
               <h2 className="text-xl font-bold text-brand-dark">{client.name}</h2>
-              <p className="text-sm text-text-muted">{client.company}</p>
+              <p className="text-sm text-text-muted">{client.company || 'Private Individual'}</p>
               <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-light text-brand-blue mt-1 inline-block">
-                {client.industry}
+                {client.industry || 'General'}
               </span>
             </div>
           </div>
@@ -81,16 +87,15 @@ const ClientDrawer = ({ client, onClose }: { client: Client; onClose: () => void
           </div>
           <div className="flex items-center gap-3 text-sm text-text-secondary">
             <div className="w-9 h-9 rounded-xl bg-brand-light flex items-center justify-center text-brand-blue"><Phone size={16}/></div>
-            <span>{client.phone}</span>
+            <span>{client.phone || 'No phone on record'}</span>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="p-8 border-b border-border-base grid grid-cols-3 gap-4">
+        <div className="p-8 border-b border-border-base grid grid-cols-2 gap-4">
           {[
-            { label: 'Total Cases', value: client.cases },
-            { label: 'Active', value: client.activeCases },
-            { label: 'Resolved', value: client.cases - client.activeCases },
+            { label: 'Total Cases', value: client._count?.cases || 0 },
+            { label: 'Member Since', value: new Date(client.createdAt).getFullYear() },
           ].map((s) => (
             <div key={s.label} className="text-center bg-page-bg rounded-2xl py-4">
               <p className="text-2xl font-bold text-brand-dark">{s.value}</p>
@@ -99,24 +104,14 @@ const ClientDrawer = ({ client, onClose }: { client: Client; onClose: () => void
           ))}
         </div>
 
-        {/* View Full Profile CTA — pinned below stats, always visible */}
-        <div className="px-8 py-5 border-b border-border-base bg-white">
-          <button
-            onClick={() => { onClose(); navigate(`/clients/${client.id}`); }}
-            className="w-full flex items-center justify-center gap-2 bg-brand-blue text-white h-12 rounded-xl font-bold shadow-lg shadow-brand-blue/30 hover:shadow-xl hover:-translate-y-0.5 transition-all"
-          >
-            <ExternalLink size={16} /> View Full Profile
-          </button>
-        </div>
-
         {/* Recent Cases */}
         <div className="p-8 flex-1 overflow-y-auto">
           <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted mb-4">Recent Cases</h3>
           <div className="space-y-3">
-            {client.recentCases.map((rc) => (
-              <div key={rc.id} className="flex items-center justify-between p-4 bg-page-bg rounded-xl hover:bg-brand-light/30 transition-colors cursor-pointer group">
+            {client.cases?.map((rc: any) => (
+              <div key={rc.id} onClick={() => navigate(`/cases/${rc.id}`)} className="flex items-center justify-between p-4 bg-page-bg rounded-xl hover:bg-brand-light/30 transition-colors cursor-pointer group">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-brand-light text-brand-blue font-bold text-[9px] flex items-center justify-center">{rc.id}</div>
+                  <div className="w-8 h-8 rounded-lg bg-brand-light text-brand-blue font-bold text-[9px] flex items-center justify-center">CASE</div>
                   <span className="text-sm font-semibold text-brand-dark group-hover:text-brand-blue transition-colors">{rc.title}</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -128,6 +123,9 @@ const ClientDrawer = ({ client, onClose }: { client: Client; onClose: () => void
                 </div>
               </div>
             ))}
+            {(!client.cases || client.cases.length === 0) && (
+              <p className="text-xs text-text-muted text-center py-4">No cases associated with this client.</p>
+            )}
           </div>
         </div>
       </div>
@@ -138,12 +136,28 @@ const ClientDrawer = ({ client, onClose }: { client: Client; onClose: () => void
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function ClientsPage() {
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<Client | null>(null);
+  const [selected, setSelected] = useState<any | null>(null);
+  const [clients, setClients] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filtered = CLIENTS.filter((c) =>
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const data = await clientService.getAll();
+        setClients(data);
+      } catch (error) {
+        console.error('Failed to fetch clients:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchClients();
+  }, []);
+
+  const filtered = clients.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.company.toLowerCase().includes(search.toLowerCase()) ||
-    c.industry.toLowerCase().includes(search.toLowerCase())
+    (c.company && c.company.toLowerCase().includes(search.toLowerCase())) ||
+    (c.industry && c.industry.toLowerCase().includes(search.toLowerCase()))
   );
 
   const action = (
@@ -159,7 +173,7 @@ export default function ClientsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-brand-dark">Clients</h1>
-            <p className="text-sm text-text-muted mt-1">{CLIENTS.length} clients on record</p>
+            <p className="text-sm text-text-muted mt-1">{clients.length} clients on record</p>
           </div>
           <div className="relative">
             <SearchIcon size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
@@ -176,9 +190,9 @@ export default function ClientsPage() {
         {/* Summary stats */}
         <div className="grid grid-cols-3 gap-6">
           {[
-            { label: 'Total Clients', value: CLIENTS.length },
-            { label: 'With Active Cases', value: CLIENTS.filter(c=>c.activeCases>0).length },
-            { label: 'Total Cases Managed', value: CLIENTS.reduce((s,c)=>s+c.cases,0) },
+            { label: 'Total Clients', value: clients.length },
+            { label: 'Industries', value: new Set(clients.map(c => c.industry).filter(Boolean)).size || 1 },
+            { label: 'Total Cases Managed', value: clients.reduce((s,c)=>s+(c._count?.cases || 0),0) },
           ].map((s, i) => (
             <div key={s.label} className={`bg-white rounded-2xl border border-border-base p-6 animate-in-up delay-${(i + 1) * 100}`}>
               <p className="text-3xl font-bold text-brand-dark">{s.value}</p>
@@ -188,7 +202,11 @@ export default function ClientsPage() {
         </div>
 
         {/* Client Grid */}
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1,2,3,4,5,6].map(i => <TableSkeleton key={i} />)}
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="text-center py-20 text-text-muted">No clients found.</div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -11,7 +11,7 @@ const routeConfig: Record<string, string> = {
   settings: 'Settings',
 };
 
-export default function Breadcrumbs() {
+export default function Breadcrumbs({ customLabel }: { customLabel?: string }) {
   const location = useLocation();
   const pathnames = location.pathname.split('/').filter((x) => x);
 
@@ -30,7 +30,8 @@ export default function Breadcrumbs() {
       {pathnames.map((value, index) => {
         const last = index === pathnames.length - 1;
         const to = `/${pathnames.slice(0, index + 1).join('/')}`;
-        const label = routeConfig[value] || value.toUpperCase();
+        let label = routeConfig[value] || value.toUpperCase();
+        if (last && customLabel) label = customLabel;
 
         return (
           <div key={to} className="flex items-center gap-2">

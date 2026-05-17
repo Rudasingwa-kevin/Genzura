@@ -1,6 +1,7 @@
-/// <reference types="node" />
 import { PrismaClient, UserRole, UserStatus, CaseStatus, CasePriority, CaseType } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
@@ -11,14 +12,17 @@ const USERS = [
   { id: 'U-104', name: 'Elena Rodriguez', email: 'e.rodriguez@genzura.law', role: 'Paralegal', status: 'Active', initials: 'ER' },
 ];
 
+const CLIENTS = [
+  { id: 'C-001', name: 'Alpha Corporation Legal', email: 'legal@alphacorp.com', phone: '+1 (555) 010-2030', company: 'Alpha Corp', industry: 'Technology' },
+  { id: 'C-002', name: 'Tech Innovations IP Dept', email: 'ip@techinnovations.io', phone: '+1 (555) 020-3040', company: 'Tech Innovations', industry: 'Semiconductors' },
+  { id: 'C-003', name: 'Apex Global M&A', email: 'ma@apex.com', phone: '+1 (555) 030-4050', company: 'Apex Global', industry: 'Finance' },
+];
+
 const CASES = [
   {
     caseNumber: 'CV-2026-0482',
     title: 'Alpha Corp v. Beta Inc',
-    client: 'Alpha Corporation',
-    clientEmail: 'legal@alphacorp.com',
-    clientPhone: '+1 (555) 010-2030',
-    clientCompany: 'Alpha Corp',
+    clientId: 'C-001',
     attorneyId: 'U-101',
     status: 'Active' as CaseStatus,
     priority: 'High' as CasePriority,
@@ -29,10 +33,7 @@ const CASES = [
   {
     caseNumber: 'IP-2026-7712',
     title: 'Tech Innovations Patent Filing',
-    client: 'Tech Innovations LLC',
-    clientEmail: 'ip@techinnovations.io',
-    clientPhone: '+1 (555) 020-3040',
-    clientCompany: 'Tech Innovations',
+    clientId: 'C-002',
     attorneyId: 'U-103',
     status: 'Pending' as CaseStatus,
     priority: 'Medium' as CasePriority,
@@ -43,10 +44,7 @@ const CASES = [
   {
     caseNumber: 'CORP-2026-0012',
     title: 'Apex Global Merger',
-    client: 'Apex Global Inc',
-    clientEmail: 'm&a@apex.com',
-    clientPhone: '+1 (555) 030-4050',
-    clientCompany: 'Apex Global',
+    clientId: 'C-003',
     attorneyId: 'U-101',
     status: 'Active' as CaseStatus,
     priority: 'High' as CasePriority,
@@ -57,40 +55,61 @@ const CASES = [
 ];
 
 async function main() {
-  console.log('🌱 Seeding database with government case numbers...');
+  console.log('🌱 Starting seed process...');
+  
+  try {
+    const passwordHash = await bcrypt.hash('Genzura2026!', 10);
+    console.log('🔑 Password hash generated.');
 
-  const passwordHash = await bcrypt.hash('Genzura2026!', 10);
+    // Users
+    console.log('👥 Seeding users...');
+    for (const user of USERS) {
+      console.log(`   - Upserting user: ${user.email}`);
+      await prisma.user.upsert({
+        where: { email: user.email },
+        update: {},
+        create: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          passwordHash,
+          role: user.role as UserRole,
+          status: user.status as UserStatus,
+          initials: user.initials,
+        },
+      });
+    }
 
-  // Users
-  for (const user of USERS) {
-    await prisma.user.upsert({
-      where: { email: user.email },
-      update: {},
-      create: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        passwordHash,
-        role: user.role as UserRole,
-        status: user.status as UserStatus,
-        initials: user.initials,
-      },
-    });
+    // Clients
+    console.log('🏢 Seeding clients...');
+    for (const client of CLIENTS) {
+      console.log(`   - Upserting client: ${client.email}`);
+      await prisma.client.upsert({
+        where: { email: client.email },
+        update: {},
+        create: client,
+      });
+    }
+
+    // Cases
+    console.log('📂 Seeding cases...');
+    for (const c of CASES) {
+      console.log(`   - Upserting case: ${c.caseNumber}`);
+      await prisma.case.upsert({
+        where: { caseNumber: c.caseNumber },
+        update: {},
+        create: {
+          ...c,
+          filedDate: new Date(),
+        },
+      });
+    }
+
+    console.log('✅ Seed complete.');
+  } catch (error) {
+    console.error('❌ Error during seeding:', error);
+    throw error;
   }
-
-  // Cases
-  for (const c of CASES) {
-    await prisma.case.upsert({
-      where: { caseNumber: c.caseNumber },
-      update: {},
-      create: {
-        ...c,
-        filedDate: new Date(),
-      },
-    });
-  }
-
-  console.log('✅ Seed complete.');
 }
 
 main()

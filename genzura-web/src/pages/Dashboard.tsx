@@ -123,7 +123,6 @@ const Dashboard = () => {
                 <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color}`}>
                   <stat.icon size={26} />
                 </div>
-                <span className="text-emerald-600 text-xs font-bold bg-emerald-50 px-2.5 py-1 rounded-lg">+{Math.floor(Math.random() * 15) + 5}%</span>
               </div>
               <p className="text-text-muted text-[10px] font-bold uppercase tracking-[0.1em] mb-2">{stat.label}</p>
               <p className="text-4xl font-bold text-brand-dark tracking-tighter">{stat.value}</p>

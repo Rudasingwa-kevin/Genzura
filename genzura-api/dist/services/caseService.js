@@ -6,6 +6,7 @@ export class CaseService {
         return prisma.case.findMany({
             include: {
                 attorney: true,
+                client: true,
                 team: {
                     include: { user: true }
                 }
@@ -18,6 +19,7 @@ export class CaseService {
             where: { id },
             include: {
                 attorney: true,
+                client: true,
                 team: {
                     include: { user: true }
                 },
@@ -89,19 +91,41 @@ export class CaseService {
         };
     }
     static async addTeamMember(caseId, userId) {
-        const caseItem = await prisma.case.update({
-            where: { id: caseId },
+        const caseTeam = await prisma.caseTeam.create({
             data: {
-                team: {
-                    connect: { id: userId }
-                }
+                caseId,
+                userId,
+                role: 'Collaborator' // Default role
             },
             include: {
-                team: true
+                user: true
             }
         });
-        emitToAll('case_team_updated', { caseId, team: caseItem.team });
-        return caseItem;
+        emitToAll('case_team_updated', { caseId, teamMember: caseTeam });
+        return caseTeam;
+    }
+    static async updateCase(id, data) {
+        const updatedCase = await prisma.case.update({
+            where: { id },
+            data: {
+                ...data,
+                updatedAt: new Date()
+            }
+        });
+        emitToAll('case_updated', updatedCase);
+        return updatedCase;
+    }
+    static async deleteCase(id) {
+        // Delete related records first if not handled by cascade
+        await prisma.caseTeam.deleteMany({ where: { caseId: id } });
+        await prisma.timelineEvent.deleteMany({ where: { caseId: id } });
+        await prisma.caseDocument.deleteMany({ where: { caseId: id } });
+        await prisma.caseNote.deleteMany({ where: { caseId: id } });
+        const deletedCase = await prisma.case.delete({
+            where: { id }
+        });
+        emitToAll('case_deleted', { id });
+        return deletedCase;
     }
 }
 //# sourceMappingURL=caseService.js.map

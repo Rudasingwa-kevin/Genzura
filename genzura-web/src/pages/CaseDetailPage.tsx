@@ -6,7 +6,7 @@ import {
   FileText, Download, Paperclip, MessageSquare, Send, CheckCircle2,
   Edit3, Archive, Share2, Flag, MoreHorizontal, Plus, Search,
   Filter, ChevronRight, History, X, Copy, Trash2, FileDown,
-  Loader2
+  Loader2, Briefcase
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import {
@@ -318,17 +318,17 @@ export default function CaseDetailPage() {
     });
   };
 
-  const handleArchive = () => {
+  const handleArchive = async () => {
     toast.promise(
-      new Promise((resolve) => setTimeout(resolve, 1000)),
+      caseService.updateStatus(caseData.id, 'Archived'),
       {
         loading: 'Archiving case...',
-        success: () => {
-          setCurrentCase({ ...caseData, status: 'Archived' });
+        success: (data) => {
+          setCurrentCase(data);
           setTimeout(() => navigate('/cases'), 500);
           return 'Case archived successfully!';
         },
-        error: 'Failed to archive.',
+        error: 'Failed to archive case.',
       },
       { style: { borderRadius: '1rem' } }
     );
@@ -384,12 +384,19 @@ export default function CaseDetailPage() {
     toast((t) => (
       <div className="flex flex-col gap-3">
         <p className="font-bold text-brand-dark">Are you sure you want to delete this case?</p>
+        <p className="text-xs text-text-muted">This action is permanent and cannot be undone.</p>
         <div className="flex gap-2">
           <button 
-            onClick={() => {
+            onClick={async () => {
               toast.dismiss(t.id);
-              toast.success('Case deleted (simulated)');
-              navigate('/cases');
+              const loadId = toast.loading('Deleting case...');
+              try {
+                await caseService.delete(caseData.id);
+                toast.success('Case deleted successfully', { id: loadId });
+                navigate('/cases');
+              } catch (error) {
+                toast.error('Failed to delete case', { id: loadId });
+              }
             }}
             className="bg-red-500 text-white px-3 py-1.5 rounded-lg font-bold text-xs"
           >
@@ -469,14 +476,20 @@ export default function CaseDetailPage() {
   );
 
   return (
-    <AppLayout action={actionBar}>
+    <AppLayout action={actionBar} breadcrumbLabel={caseData.caseNumber}>
       {showEditModal && (
         <EditCaseModal
           caseData={caseData}
           onClose={() => setShowEditModal(false)}
-          onSave={(updated) => {
-            setCurrentCase(updated);
-            toast.success('Case updated successfully!');
+          onSave={async (updated) => {
+            const loadId = toast.loading('Updating case...');
+            try {
+              const data = await caseService.update(caseData.id, updated);
+              setCurrentCase(data);
+              toast.success('Case updated successfully!', { id: loadId });
+            } catch (error) {
+              toast.error('Failed to update case', { id: loadId });
+            }
           }}
         />
       )}
@@ -534,6 +547,12 @@ export default function CaseDetailPage() {
                   <div className="flex items-center gap-2.5 text-text-secondary group cursor-help">
                     <div className="w-8 h-8 rounded-lg bg-brand-blue/5 flex items-center justify-center text-brand-blue transition-colors group-hover:bg-brand-blue group-hover:text-white">
                       <User size={16} />
+                    </div>
+                    <span className="text-sm font-semibold">Client: <span className="text-brand-dark">{caseData.client?.name || 'Unassigned'}</span></span>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-text-secondary group cursor-help">
+                    <div className="w-8 h-8 rounded-lg bg-brand-blue/5 flex items-center justify-center text-brand-blue transition-colors group-hover:bg-brand-blue group-hover:text-white">
+                      <Briefcase size={16} />
                     </div>
                     <span className="text-sm font-semibold">Lead: <span className="text-brand-dark">{typeof caseData.attorney === 'object' ? caseData.attorney?.name : caseData.attorney}</span></span>
                   </div>

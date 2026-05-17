@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import AppLayout from '../components/AppLayout';
-import { CASES, STATUS_STYLES, STATUS_DOT, PRIORITY_STYLES } from '../data/cases';
+import { STATUS_STYLES, STATUS_DOT, PRIORITY_STYLES } from '../data/cases';
 import EmptyState from '../components/EmptyState';
 import { TableSkeleton } from '../components/Skeleton';
 import { caseService } from '../api/services/case.service';
@@ -27,7 +27,7 @@ export default function CasesPage() {
   const [priorityFilter, setPriorityFilter] = useState<'All' | 'High' | 'Medium' | 'Low'>('All');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
-  const [localCases, setLocalCases] = useState(CASES);
+  const [localCases, setLocalCases] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

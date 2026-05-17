@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
-import bcrypt from 'bcryptjs';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const bcrypt = require('bcryptjs');
 import jwt from 'jsonwebtoken';
 import { UserService } from '../services/userService.js';
 import { EmailService } from '../services/emailService.js';

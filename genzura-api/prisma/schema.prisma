@@ -95,14 +95,24 @@ model User {
   updatedAt    DateTime   @updatedAt
 }
 
+model Client {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  phone        String?
+  company      String?
+  industry     String?
+  cases        Case[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
 model Case {
   id            String       @id @default(cuid())
   caseNumber    String       @unique
   title         String
-  client        String
-  clientEmail   String
-  clientPhone   String
-  clientCompany String
+  client        Client       @relation(fields: [clientId], references: [id])
+  clientId      String
   attorney      User         @relation("AttorneyCases", fields: [attorneyId], references: [id])
   attorneyId    String
   status        CaseStatus   @default(Pending)

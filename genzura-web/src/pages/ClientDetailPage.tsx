@@ -53,7 +53,7 @@ export default function ClientDetailPage() {
   ];
 
   return (
-    <AppLayout>
+    <AppLayout breadcrumbLabel={client.name}>
       {/* Back nav */}
       <button
         onClick={() => navigate('/clients')}

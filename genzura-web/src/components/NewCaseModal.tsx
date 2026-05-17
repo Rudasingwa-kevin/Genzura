@@ -2,18 +2,17 @@ import { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { caseService } from '../api/services/case.service';
 import { userService } from '../api/services/user.service';
+import { clientService } from '../api/services/client.service';
 import { toast } from 'react-hot-toast';
 
 export default function NewCaseModal({ onClose }: { onClose: () => void }) {
   const [isLoading, setIsLoading] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     caseNumber: '',
     title: '',
-    client: '',
-    clientEmail: '',
-    clientPhone: '',
-    clientCompany: '',
+    clientId: '',
     attorneyId: '',
     priority: 'Medium',
     type: 'Litigation',
@@ -22,40 +21,44 @@ export default function NewCaseModal({ onClose }: { onClose: () => void }) {
   });
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchData = async () => {
       try {
-        const allUsers = await userService.getAll();
+        const [allUsers, allClients] = await Promise.all([
+          userService.getAll(),
+          clientService.getAll()
+        ]);
         setUsers(allUsers);
-        if (allUsers.length > 0) {
-          setFormData(prev => ({ ...prev, attorneyId: allUsers[0].id }));
-        }
+        setClients(allClients);
+        
+        setFormData(prev => ({ 
+          ...prev, 
+          attorneyId: allUsers[0]?.id || '',
+          clientId: allClients[0]?.id || ''
+        }));
       } catch (error) {
-        console.error('Failed to fetch users:', error);
+        console.error('Failed to fetch data:', error);
       }
     };
-    fetchUsers();
+    fetchData();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.caseNumber || !formData.title || !formData.client) {
+    if (!formData.caseNumber || !formData.title || !formData.clientId) {
       toast.error('Please fill in all required fields');
       return;
     }
 
     setIsLoading(true);
     try {
-      // Ensure date is valid ISO or null
       const processedData = {
         ...formData,
         deadline: formData.deadline ? new Date(formData.deadline).toISOString() : null,
-        filedDate: new Date().toISOString(),
       };
       
       await caseService.create(processedData);
       toast.success('Case created successfully!');
       onClose();
-      // Optionally refresh page or cases list
       window.location.reload();
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Failed to create case');
@@ -106,15 +109,18 @@ export default function NewCaseModal({ onClose }: { onClose: () => void }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">Client Name</label>
-              <input 
+              <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">Select Client</label>
+              <select 
                 required
-                type="text" 
-                value={formData.client}
-                onChange={e => setFormData({ ...formData, client: e.target.value })}
-                className="w-full h-12 px-5 rounded-2xl border border-border-base focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/5 outline-none transition-all font-bold text-sm bg-page-bg/30" 
-                placeholder="Apex Global Inc." 
-              />
+                value={formData.clientId}
+                onChange={e => setFormData({ ...formData, clientId: e.target.value })}
+                className="w-full h-12 px-5 rounded-2xl border border-border-base focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/5 outline-none transition-all font-bold text-sm bg-white appearance-none cursor-pointer"
+              >
+                <option value="" disabled>Choose a client...</option>
+                {clients.map(c => (
+                  <option key={c.id} value={c.id}>{c.name} ({c.company || 'Private'})</option>
+                ))}
+              </select>
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest ml-1">Lead Attorney</label>

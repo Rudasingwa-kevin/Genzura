@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 export class UserService {
     static async createUser(data) {
