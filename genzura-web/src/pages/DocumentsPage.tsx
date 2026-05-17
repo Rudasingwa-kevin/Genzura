@@ -95,7 +95,7 @@ const UploadModal = ({ isOpen, onClose, onUploadComplete }: { isOpen: boolean; o
           >
             <option value="" disabled>Choose a case...</option>
             {cases.map(c => (
-              <option key={c.id} value={c.id}>{c.caseNumber} - {c.title}</option>
+              <option key={c.id} value={c.caseNumber || c.id}>{c.caseNumber} - {c.title}</option>
             ))}
           </select>
         </div>

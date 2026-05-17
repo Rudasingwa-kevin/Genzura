@@ -213,10 +213,12 @@ export default function ClientDetailPage() {
               <div className="p-6">
                 {client.cases && client.cases.length > 0 ? (
                   <div className="space-y-3">
-                    {client.cases.map((rc: any) => (
-                      <Link
-                        key={rc.id}
-                        to={`/cases/${rc.id}`}
+                    {client.cases.map((rc: any) => {
+                      const routeId = rc.caseNumber || rc.id;
+                      return (
+                        <Link
+                          key={rc.id}
+                          to={`/cases/${routeId}`}
                         className="flex items-center justify-between p-5 bg-page-bg rounded-2xl hover:bg-brand-light/40 hover:border-brand-blue/20 border border-transparent transition-all group"
                       >
                         <div className="flex items-center gap-4">
@@ -238,7 +240,8 @@ export default function ClientDetailPage() {
                           <ExternalLink size={14} className="text-text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
                       </Link>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="text-center py-12 text-text-muted">No cases found for this client.</div>

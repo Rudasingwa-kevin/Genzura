@@ -1,6 +1,7 @@
 import { PrismaClient, CaseStatus, CasePriority, CaseType } from '@prisma/client';
 import { emitToAll } from '../socket.js';
 import { NotificationService } from './notificationService.js';
+import { DateService } from '../utils/dateUtils.js';
 
 const prisma = new PrismaClient();
 
@@ -18,9 +19,38 @@ export class CaseService {
     });
   }
 
-  static async getCaseById(id: string) {
+  static async getCaseById(idOrCaseNumber: string) {
+    // Try to find by caseNumber first (if it matches the pattern), then by ID
+    // Flexible pattern: PREFIX-NUMBERS (e.g., CV-2025-003, CV-2026-0482, IP-2024-1234)
+    const isCaseNumber = /^[A-Z]+-\d+-\d+$/.test(idOrCaseNumber);
+
+    if (isCaseNumber) {
+      return prisma.case.findUnique({
+        where: { caseNumber: idOrCaseNumber },
+        include: {
+          attorney: true,
+          client: true,
+          team: {
+            include: { user: true }
+          },
+          timeline: {
+            include: { author: true },
+            orderBy: { timestamp: 'desc' }
+          },
+          documents: {
+            include: { uploadedBy: true }
+          },
+          notes: {
+            include: { author: true },
+            orderBy: { timestamp: 'desc' }
+          }
+        }
+      });
+    }
+
+    // Otherwise lookup by ID
     return prisma.case.findUnique({
-      where: { id },
+      where: { id: idOrCaseNumber },
       include: {
         attorney: true,
         client: true,
@@ -46,14 +76,21 @@ export class CaseService {
     return prisma.case.create({
       data: {
         ...data,
-        filedDate: new Date(),
+        filedDate: DateService.now(),
       }
     });
   }
 
-  static async updateCaseStatus(id: string, status: CaseStatus) {
+  static async updateCaseStatus(idOrCaseNumber: string, status: CaseStatus) {
+    // Support updating by case number or ID
+    const isCaseNumber = /^[A-Z]+-\d+-\d+$/.test(idOrCaseNumber);
+
+    const whereClause = isCaseNumber
+      ? { caseNumber: idOrCaseNumber }
+      : { id: idOrCaseNumber };
+
     const updatedCase = await prisma.case.update({
-      where: { id },
+      where: whereClause,
       data: { status }
     });
 
@@ -62,7 +99,7 @@ export class CaseService {
       type: 'case',
       title: 'Case Status Updated',
       body: `Case ${updatedCase.title} is now ${status}`,
-      link: `/cases/${updatedCase.id}`
+      link: `/cases/${updatedCase.caseNumber || updatedCase.id}`
     });
     emitToAll('new_notification', notification);
 
@@ -141,29 +178,67 @@ export class CaseService {
     return caseTeam;
   }
 
-  static async updateCase(id: string, data: any) {
+  static async updateCase(idOrCaseNumber: string, data: any) {
+    // Support updating by case number or ID
+    const isCaseNumber = /^[A-Z]+-\d+-\d+$/.test(idOrCaseNumber);
+
+    const whereClause = isCaseNumber
+      ? { caseNumber: idOrCaseNumber }
+      : { id: idOrCaseNumber };
+
     const updatedCase = await prisma.case.update({
-      where: { id },
+      where: whereClause,
       data: {
         ...data,
-        updatedAt: new Date()
+        updatedAt: DateService.now()
+      },
+      include: {
+        attorney: true,
+        client: true,
+        team: {
+          include: { user: true }
+        },
+        timeline: {
+          include: { author: true },
+          orderBy: { timestamp: 'desc' }
+        },
+        documents: {
+          include: { uploadedBy: true }
+        },
+        notes: {
+          include: { author: true },
+          orderBy: { timestamp: 'desc' }
+        }
       }
     });
     emitToAll('case_updated', updatedCase);
     return updatedCase;
   }
 
-  static async deleteCase(id: string) {
+  static async deleteCase(idOrCaseNumber: string) {
+    // Support deleting by case number or ID
+    const isCaseNumber = /^[A-Z]+-\d+-\d+$/.test(idOrCaseNumber);
+
+    // First find the case to get its actual ID for related records
+    const caseToDelete = await this.getCaseById(idOrCaseNumber);
+    if (!caseToDelete) {
+      throw new Error('Case not found');
+    }
+
     // Delete related records first if not handled by cascade
-    await prisma.caseTeam.deleteMany({ where: { caseId: id } });
-    await prisma.timelineEvent.deleteMany({ where: { caseId: id } });
-    await prisma.caseDocument.deleteMany({ where: { caseId: id } });
-    await prisma.caseNote.deleteMany({ where: { caseId: id } });
-    
+    await prisma.caseTeam.deleteMany({ where: { caseId: caseToDelete.id } });
+    await prisma.timelineEvent.deleteMany({ where: { caseId: caseToDelete.id } });
+    await prisma.caseDocument.deleteMany({ where: { caseId: caseToDelete.id } });
+    await prisma.caseNote.deleteMany({ where: { caseId: caseToDelete.id } });
+
+    const whereClause = isCaseNumber
+      ? { caseNumber: idOrCaseNumber }
+      : { id: idOrCaseNumber };
+
     const deletedCase = await prisma.case.delete({
-      where: { id }
+      where: whereClause
     });
-    emitToAll('case_deleted', { id });
+    emitToAll('case_deleted', { id: caseToDelete.id });
     return deletedCase;
   }
 }

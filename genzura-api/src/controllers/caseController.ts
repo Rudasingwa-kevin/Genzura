@@ -28,7 +28,7 @@ export class CaseController {
     try {
       const newCase = await CaseService.createCase({
         ...req.body,
-        attorneyId: req.user.id // Assigning the current user as the attorney by default or from body
+        attorneyId: req.user.id // Automatically assign logged-in user as lead attorney
       });
       res.status(201).json(newCase);
     } catch (error: any) {

@@ -15,7 +15,24 @@ export class DocumentService {
     });
   }
 
-  static async getCaseDocuments(caseId: string) {
+  static async getCaseDocuments(idOrCaseNumber: string) {
+    // Support lookup by case number or ID
+    const isCaseNumber = /^[A-Z]+-\d+-\d+$/.test(idOrCaseNumber);
+
+    let caseId = idOrCaseNumber;
+
+    // If case number, find the actual case ID
+    if (isCaseNumber) {
+      const caseObj = await prisma.case.findUnique({
+        where: { caseNumber: idOrCaseNumber },
+        select: { id: true }
+      });
+      if (!caseObj) {
+        throw new Error('Case not found');
+      }
+      caseId = caseObj.id;
+    }
+
     return prisma.caseDocument.findMany({
       where: { caseId },
       include: { uploadedBy: true },
@@ -31,18 +48,58 @@ export class DocumentService {
     fileUrl?: string;
     uploadedById: string;
   }) {
+    // Support case number or ID
+    const isCaseNumber = /^[A-Z]+-\d+-\d+$/.test(data.caseId);
+
+    let actualCaseId = data.caseId;
+
+    // If case number, find the actual case ID
+    if (isCaseNumber) {
+      const caseObj = await prisma.case.findUnique({
+        where: { caseNumber: data.caseId },
+        select: { id: true, attorneyId: true, title: true, caseNumber: true }
+      });
+      if (!caseObj) {
+        throw new Error('Case not found');
+      }
+      actualCaseId = caseObj.id;
+
+      // Create document with actual ID
+      const document = await prisma.caseDocument.create({
+        data: { ...data, caseId: actualCaseId },
+        include: { uploadedBy: true }
+      });
+
+      const notification = await NotificationService.createNotification({
+        userId: caseObj.attorneyId,
+        type: 'document',
+        title: 'New Document Uploaded',
+        body: `A new document (${data.name}) was uploaded to case ${caseObj.title}.`,
+        link: `/cases/${caseObj.caseNumber}`
+      });
+      emitToAll('new_notification', notification);
+
+      return document;
+    }
+
+    // Regular ID path
     const document = await prisma.caseDocument.create({
-      data
+      data,
+      include: { uploadedBy: true }
     });
 
-    const caseObj = await prisma.case.findUnique({ where: { id: data.caseId } });
+    const caseObj = await prisma.case.findUnique({
+      where: { id: actualCaseId },
+      select: { attorneyId: true, title: true, caseNumber: true }
+    });
+
     if (caseObj) {
       const notification = await NotificationService.createNotification({
         userId: caseObj.attorneyId,
         type: 'document',
         title: 'New Document Uploaded',
         body: `A new document (${data.name}) was uploaded to case ${caseObj.title}.`,
-        link: `/cases/${caseObj.id}`
+        link: `/cases/${caseObj.caseNumber || actualCaseId}`
       });
       emitToAll('new_notification', notification);
     }

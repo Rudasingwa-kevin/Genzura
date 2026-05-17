@@ -13,18 +13,20 @@ import { type CaseStatus } from '../data/cases';
 import { caseService } from '../api/services/case.service';
 import { CardSkeleton, TableSkeleton, Skeleton } from '../components/Skeleton';
 
-const CaseRow = ({ id, title, client, status, date }: { id: string; title: string; client: string; status: CaseStatus; date: string }) => {
+const CaseRow = ({ id, caseNumber, title, client, status, date }: { id: string; caseNumber?: string; title: string; client: string; status: CaseStatus; date: string }) => {
   const navigate = useNavigate();
-  
+  const displayNumber = caseNumber || id.substring(id.length - 6).toUpperCase();
+  const routeId = caseNumber || id;
+
   return (
-    <tr 
+    <tr
       className="border-b border-border-base hover:bg-page-bg/50 transition-colors group animate-in-fade delay-500 cursor-pointer"
-      onClick={() => navigate(`/cases/${id}`)}
+      onClick={() => navigate(`/cases/${routeId}`)}
     >
       <td className="py-5 px-8">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-brand-light flex items-center justify-center text-brand-blue font-bold text-[10px] overflow-hidden whitespace-nowrap">
-            {id.substring(id.length - 4).toUpperCase()}
+            {displayNumber}
           </div>
           <div>
             <p className="font-bold text-brand-dark text-sm group-hover:text-brand-blue transition-colors">{title}</p>
@@ -195,13 +197,14 @@ const Dashboard = () => {
                 </thead>
                 <tbody className="divide-y divide-border-base">
                   {recentCases.map((c) => (
-                    <CaseRow 
-                      key={c.id} 
-                      id={c.id} 
-                      title={c.title} 
-                      client={c.client} 
-                      status={c.status} 
-                      date={c.updatedAt} 
+                    <CaseRow
+                      key={c.id}
+                      id={c.id}
+                      caseNumber={c.caseNumber}
+                      title={c.title}
+                      client={c.client}
+                      status={c.status}
+                      date={c.updatedAt}
                     />
                   ))}
                 </tbody>

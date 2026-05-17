@@ -222,18 +222,17 @@ function EditCaseModal({ caseData, onClose, onSave }: { caseData: any; onClose: 
               Cancel
             </button>
             <button
-              onClick={() => { 
+              onClick={() => {
+                // Only send updatable fields, not relations
                 const updatedData = {
-                  ...caseData,
                   caseNumber,
                   title,
                   description,
                   status,
                   priority,
-                  deadline: caseData.deadline ? new Date(caseData.deadline).toISOString() : null
                 };
-                onSave(updatedData); 
-                onClose(); 
+                onSave(updatedData);
+                onClose();
               }}
               className="flex-1 h-14 bg-brand-blue text-white rounded-2xl font-bold shadow-lg shadow-brand-blue/20 hover:shadow-xl hover:-translate-y-0.5 transition-all"
             >
@@ -266,9 +265,24 @@ export default function CaseDetailPage() {
       if (!id) return;
       try {
         const data = await caseService.getById(id);
-        setCurrentCase(data);
+
+        // Transform API response to match expected format
+        const transformedCase = {
+          ...data,
+          client: data.client?.name || data.clientName || 'Unknown Client',
+          clientEmail: data.client?.email || data.clientEmail || '',
+          clientPhone: data.client?.phone || data.clientPhone || '',
+          clientCompany: data.client?.company || data.clientCompany || '',
+          attorney: data.attorney?.name || data.attorneyName || 'Unknown Attorney',
+          // Keep original objects for backward compatibility
+          clientObject: data.client,
+          attorneyObject: data.attorney,
+        };
+
+        setCurrentCase(transformedCase);
       } catch (error) {
         console.error('Failed to fetch case:', error);
+        toast.error('Failed to load case details');
       } finally {
         setIsLoading(false);
       }
@@ -320,7 +334,7 @@ export default function CaseDetailPage() {
 
   const handleArchive = async () => {
     toast.promise(
-      caseService.updateStatus(caseData.id, 'Archived'),
+      caseService.updateStatus(id!, 'Archived'),
       {
         loading: 'Archiving case...',
         success: (data) => {
@@ -391,7 +405,7 @@ export default function CaseDetailPage() {
               toast.dismiss(t.id);
               const loadId = toast.loading('Deleting case...');
               try {
-                await caseService.delete(caseData.id);
+                await caseService.delete(id!);
                 toast.success('Case deleted successfully', { id: loadId });
                 navigate('/cases');
               } catch (error) {
@@ -484,10 +498,32 @@ export default function CaseDetailPage() {
           onSave={async (updated) => {
             const loadId = toast.loading('Updating case...');
             try {
-              const data = await caseService.update(caseData.id, updated);
-              setCurrentCase(data);
+              // Use the URL parameter (case number or ID) for the update
+              const data = await caseService.update(id!, updated);
+              console.log('Update response:', data);
+
+              // Transform the response with all required fields
+              const transformedCase = {
+                ...data,
+                client: data.client?.name || data.clientName || 'Unknown Client',
+                clientEmail: data.client?.email || data.clientEmail || '',
+                clientPhone: data.client?.phone || data.clientPhone || '',
+                clientCompany: data.client?.company || data.clientCompany || '',
+                attorney: data.attorney?.name || data.attorneyName || 'Unknown Attorney',
+                clientObject: data.client,
+                attorneyObject: data.attorney,
+                // Ensure arrays exist
+                team: data.team || [],
+                timeline: data.timeline || [],
+                documents: data.documents || [],
+                notes: data.notes || [],
+              };
+              console.log('Transformed case:', transformedCase);
+              setCurrentCase(transformedCase);
+              setShowEditModal(false);
               toast.success('Case updated successfully!', { id: loadId });
             } catch (error) {
+              console.error('Update error:', error);
               toast.error('Failed to update case', { id: loadId });
             }
           }}
@@ -548,7 +584,7 @@ export default function CaseDetailPage() {
                     <div className="w-8 h-8 rounded-lg bg-brand-blue/5 flex items-center justify-center text-brand-blue transition-colors group-hover:bg-brand-blue group-hover:text-white">
                       <User size={16} />
                     </div>
-                    <span className="text-sm font-semibold">Client: <span className="text-brand-dark">{caseData.client?.name || 'Unassigned'}</span></span>
+                    <span className="text-sm font-semibold">Client: <span className="text-brand-dark">{caseData.client || 'Unassigned'}</span></span>
                   </div>
                   <div className="flex items-center gap-2.5 text-text-secondary group cursor-help">
                     <div className="w-8 h-8 rounded-lg bg-brand-blue/5 flex items-center justify-center text-brand-blue transition-colors group-hover:bg-brand-blue group-hover:text-white">
@@ -641,7 +677,7 @@ export default function CaseDetailPage() {
                       <span className={`ml-1 text-[10px] font-bold px-2 py-0.5 rounded-lg border ${
                         activeTab === tab ? 'bg-brand-blue text-white border-brand-blue' : 'bg-white text-text-muted border-border-base'
                       }`}>
-                        {tab === 'timeline' ? caseData.timeline.length : tab === 'documents' ? caseData.documents.length : caseData.notes.length}
+                        {tab === 'timeline' ? (caseData.timeline?.length || 0) : tab === 'documents' ? (caseData.documents?.length || 0) : (caseData.notes?.length || 0)}
                       </span>
                     </button>
                   ))}
@@ -668,11 +704,11 @@ export default function CaseDetailPage() {
                   <div className="relative">
                     <div className="absolute left-5 top-0 bottom-0 w-px bg-border-base opacity-50" />
                     <div className="space-y-4">
-                      {caseData.timeline.map((event, i) => (
+                      {(caseData.timeline || []).map((event, i) => (
                         <TimelineItem
                           key={event.id}
                           event={event}
-                          isLast={i === caseData.timeline.length - 1}
+                          isLast={i === (caseData.timeline?.length || 0) - 1}
                           index={i}
                         />
                       ))}
@@ -684,7 +720,7 @@ export default function CaseDetailPage() {
                 {activeTab === 'documents' && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between mb-6">
-                      <h4 className="text-sm font-bold text-brand-dark uppercase tracking-widest">Case Documents ({caseData.documents.length})</h4>
+                      <h4 className="text-sm font-bold text-brand-dark uppercase tracking-widest">Case Documents ({caseData.documents?.length || 0})</h4>
                       <label className="text-xs font-bold text-brand-blue flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-brand-light transition-all cursor-pointer">
                         <Plus size={14} /> Upload New
                         <input
@@ -693,16 +729,18 @@ export default function CaseDetailPage() {
                           onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (!file) return;
-                            
+
                             const loadId = toast.loading('Uploading document...');
                             try {
-                              const newDoc = await documentService.upload(caseData.id, file);
+                              // Use case number from URL, not UUID
+                              const newDoc = await documentService.upload(id!, file);
                               setCurrentCase({
                                 ...caseData,
-                                documents: [newDoc, ...caseData.documents]
+                                documents: [newDoc, ...(caseData.documents || [])]
                               });
                               toast.success('Document uploaded successfully', { id: loadId });
                             } catch (error) {
+                              console.error('Upload error:', error);
                               toast.error('Upload failed', { id: loadId });
                             }
                           }}
@@ -710,7 +748,7 @@ export default function CaseDetailPage() {
                       </label>
                     </div>
                     <div className="grid gap-2">
-                      {caseData.documents.length === 0 ? (
+                      {!caseData.documents || caseData.documents.length === 0 ? (
                         <EmptyState 
                           illustration="generic"
                           title="No Documents"
@@ -722,7 +760,7 @@ export default function CaseDetailPage() {
                           }
                         />
                       ) : (
-                        caseData.documents.map((doc, i) => <DocumentRow key={doc.id} doc={doc} index={i} />)
+                        (caseData.documents || []).map((doc, i) => <DocumentRow key={doc.id} doc={doc} index={i} />)
                       )}
                     </div>
                   </div>
@@ -732,14 +770,14 @@ export default function CaseDetailPage() {
                 {activeTab === 'notes' && (
                   <div className="space-y-8 max-w-2xl">
                     <div className="space-y-6">
-                      {caseData.notes.length === 0 ? (
+                      {!caseData.notes || caseData.notes.length === 0 ? (
                         <EmptyState 
                           illustration="generic"
                           title="No Internal Notes"
                           description="Keep track of case observations and legal strategy by posting your first note below."
                         />
                       ) : (
-                        caseData.notes.map((note, i) => (
+                        (caseData.notes || []).map((note, i) => (
                           <NoteCard key={note.id} note={note} index={i} />
                         ))
                       )}

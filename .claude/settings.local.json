@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(cat)",
+      "Bash(node ../genzura-api/test-regex.js)",
+      "Bash(curl -X PUT http://localhost:5000/api/cases/CORP-2026-0012 -H \"Content-Type: application/json\" -H \"Authorization: Bearer $\\(cat .token || echo 'test'\\)\" -d '{\"title\":\"Test Update\"}')",
+      "Bash(npx prisma *)"
     ]
   }
 }

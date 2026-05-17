@@ -14,6 +14,7 @@ import clientRoutes from './routes/clientRoutes.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 import { createServer } from 'http';
 import { initSocket } from './socket.js';
+import { DateService } from './utils/dateUtils.js';
 
 dotenv.config();
 
@@ -22,7 +23,8 @@ const prisma = new PrismaClient();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ limit: '100mb', extended: true }));
 app.use('/uploads', express.static('uploads'));
 
 // Routes
@@ -39,9 +41,14 @@ app.use('/api/clients', clientRoutes);
 // Error Handling
 app.use(errorHandler);
 
-// Basic health check
+// Enhanced health check with system clock validation
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  const clockHealth = DateService.systemClockHealthCheck();
+  res.json({
+    status: clockHealth.healthy ? 'ok' : 'warning',
+    timestamp: DateService.now().toISOString(),
+    systemClock: clockHealth
+  });
 });
 
 // Root route

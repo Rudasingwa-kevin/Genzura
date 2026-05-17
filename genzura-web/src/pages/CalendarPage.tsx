@@ -216,8 +216,8 @@ export default function CalendarPage() {
             time: '11:59 PM',
             type: 'Deadline' as EventType,
             color: 'bg-amber-500',
-            caseId: c.id,
-            description: `Case deadline for ${c.client || 'Client'}`
+            caseId: c.caseNumber || c.id, // Use case number for display
+            description: `Case deadline for ${c.client?.name || c.client || 'Client'}`
           }));
 
         setEvents(deadlineEvents);

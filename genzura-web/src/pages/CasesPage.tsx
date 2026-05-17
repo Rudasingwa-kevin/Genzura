@@ -193,13 +193,15 @@ export default function CasesPage() {
                 </tr>
               </thead>
               <tbody>
-                {sorted.map((c) => (
-                  <tr
-                    key={c.id}
-                    onClick={() => navigate(`/cases/${c.id}`)}
-                    className="group border-b border-border-base last:border-0 hover:bg-page-bg/40 transition-all cursor-pointer animate-in-up"
-                  >
-                    <td className="px-8 py-6">
+                {sorted.map((c) => {
+                  const routeId = c.caseNumber || c.id;
+                  return (
+                    <tr
+                      key={c.id}
+                      onClick={() => navigate(`/cases/${routeId}`)}
+                      className="group border-b border-border-base last:border-0 hover:bg-page-bg/40 transition-all cursor-pointer animate-in-up"
+                    >
+                      <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
                         <div className="w-auto px-3 h-12 rounded-xl bg-brand-light flex items-center justify-center text-[10px] font-bold text-brand-blue border border-brand-blue/5 shadow-inner">
                           {c.caseNumber}
@@ -243,7 +245,8 @@ export default function CasesPage() {
                       </button>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
             {sorted.length === 0 && (
