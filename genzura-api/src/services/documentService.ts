@@ -1,4 +1,6 @@
 import { PrismaClient, DocumentType } from '@prisma/client';
+import { NotificationService } from './notificationService.js';
+import { emitToAll } from '../socket.js';
 
 const prisma = new PrismaClient();
 
@@ -29,9 +31,23 @@ export class DocumentService {
     fileUrl?: string;
     uploadedById: string;
   }) {
-    return prisma.caseDocument.create({
+    const document = await prisma.caseDocument.create({
       data
     });
+
+    const caseObj = await prisma.case.findUnique({ where: { id: data.caseId } });
+    if (caseObj) {
+      const notification = await NotificationService.createNotification({
+        userId: caseObj.attorneyId,
+        type: 'document',
+        title: 'New Document Uploaded',
+        body: `A new document (${data.name}) was uploaded to case ${caseObj.title}.`,
+        link: `/cases/${caseObj.id}`
+      });
+      emitToAll('new_notification', notification);
+    }
+
+    return document;
   }
 
   static async deleteDocument(id: string) {

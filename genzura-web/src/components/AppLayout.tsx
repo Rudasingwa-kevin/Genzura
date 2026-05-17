@@ -120,7 +120,9 @@ function NotificationPanel({
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-brand-dark text-sm leading-tight">{notif.title}</p>
                   <p className="text-xs text-text-muted mt-1 font-medium leading-relaxed">{notif.message || notif.body}</p>
-                  <p className="text-[10px] text-text-muted mt-2 font-bold uppercase tracking-wider">{notif.time}</p>
+                  <p className="text-[10px] text-text-muted mt-2 font-bold uppercase tracking-wider">
+                    {notif.time || (notif.createdAt ? new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '')}
+                  </p>
                 </div>
 
                 {/* Dismiss */}

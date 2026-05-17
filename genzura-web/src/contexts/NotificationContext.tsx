@@ -2,14 +2,16 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { toast } from 'react-hot-toast';
+import { notificationService } from '../api/services/notification.service';
 
 interface Notification {
   id: string;
   title: string;
-  message: string;
-  time: string;
+  body: string;
+  createdAt: string;
   read: boolean;
-  type: 'info' | 'success' | 'warning';
+  type: string;
+  link?: string;
 }
 
 interface NotificationContextType {
@@ -17,6 +19,7 @@ interface NotificationContextType {
   unreadCount: number;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
+  dismiss: (id: string) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -28,42 +31,30 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   useEffect(() => {
     if (user) {
+      // Fetch historical notifications
+      notificationService.getAll().then(data => {
+        setNotifications(data);
+      }).catch(console.error);
+
       const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
       const newSocket = io(baseUrl);
       
       newSocket.on('connect', () => {
-        console.log('Socket connected');
+        console.log('Socket connected for notifications');
         newSocket.emit('join', user.id);
       });
 
-      newSocket.on('case_status_updated', (data) => {
-        const newNotification: Notification = {
-          id: Date.now().toString(),
-          title: 'Case Status Updated',
-          message: `Case ${data.title} is now ${data.status}`,
-          time: 'Just now',
-          read: false,
-          type: 'info'
-        };
-        setNotifications(prev => [newNotification, ...prev]);
-        toast(newNotification.message, { icon: 'ℹ️' });
-      });
-
-      newSocket.on('new_case_note', () => {
-        const newNotification: Notification = {
-          id: Date.now().toString(),
-          title: 'New Case Note',
-          message: `A new note was added to your case.`,
-          time: 'Just now',
-          read: false,
-          type: 'success'
-        };
-        setNotifications(prev => [newNotification, ...prev]);
-        toast.success(newNotification.message);
+      newSocket.on('new_notification', (data: Notification) => {
+        // We only want to show it if it's meant for the current user
+        // The backend emits to all for now, but ideally it emits to user's room.
+        // Let's assume data has a userId field (it does from the service)
+        if ((data as any).userId === user.id) {
+          setNotifications(prev => [data, ...prev]);
+          toast(data.title, { icon: 'ℹ️' });
+        }
       });
 
       setSocket(newSocket);
-      console.log('Socket initialized:', socket?.id);
 
       return () => {
         newSocket.close();
@@ -73,16 +64,35 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  const markAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  const markAsRead = async (id: string) => {
+    try {
+      await notificationService.markRead(id);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  const markAllAsRead = async () => {
+    try {
+      await notificationService.markAllRead();
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const dismiss = async (id: string) => {
+    try {
+      await notificationService.dismiss(id);
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
-    <NotificationContext.Provider value={{ notifications, unreadCount, markAsRead, markAllAsRead }}>
+    <NotificationContext.Provider value={{ notifications, unreadCount, markAsRead, markAllAsRead, dismiss }}>
       {children}
     </NotificationContext.Provider>
   );

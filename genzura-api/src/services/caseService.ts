@@ -1,5 +1,6 @@
 import { PrismaClient, CaseStatus, CasePriority, CaseType } from '@prisma/client';
 import { emitToAll } from '../socket.js';
+import { NotificationService } from './notificationService.js';
 
 const prisma = new PrismaClient();
 
@@ -55,6 +56,16 @@ export class CaseService {
       where: { id },
       data: { status }
     });
+
+    const notification = await NotificationService.createNotification({
+      userId: updatedCase.attorneyId,
+      type: 'case',
+      title: 'Case Status Updated',
+      body: `Case ${updatedCase.title} is now ${status}`,
+      link: `/cases/${updatedCase.id}`
+    });
+    emitToAll('new_notification', notification);
+
     emitToAll('case_status_updated', updatedCase);
     return updatedCase;
   }
@@ -67,6 +78,19 @@ export class CaseService {
         text,
       }
     });
+
+    const caseObj = await prisma.case.findUnique({ where: { id: caseId } });
+    if (caseObj) {
+      const notification = await NotificationService.createNotification({
+        userId: caseObj.attorneyId,
+        type: 'case',
+        title: 'New Case Note',
+        body: `A new note was added to case ${caseObj.title}.`,
+        link: `/cases/${caseObj.id}`
+      });
+      emitToAll('new_notification', notification);
+    }
+
     emitToAll('new_case_note', { caseId, note });
     return note;
   }
