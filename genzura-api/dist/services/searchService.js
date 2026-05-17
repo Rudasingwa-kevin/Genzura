@@ -10,7 +10,8 @@ export class SearchService {
                 where: {
                     OR: [
                         { title: { contains: q, mode: 'insensitive' } },
-                        { client: { contains: q, mode: 'insensitive' } },
+                        { client: { name: { contains: q, mode: 'insensitive' } } },
+                        { client: { company: { contains: q, mode: 'insensitive' } } },
                         { description: { contains: q, mode: 'insensitive' } },
                     ],
                 },

@@ -1,6 +1,15 @@
 import path from 'path';
 import { DocumentService } from '../services/documentService.js';
 export class DocumentController {
+    static async getAll(req, res) {
+        try {
+            const documents = await DocumentService.getAllDocuments();
+            res.json(documents);
+        }
+        catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
     static async getByCase(req, res) {
         try {
             const { caseId } = req.params;
