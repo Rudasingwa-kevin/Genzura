@@ -29,7 +29,6 @@ type Tab = 'branding' | 'practice' | 'security' | 'integrations' | 'infra';
 export default function SystemSettings() {
   const [activeTab, setActiveTab] = useState<Tab>('branding');
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
   // Settings State
   const [settings, setSettings] = useState<Record<string, string>>({
@@ -49,8 +48,6 @@ export default function SystemSettings() {
         }
       } catch (error) {
         console.error('Failed to load settings', error);
-      } finally {
-        setIsLoading(false);
       }
     };
     fetchSettings();

@@ -27,7 +27,6 @@ import NewCaseModal from './NewCaseModal';
 import Breadcrumbs from './Breadcrumbs';
 import CommandPalette from './CommandPalette';
 import EmptyState from './EmptyState';
-import { CASES } from '../data/cases';
 
 
 

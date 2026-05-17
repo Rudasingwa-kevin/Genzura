@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Filter, Search as SearchIcon, MoreHorizontal, Clock,
-  CheckCircle2, Hourglass, Archive, X, Plus, Briefcase, User, Calendar, Zap, Loader2
+  CheckCircle2, Hourglass, Archive, Plus
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import AppLayout from '../components/AppLayout';

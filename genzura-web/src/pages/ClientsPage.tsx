@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search as SearchIcon, X, Mail, Phone, Briefcase, Calendar, ChevronRight, ExternalLink } from 'lucide-react';
+import { Plus, Search as SearchIcon, X, Mail, Phone, Briefcase, Calendar, ChevronRight } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { clientService } from '../api/services/client.service';
 import { TableSkeleton } from '../components/Skeleton';
