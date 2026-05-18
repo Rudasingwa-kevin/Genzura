@@ -11,12 +11,14 @@ import {
   Shield,
   ChevronRight,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  Settings
 } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
 import { CardSkeleton, TableSkeleton } from '../../components/Skeleton';
 import { useState, useEffect } from 'react';
 import { userService } from '../../api/services/user.service';
+import AdminSubscriptionModal from '../../components/AdminSubscriptionModal';
 
 const PLAN_INFO = {
   Genzura: {
@@ -69,6 +71,8 @@ export default function SubscriptionManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [users, setUsers] = useState<any[]>([]);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
     free: 0,
@@ -79,11 +83,10 @@ export default function SubscriptionManagement() {
     conversionRate: 0
   });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await userService.getAll();
-        setUsers(data);
+  const fetchData = async () => {
+    try {
+      const data = await userService.getAll();
+      setUsers(data);
 
         // Calculate stats
         const planCounts = data.reduce((acc: any, user: any) => {
@@ -108,12 +111,25 @@ export default function SubscriptionManagement() {
         });
       } catch (error) {
         console.error('Failed to fetch subscription data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    } catch (error) {
+      console.error('Failed to fetch subscription data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, []);
+
+  const handleManageClick = (user: any) => {
+    setSelectedUser(user);
+    setIsModalOpen(true);
+  };
+
+  const handleModalSuccess = () => {
+    fetchData(); // Refresh data after admin action
+  };
 
   const filtered = users.filter(u =>
     u.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -143,6 +159,13 @@ export default function SubscriptionManagement() {
 
   return (
     <AdminLayout title="Subscription Management">
+      <AdminSubscriptionModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        user={selectedUser}
+        onSuccess={handleModalSuccess}
+      />
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
         <div>
           <h1 className="text-3xl font-bold text-brand-dark tracking-tight">Subscription Management</h1>
@@ -265,6 +288,7 @@ export default function SubscriptionManagement() {
                   <th className="px-8 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest">Expiry Date</th>
                   <th className="px-8 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest">Status</th>
                   <th className="px-8 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest text-right">Revenue</th>
+                  <th className="px-8 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -339,6 +363,17 @@ export default function SubscriptionManagement() {
                         <span className="text-sm font-bold text-brand-dark">
                           {planInfo.price > 0 ? `${planInfo.price.toLocaleString()} RWF` : 'Free'}
                         </span>
+                      </td>
+                      <td className="px-8 py-6">
+                        <div className="flex justify-center">
+                          <button
+                            onClick={() => handleManageClick(user)}
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-blue text-white text-xs font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all"
+                          >
+                            <Settings size={14} />
+                            Manage
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
