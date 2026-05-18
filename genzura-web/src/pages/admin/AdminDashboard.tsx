@@ -1,13 +1,15 @@
-import { 
-  Users, 
-  Database, 
+import {
+  Users,
+  Database,
   Shield,
-  Activity, 
-  TrendingUp, 
+  Activity,
+  TrendingUp,
   ArrowRight,
   UserPlus,
   ShieldAlert,
-  Server
+  Server,
+  CreditCard,
+  DollarSign
 } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
 import { CardSkeleton } from '../../components/Skeleton';
@@ -33,6 +35,48 @@ const AdminKpiCard = ({ label, value, sub, icon: Icon, color, bg, trend }: any) 
   </div>
 );
 
+const SubscriptionDistribution = ({ subscriptions }: any) => (
+  <div className="bg-white rounded-[2.5rem] border border-border-base p-8 shadow-sm h-full">
+    <div className="flex items-center justify-between mb-8">
+      <div>
+        <h3 className="text-xl font-bold text-brand-dark">Subscription Overview</h3>
+        <p className="text-xs text-text-muted mt-1 uppercase tracking-widest font-medium">User plan distribution</p>
+      </div>
+      <button className="text-brand-blue font-bold text-xs hover:underline flex items-center gap-1">
+        View Details <ArrowRight size={14} />
+      </button>
+    </div>
+
+    <div className="space-y-6">
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: 'Genzura', plan: 'Free', count: subscriptions?.genzura || 0, color: 'bg-slate-500', textColor: 'text-slate-700' },
+          { label: 'Intango', plan: '3 Months', count: subscriptions?.intango || 0, color: 'bg-brand-blue', textColor: 'text-brand-blue' },
+          { label: 'Inkingi', plan: '1 Year', count: subscriptions?.inkingi || 0, color: 'bg-amber-500', textColor: 'text-amber-600' },
+        ].map(item => (
+          <div key={item.label} className="p-5 rounded-2xl bg-page-bg border border-border-base text-center hover:shadow-md transition-all">
+            <div className={`w-8 h-8 ${item.color} rounded-xl mx-auto mb-3`} />
+            <p className="text-2xl font-bold text-brand-dark">{item.count}</p>
+            <p className={`text-[10px] font-bold ${item.textColor} uppercase mt-1`}>{item.label}</p>
+            <p className="text-[9px] text-text-muted uppercase tracking-wider mt-0.5">{item.plan}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="pt-4 border-t border-border-base">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-bold text-text-muted uppercase tracking-wider">Monthly Recurring Revenue</span>
+          <span className="text-lg font-bold text-brand-blue">{subscriptions?.mrr || '0'} RWF</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold text-text-muted uppercase tracking-wider">Annual Revenue</span>
+          <span className="text-lg font-bold text-emerald-600">{subscriptions?.arr || '0'} RWF</span>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 const LicenseUsage = () => (
   <div className="bg-white rounded-[2.5rem] border border-border-base p-8 shadow-sm h-full">
     <div className="flex items-center justify-between mb-8">
@@ -44,7 +88,7 @@ const LicenseUsage = () => (
         Manage Seats <ArrowRight size={14} />
       </button>
     </div>
-    
+
     <div className="space-y-6">
       <div>
         <div className="flex justify-between items-end mb-2">
@@ -55,7 +99,7 @@ const LicenseUsage = () => (
           <div className="h-full bg-brand-blue w-[84%] rounded-full shadow-[0_0_12px_rgba(24,95,165,0.3)]" />
         </div>
       </div>
-      
+
       <div className="grid grid-cols-3 gap-4 pt-4">
         {[
           { label: 'Attorneys', count: 28, color: 'bg-brand-blue' },
@@ -94,12 +138,40 @@ import { userService } from '../../api/services/user.service';
 export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [userCount, setUserCount] = useState(0);
+  const [subscriptionData, setSubscriptionData] = useState({
+    genzura: 0,
+    intango: 0,
+    inkingi: 0,
+    mrr: '0',
+    arr: '0'
+  });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const users = await userService.getAll();
         setUserCount(users.length);
+
+        // Calculate subscription distribution
+        const planCounts = users.reduce((acc: any, user: any) => {
+          const plan = user.subscriptionPlan?.toLowerCase() || 'genzura';
+          acc[plan] = (acc[plan] || 0) + 1;
+          return acc;
+        }, { genzura: 0, intango: 0, inkingi: 0 });
+
+        // Calculate revenue (simplified - assumes monthly billing)
+        // Intango: 100,000 RWF / 3 months = ~33,333 RWF/month
+        // Inkingi: 200,000 RWF / 12 months = ~16,667 RWF/month
+        const mrr = (planCounts.intango * 33333) + (planCounts.inkingi * 16667);
+        const arr = (planCounts.intango * 100000 * 4) + (planCounts.inkingi * 200000); // Assuming 4 quarters
+
+        setSubscriptionData({
+          genzura: planCounts.genzura,
+          intango: planCounts.intango,
+          inkingi: planCounts.inkingi,
+          mrr: mrr.toLocaleString(),
+          arr: arr.toLocaleString()
+        });
       } catch (error) {
         console.error('Failed to fetch admin data:', error);
       } finally {
@@ -156,16 +228,22 @@ export default function AdminDashboard() {
               color="text-violet-600" 
               bg="bg-violet-50" 
             />
-            <AdminKpiCard 
-              label="Security Events" 
-              value="0" 
-              sub="Critical issues detected" 
-              icon={Shield} 
-              color="text-rose-500" 
-              bg="bg-rose-50" 
+            <AdminKpiCard
+              label="Revenue (MRR)"
+              value={`${Math.round(parseInt(subscriptionData.mrr.replace(/,/g, '')) / 1000)}K`}
+              sub="Monthly recurring revenue"
+              icon={DollarSign}
+              color="text-emerald-600"
+              bg="bg-emerald-50"
+              trend="+12%"
             />
           </>
         )}
+      </div>
+
+      {/* Subscription Overview */}
+      <div className="mb-10">
+        <SubscriptionDistribution subscriptions={subscriptionData} />
       </div>
 
       <div className="grid lg:grid-cols-4 gap-8 mb-10">

@@ -29,6 +29,7 @@ import UserAnalyticsPage from './pages/admin/UserAnalyticsPage';
 import UserManagement from './pages/admin/UserManagement';
 import SystemSettings from './pages/admin/SystemSettings';
 import AuditLogPage   from './pages/admin/AuditLogPage';
+import SubscriptionManagement from './pages/admin/SubscriptionManagement';
 
 function App() {
   return (
@@ -60,6 +61,7 @@ function App() {
             <Route path="/admin"          element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="/admin/analytics" element={<AdminRoute><UserAnalyticsPage /></AdminRoute>} />
             <Route path="/admin/users"    element={<AdminRoute><UserManagement /></AdminRoute>} />
+            <Route path="/admin/subscriptions" element={<AdminRoute><SubscriptionManagement /></AdminRoute>} />
             <Route path="/admin/settings" element={<AdminRoute><SystemSettings /></AdminRoute>} />
             <Route path="/admin/audit"    element={<AdminRoute><AuditLogPage /></AdminRoute>} />
           </Routes>

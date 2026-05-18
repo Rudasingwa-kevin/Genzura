@@ -1,14 +1,15 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Users, 
-  ShieldCheck, 
-  Settings, 
-  Activity, 
-  LogOut, 
+import {
+  LayoutDashboard,
+  Users,
+  ShieldCheck,
+  Settings,
+  Activity,
+  LogOut,
   X,
-  BarChart3
+  BarChart3,
+  CreditCard
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -16,6 +17,7 @@ const adminNavItems = [
   { icon: LayoutDashboard, label: 'Admin Overview', to: '/admin' },
   { icon: BarChart3,       label: 'User Analytics',  to: '/admin/analytics' },
   { icon: Users,           label: 'Team Management', to: '/admin/users' },
+  { icon: CreditCard,      label: 'Subscriptions',   to: '/admin/subscriptions' },
   { icon: Settings,        label: 'System Config',   to: '/admin/settings' },
   { icon: Activity,        label: 'Audit Trail',     to: '/admin/audit' },
 ];
