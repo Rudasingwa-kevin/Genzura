@@ -36,16 +36,16 @@ const PLAN_INFO = {
     color: 'text-brand-blue',
     bg: 'bg-blue-50',
     icon: Zap,
-    limit: 'Unlimited'
+    limit: 'Full features'
   },
   Inkingi: {
     name: 'Inkingi',
-    price: 200000,
+    price: 250000,
     duration: '1 year',
     color: 'text-amber-600',
     bg: 'bg-amber-50',
     icon: Crown,
-    limit: 'Unlimited + API'
+    limit: 'Same features'
   }
 };
 
@@ -95,8 +95,8 @@ export default function SubscriptionManagement() {
           return acc;
         }, { genzura: 0, intango: 0, inkingi: 0 });
 
-        const mrr = (planCounts.intango * 33333) + (planCounts.inkingi * 16667);
-        const arr = (planCounts.intango * 100000 * 4) + (planCounts.inkingi * 200000);
+        const mrr = (planCounts.intango * 33333) + (planCounts.inkingi * 20833);
+        const arr = (planCounts.intango * 100000 * 4) + (planCounts.inkingi * 250000);
         const paidUsers = planCounts.intango + planCounts.inkingi;
         const conversionRate = data.length > 0 ? ((paidUsers / data.length) * 100).toFixed(1) : 0;
 

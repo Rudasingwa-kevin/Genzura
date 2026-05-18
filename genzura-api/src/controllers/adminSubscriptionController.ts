@@ -234,8 +234,8 @@ export class AdminSubscriptionController {
       }, { genzura: 0, intango: 0, inkingi: 0, expiringSoon: 0, expired: 0 });
 
       // Calculate revenue
-      const mrr = (stats.intango * 33333) + (stats.inkingi * 16667);
-      const arr = (stats.intango * 100000 * 4) + (stats.inkingi * 200000);
+      const mrr = (stats.intango * 33333) + (stats.inkingi * 20833);
+      const arr = (stats.intango * 100000 * 4) + (stats.inkingi * 250000);
 
       res.json({
         total: users.length,

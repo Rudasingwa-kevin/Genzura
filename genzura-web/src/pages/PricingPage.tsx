@@ -74,22 +74,23 @@ const PLANS = [
       cases: 'Unlimited',
       documents: 'Unlimited',
       documentDownload: true,
-      collaborators: 5,
-      storage: '50 GB',
+      collaborators: 'Unlimited',
+      storage: '100 GB',
       calendarIntegration: 'Advanced',
       notifications: 'Email + SMS',
       analytics: true,
       prioritySupport: true,
       exportReports: true,
-      apiAccess: false,
-      customBranding: false
+      apiAccess: true,
+      customBranding: true
     },
     benefits: [
       'Unlimited cases and documents',
+      'Unlimited team members',
       'Full download capabilities',
-      'Advanced calendar integration',
-      'Priority email support',
-      'Export to PDF reports'
+      'Advanced calendar & analytics',
+      'API access for integrations',
+      'Custom branding options'
     ]
   },
   {
@@ -97,11 +98,11 @@ const PLANS = [
     name: 'Inkingi',
     tagline: 'Best Value',
     nameTranslation: 'Excellence',
-    price: 200000,
+    price: 250000,
     currency: 'RWF',
     billing: 'per year',
     duration: 365,
-    savings: '50% savings',
+    savings: '37% savings',
     icon: Crown,
     color: 'bg-amber-500',
     gradient: 'from-amber-400 to-orange-600',
@@ -110,9 +111,9 @@ const PLANS = [
       documents: 'Unlimited',
       documentDownload: true,
       collaborators: 'Unlimited',
-      storage: '500 GB',
-      calendarIntegration: 'Premium',
-      notifications: 'Email + SMS + In-App',
+      storage: '100 GB',
+      calendarIntegration: 'Advanced',
+      notifications: 'Email + SMS',
       analytics: true,
       prioritySupport: true,
       exportReports: true,
@@ -120,12 +121,12 @@ const PLANS = [
       customBranding: true
     },
     benefits: [
-      'Everything in Intango',
+      'Same features as Intango',
+      'Pay annually, save 37%',
+      'Unlimited cases and documents',
       'Unlimited team members',
-      'API access for integrations',
-      'Custom branding options',
-      'Dedicated account manager',
-      '50% cost savings vs quarterly'
+      'API access & custom branding',
+      'Best value for long-term use'
     ]
   }
 ];

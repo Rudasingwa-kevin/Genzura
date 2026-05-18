@@ -159,11 +159,11 @@ export default function AdminDashboard() {
           return acc;
         }, { genzura: 0, intango: 0, inkingi: 0 });
 
-        // Calculate revenue (simplified - assumes monthly billing)
+        // Calculate revenue
         // Intango: 100,000 RWF / 3 months = ~33,333 RWF/month
-        // Inkingi: 200,000 RWF / 12 months = ~16,667 RWF/month
-        const mrr = (planCounts.intango * 33333) + (planCounts.inkingi * 16667);
-        const arr = (planCounts.intango * 100000 * 4) + (planCounts.inkingi * 200000); // Assuming 4 quarters
+        // Inkingi: 250,000 RWF / 12 months = ~20,833 RWF/month
+        const mrr = (planCounts.intango * 33333) + (planCounts.inkingi * 20833);
+        const arr = (planCounts.intango * 100000 * 4) + (planCounts.inkingi * 250000); // 4 quarters for Intango, annual for Inkingi
 
         setSubscriptionData({
           genzura: planCounts.genzura,

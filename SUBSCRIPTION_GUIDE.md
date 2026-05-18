@@ -38,32 +38,35 @@ The plan names are in Kinyarwanda:
 - ✅ **Unlimited cases**
 - ✅ **Unlimited document uploads**
 - ✅ **Full document download** capabilities
-- ✅ Up to 5 team members
-- ✅ 50 GB storage
+- ✅ **Unlimited team members**
+- ✅ 100 GB storage
 - ✅ Advanced calendar integration
 - ✅ Email + SMS notifications
 - ✅ Analytics and insights
-- ✅ Priority email support
-- ✅ Export to PDF reports
-- ❌ No API access
-
-**Cost per day:** ~1,111 RWF/day
-
-### Inkingi (200,000 RWF / 12 months)
-- ✅ **Unlimited cases**
-- ✅ **Unlimited document uploads**
-- ✅ **Full document download** capabilities
-- ✅ **Unlimited team members**
-- ✅ 500 GB storage
-- ✅ Premium calendar integration
-- ✅ Email + SMS + In-App notifications
-- ✅ Advanced analytics and insights
-- ✅ Priority support with dedicated account manager
+- ✅ Priority support
 - ✅ Export to PDF reports
 - ✅ **API access** for integrations
 - ✅ **Custom branding** options
 
-**Cost per day:** ~548 RWF/day (50% savings vs. Intango)
+**Cost per day:** ~1,111 RWF/day
+
+### Inkingi (250,000 RWF / 12 months)
+- ✅ **Same features as Intango**
+- ✅ **Unlimited cases**
+- ✅ **Unlimited document uploads**
+- ✅ **Full document download** capabilities
+- ✅ **Unlimited team members**
+- ✅ 100 GB storage
+- ✅ Advanced calendar integration
+- ✅ Email + SMS notifications
+- ✅ Analytics and insights
+- ✅ Priority support
+- ✅ Export to PDF reports
+- ✅ **API access** for integrations
+- ✅ **Custom branding** options
+
+**Cost per day:** ~685 RWF/day (37.5% savings vs. Intango quarterly)
+**The only difference:** Duration! Same features, better value with annual commitment.
 
 ## Technical Implementation
 

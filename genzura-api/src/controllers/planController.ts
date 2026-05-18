@@ -140,7 +140,7 @@ export class PlanController {
             duration: 90,
             displayName: 'Intango',
             tagline: 'Most Popular',
-            description: 'Professional tier',
+            description: 'Full features - quarterly',
             maxCases: null,
             maxDocuments: null,
             features: {
@@ -150,23 +150,23 @@ export class PlanController {
               analytics: true,
               prioritySupport: true,
               exportReports: true,
-              apiAccess: false,
-              customBranding: false
+              apiAccess: true,
+              customBranding: true
             }
           },
           {
             plan: 'Inkingi',
-            price: 200000,
+            price: 250000,
             duration: 365,
             displayName: 'Inkingi',
             tagline: 'Best Value',
-            description: 'Premium tier',
+            description: 'Same features - save 37% annually',
             maxCases: null,
             maxDocuments: null,
             features: {
               documentDownload: true,
-              calendarIntegration: 'Premium',
-              notifications: 'Email + SMS + In-App',
+              calendarIntegration: 'Advanced',
+              notifications: 'Email + SMS',
               analytics: true,
               prioritySupport: true,
               exportReports: true,
