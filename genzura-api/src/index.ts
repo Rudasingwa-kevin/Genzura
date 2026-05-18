@@ -14,6 +14,7 @@ import clientRoutes from './routes/clientRoutes.js';
 import calendarRoutes from './routes/calendarRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import adminSubscriptionRoutes from './routes/adminSubscriptionRoutes.js';
+import planRoutes from './routes/planRoutes.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 import { createServer } from 'http';
 import { initSocket } from './socket.js';
@@ -43,6 +44,8 @@ app.use('/api/clients', clientRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/admin/subscriptions', adminSubscriptionRoutes);
+app.use('/api/admin/plans', planRoutes);
+app.use('/api/plans', planRoutes);
 
 // Error Handling
 app.use(errorHandler);

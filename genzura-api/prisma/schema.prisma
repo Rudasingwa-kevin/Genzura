@@ -275,3 +275,35 @@ model EventReminder {
   sentAt         DateTime?
   createdAt      DateTime        @default(now())
 }
+
+model PlanConfig {
+  id              String           @id @default(cuid())
+  plan            SubscriptionPlan @unique
+
+  // Pricing
+  price           Int              // Price in RWF
+  duration        Int              // Duration in days
+
+  // Display
+  displayName     String           // e.g., "Intango"
+  tagline         String?          // e.g., "Most Popular"
+  description     String?
+
+  // Limits
+  maxCases        Int?             // null = unlimited
+  maxDocuments    Int?             // null = unlimited
+  maxTeamMembers  Int?             // null = unlimited
+  storageGB       Int?
+
+  // Features (JSON)
+  features        Json             // Flexible feature flags
+
+  // Status
+  isActive        Boolean          @default(true)
+  isVisible       Boolean          @default(true) // Show on pricing page
+
+  // Audit
+  lastModifiedBy  String?
+  lastModifiedAt  DateTime         @default(now()) @updatedAt
+  createdAt       DateTime         @default(now())
+}
