@@ -21,6 +21,12 @@ enum UserStatus {
   Suspended
 }
 
+enum SubscriptionPlan {
+  Genzura   // Free tier
+  Intango   // 100,000 RWF / 3 months
+  Inkingi   // 200,000 RWF / 12 months
+}
+
 enum CaseStatus {
   Active
   Pending
@@ -76,25 +82,30 @@ enum NotificationType {
 }
 
 model User {
-  id              String          @id @default(cuid())
-  name            String
-  email           String          @unique
-  passwordHash    String
-  role            UserRole        @default(Attorney)
-  status          UserStatus      @default(Active)
-  lastActive      DateTime        @default(now())
-  initials        String
-  cases           Case[]          @relation("AttorneyCases")
-  teamMemberships CaseTeam[]
-  timelineEvents  TimelineEvent[]
-  uploadedDocs    CaseDocument[]
-  notes           CaseNote[]
-  feedback        Feedback[]
-  notifications   Notification[]
-  calendarEvents  CalendarEvent[]
-  eventAttendees  EventAttendee[]
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id                    String           @id @default(cuid())
+  name                  String
+  email                 String           @unique
+  passwordHash          String
+  role                  UserRole         @default(Attorney)
+  status                UserStatus       @default(Active)
+  lastActive            DateTime         @default(now())
+  initials              String
+  // Subscription fields
+  subscriptionPlan      SubscriptionPlan @default(Genzura)
+  subscriptionStartDate DateTime?
+  subscriptionEndDate   DateTime?
+  // Relations
+  cases                 Case[]           @relation("AttorneyCases")
+  teamMemberships       CaseTeam[]
+  timelineEvents        TimelineEvent[]
+  uploadedDocs          CaseDocument[]
+  notes                 CaseNote[]
+  feedback              Feedback[]
+  notifications         Notification[]
+  calendarEvents        CalendarEvent[]
+  eventAttendees        EventAttendee[]
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
 }
 
 model Client {

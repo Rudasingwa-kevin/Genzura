@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from 'react';
-import { 
-  User as UserIcon, 
-  Building, 
-  Shield, 
-  Bell, 
-  Camera, 
-  Monitor, 
+import {
+  User as UserIcon,
+  Building,
+  Shield,
+  Bell,
+  Camera,
+  Monitor,
   Loader2,
   Palette,
   Lock,
@@ -14,21 +14,24 @@ import {
   Zap,
   Moon,
   Sun,
-  Layout
+  Layout,
+  CreditCard
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import AppLayout from '../components/AppLayout';
 import { useAuth } from '../contexts/AuthContext';
+import PricingPage from './PricingPage';
 
 // ─── Tab types ────────────────────────────────────────────────────────────────
-type Tab = 'profile' | 'organization' | 'security' | 'notifications' | 'appearance';
+type Tab = 'profile' | 'organization' | 'security' | 'notifications' | 'appearance' | 'subscription';
 
 const TABS: { id: Tab; label: string; icon: React.ElementType; color: string }[] = [
-  { id: 'profile',      label: 'Personal Profile',    icon: UserIcon,  color: 'text-brand-blue' },
-  { id: 'organization', label: 'Organization Info',   icon: Building,  color: 'text-emerald-600' },
-  { id: 'security',     label: 'Security & Access',   icon: Shield,    color: 'text-amber-600' },
-  { id: 'notifications',label: 'Notifications',       icon: Bell,      color: 'text-violet-600' },
-  { id: 'appearance',   label: 'Interface Design',    icon: Palette,   color: 'text-rose-500' },
+  { id: 'profile',      label: 'Personal Profile',    icon: UserIcon,     color: 'text-brand-blue' },
+  { id: 'subscription', label: 'Subscription & Billing', icon: CreditCard, color: 'text-purple-600' },
+  { id: 'organization', label: 'Organization Info',   icon: Building,     color: 'text-emerald-600' },
+  { id: 'security',     label: 'Security & Access',   icon: Shield,       color: 'text-amber-600' },
+  { id: 'notifications',label: 'Notifications',       icon: Bell,         color: 'text-violet-600' },
+  { id: 'appearance',   label: 'Interface Design',    icon: Palette,      color: 'text-rose-500' },
 ];
 
 // ─── Shared form primitives ───────────────────────────────────────────────────
@@ -286,6 +289,7 @@ export default function SettingsPage() {
   const renderContent = () => {
     switch (activeTab) {
       case 'profile': return <ProfileTab />;
+      case 'subscription': return <PricingPage variant="settings" />;
       case 'security': return <SecurityTab />;
       case 'appearance': return <AppearanceTab />;
       case 'notifications': return <NotificationsTab />;
@@ -325,7 +329,9 @@ export default function SettingsPage() {
           </div>
 
           {/* Content Card */}
-          <div className="flex-1 w-full bg-white border border-border-base rounded-[3rem] p-10 shadow-sm relative overflow-hidden min-h-[600px]">
+          <div className={`flex-1 w-full bg-white border border-border-base rounded-[3rem] shadow-sm relative overflow-hidden min-h-[600px] ${
+            activeTab === 'subscription' ? 'p-6' : 'p-10'
+          }`}>
             <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none">
               <Zap size={240} />
             </div>

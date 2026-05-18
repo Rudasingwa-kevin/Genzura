@@ -20,6 +20,8 @@ import SettingsPage   from './pages/SettingsPage';
 import CaseDetailPage from './pages/CaseDetailPage';
 import LegalPage      from './pages/LegalPage';
 import FeedbackPage   from './pages/FeedbackPage';
+import PricingPage    from './pages/PricingPage';
+import SubscriptionSettingsPage from './pages/SubscriptionSettingsPage';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -39,6 +41,7 @@ function App() {
             <Route path="/register"   element={<RegisterPage />}  />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/pricing"    element={<PricingPage variant="public" />} />
             <Route path="/legal/:documentId" element={<LegalPage />} />
             
             <Route path="/dashboard"  element={<ProtectedRoute><Dashboard /></ProtectedRoute>}     />
@@ -50,6 +53,7 @@ function App() {
             <Route path="/clients/:id"   element={<ProtectedRoute><ClientDetailPage /></ProtectedRoute>}  />
             <Route path="/analytics"  element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
             <Route path="/settings"   element={<ProtectedRoute><SettingsPage /></ProtectedRoute>}  />
+            <Route path="/settings/subscription" element={<ProtectedRoute><SubscriptionSettingsPage /></ProtectedRoute>} />
             <Route path="/feedback"   element={<ProtectedRoute><FeedbackPage /></ProtectedRoute>}  />
             
             {/* Admin Routes */}

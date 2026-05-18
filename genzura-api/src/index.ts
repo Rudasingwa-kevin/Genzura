@@ -12,6 +12,7 @@ import searchRoutes from './routes/searchRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
 import clientRoutes from './routes/clientRoutes.js';
 import calendarRoutes from './routes/calendarRoutes.js';
+import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 import { createServer } from 'http';
 import { initSocket } from './socket.js';
@@ -39,6 +40,7 @@ app.use('/api/search', searchRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/calendar', calendarRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 
 // Error Handling
 app.use(errorHandler);

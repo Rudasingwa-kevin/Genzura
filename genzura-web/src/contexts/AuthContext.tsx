@@ -9,6 +9,9 @@ interface User {
   email: string;
   role: string;
   initials: string;
+  subscriptionPlan?: 'Genzura' | 'Intango' | 'Inkingi';
+  subscriptionStartDate?: string | null;
+  subscriptionEndDate?: string | null;
 }
 
 interface AuthContextType {

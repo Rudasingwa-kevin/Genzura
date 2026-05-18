@@ -30,6 +30,7 @@ const Navbar = () => {
 
         <div className="hidden md:flex items-center gap-8">
           <a href="#features" className="text-sm font-medium text-text-secondary hover:text-brand-blue transition-colors">Features</a>
+          <Link to="/pricing" className="text-sm font-medium text-text-secondary hover:text-brand-blue transition-colors">Pricing</Link>
           <a href="#about" className="text-sm font-medium text-text-secondary hover:text-brand-blue transition-colors">About</a>
           <a href="#solutions" className="text-sm font-medium text-text-secondary hover:text-brand-blue transition-colors">Solutions</a>
           <Link to="/login" className="text-sm font-medium text-text-secondary hover:text-brand-blue transition-colors">Sign in</Link>
@@ -47,6 +48,7 @@ const Navbar = () => {
       {isOpen && (
         <div className="md:hidden bg-white border-b p-6 flex flex-col gap-4 animate-in slide-in-from-top duration-300">
           <a href="#features" className="font-medium" onClick={() => setIsOpen(false)}>Features</a>
+          <Link to="/pricing" className="font-medium" onClick={() => setIsOpen(false)}>Pricing</Link>
           <a href="#about" className="font-medium" onClick={() => setIsOpen(false)}>About</a>
           <a href="#solutions" className="font-medium" onClick={() => setIsOpen(false)}>Solutions</a>
           <Link to="/login" className="font-medium" onClick={() => setIsOpen(false)}>Sign in</Link>
