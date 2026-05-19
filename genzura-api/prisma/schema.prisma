@@ -90,6 +90,11 @@ model User {
   status                UserStatus       @default(Active)
   lastActive            DateTime         @default(now())
   initials              String
+  // Profile fields
+  phone                 String?
+  location              String?
+  jobTitle              String?
+  language              String?          @default("EN")
   // Subscription fields
   subscriptionPlan      SubscriptionPlan @default(Genzura)
   subscriptionStartDate DateTime?

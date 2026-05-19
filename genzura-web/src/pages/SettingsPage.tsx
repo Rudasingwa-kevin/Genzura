@@ -97,12 +97,16 @@ const ProfileTab = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [firstName, setFirstName] = useState(user?.firstName || '');
   const [lastName, setLastName] = useState(user?.lastName || '');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [location, setLocation] = useState(user?.location || '');
+  const [jobTitle, setJobTitle] = useState(user?.jobTitle || '');
+  const [language, setLanguage] = useState(user?.language || 'EN');
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     setTimeout(() => {
-      updateUser({ firstName, lastName });
+      updateUser({ firstName, lastName, phone, location, jobTitle, language });
       setIsSaving(false);
       toast.success('Profile updated successfully!', { icon: '👤' });
     }, 800);
@@ -113,7 +117,7 @@ const ProfileTab = () => {
   return (
     <form onSubmit={handleSubmit} className="space-y-10 animate-in-fade">
       <SectionHeader title="Profile Settings" sub="Manage your public-facing identity" />
-      
+
       {/* Executive Avatar */}
       <div className="flex flex-col sm:flex-row items-center gap-8 bg-page-bg/50 p-8 rounded-[2rem] border border-border-base shadow-inner">
         <div className="relative group shrink-0">
@@ -126,7 +130,7 @@ const ProfileTab = () => {
         </div>
         <div className="text-center sm:text-left">
           <p className="font-bold text-brand-dark text-2xl tracking-tight">{user.firstName} {user.lastName}</p>
-          <p className="text-xs font-bold text-brand-blue uppercase tracking-[0.1em] mt-1">Lead Litigation Counsel</p>
+          <p className="text-xs font-bold text-brand-blue uppercase tracking-[0.1em] mt-1">{jobTitle || user.role}</p>
           <div className="flex flex-wrap justify-center sm:justify-start gap-4 mt-6">
             <button type="button" className="text-xs font-bold text-brand-blue uppercase tracking-[0.1em] hover:bg-white px-4 py-2 rounded-xl transition-all border border-brand-blue/10">Upload Photo</button>
             <button type="button" className="text-xs font-bold text-red-500 uppercase tracking-[0.1em] hover:bg-white px-4 py-2 rounded-xl transition-all border border-red-500/10">Remove</button>
@@ -138,9 +142,10 @@ const ProfileTab = () => {
         <Field label="First Name"><Input required value={firstName} onChange={e => setFirstName(e.target.value)} /></Field>
         <Field label="Last Name"><Input required value={lastName} onChange={e => setLastName(e.target.value)} /></Field>
         <Field label="Professional Email" hint="Cannot be changed"><Input readOnly value={user.email} className="bg-page-bg/50 text-text-muted cursor-not-allowed border-dashed" /></Field>
-        <Field label="Phone"><Input type="tel" defaultValue="+1 (555) 100-2030" /></Field>
-        <Field label="Location"><Input defaultValue="London, UK" /></Field>
-        <Field label="Language"><Select defaultValue="EN"><option value="EN">English (US)</option><option value="FR">Français</option></Select></Field>
+        <Field label="Phone"><Input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+250 XXX XXX XXX" /></Field>
+        <Field label="Job Title"><Input value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="e.g., Senior Attorney" /></Field>
+        <Field label="Location"><Input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g., Kigali, Rwanda" /></Field>
+        <Field label="Language"><Select value={language} onChange={e => setLanguage(e.target.value)}><option value="EN">English (US)</option><option value="FR">Français</option><option value="RW">Kinyarwanda</option></Select></Field>
       </div>
 
       <div className="pt-8 border-t border-border-base flex justify-end">

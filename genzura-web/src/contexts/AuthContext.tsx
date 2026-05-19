@@ -9,6 +9,10 @@ interface User {
   email: string;
   role: string;
   initials: string;
+  phone?: string;
+  location?: string;
+  jobTitle?: string;
+  language?: string;
   subscriptionPlan?: 'Genzura' | 'Intango' | 'Inkingi';
   subscriptionStartDate?: string | null;
   subscriptionEndDate?: string | null;
@@ -73,10 +77,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateUser = async (data: Partial<User>) => {
-    // For now, update local state. In a real app, call API.
     if (user) {
-      const updated = processUser({ ...user, ...data });
-      setUser(updated);
+      try {
+        const updatedUser = await authService.updateProfile(data);
+        const updated = processUser(updatedUser);
+        setUser(updated);
+      } catch (error) {
+        console.error('Failed to update profile:', error);
+        throw error;
+      }
     }
   };
 

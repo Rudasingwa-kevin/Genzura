@@ -100,5 +100,24 @@ export class UserService {
       data: { passwordHash },
     });
   }
+
+  static async updateProfile(id: string, data: {
+    name?: string;
+    phone?: string;
+    location?: string;
+    jobTitle?: string;
+    language?: string;
+  }) {
+    return prisma.user.update({
+      where: { id },
+      data: {
+        ...(data.name && { name: data.name }),
+        ...(data.phone !== undefined && { phone: data.phone }),
+        ...(data.location !== undefined && { location: data.location }),
+        ...(data.jobTitle !== undefined && { jobTitle: data.jobTitle }),
+        ...(data.language && { language: data.language }),
+      },
+    });
+  }
 }
 

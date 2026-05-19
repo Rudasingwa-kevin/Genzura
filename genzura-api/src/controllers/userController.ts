@@ -52,4 +52,27 @@ export class UserController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  static async updateProfile(req: any, res: Response) {
+    try {
+      const userId = req.user.id; // From auth middleware
+      const { firstName, lastName, phone, location, jobTitle, language } = req.body;
+
+      // Combine firstName and lastName into name if provided
+      const name = firstName && lastName ? `${firstName} ${lastName}` : undefined;
+
+      const updated = await UserService.updateProfile(userId, {
+        name,
+        phone,
+        location,
+        jobTitle,
+        language,
+      });
+
+      const { passwordHash, ...userWithoutPassword } = updated;
+      res.json(userWithoutPassword);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 }

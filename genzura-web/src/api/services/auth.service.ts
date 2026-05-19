@@ -22,6 +22,11 @@ export const authService = {
     return response.data;
   },
 
+  updateProfile: async (data: any) => {
+    const response = await apiClient.put('/users/profile', data);
+    return response.data;
+  },
+
   logout: () => {
     localStorage.removeItem('genzura_token');
   },
