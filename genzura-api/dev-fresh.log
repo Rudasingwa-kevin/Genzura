@@ -1,0 +1,85 @@
+
+> genzura-api@1.0.0 dev
+> tsx watch src/index.ts
+
+🚀 Genzura API running on http://localhost:5000
+⏰ Initializing cron scheduler...
+✅ Cron scheduler initialized
+   📅 Subscription expiry check: Daily at 2:00 AM (Africa/Kigali)
+▶️ All cron tasks started
+✅ Email service connected successfully
+🔧 Manual subscription expiry check triggered by s.miller@genzura.law
+🔧 Manual subscription expiry check triggered
+🔄 Running subscription expiry check...
+📊 Found 3 paid subscriptions to check
+✅ Expiry warning sent to d.chen@genzura.law (1 days)
+📧 Sent 1-day warning to d.chen@genzura.law
+✅ Expiry warning sent to kevincracker02@gmail.com (3 days)
+📧 Sent 3-day warning to kevincracker02@gmail.com
+✅ Expiry warning sent to e.rodriguez@genzura.law (7 days)
+📧 Sent 7-day warning to e.rodriguez@genzura.law
+✅ Subscription expiry check completed
+   - Expired & downgraded: 0
+   - 7-day warnings sent: 1
+   - 3-day warnings sent: 1
+   - 1-day warnings sent: 1
+09:24:00 [tsx] change in ./src\services\emailService.ts Restarting...
+cnode:events:487
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use :::5000
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at <anonymous> (C:\Users\KEVIN\Desktop\Genzura\genzura-api\src\index.ts:82:12)
+    at ModuleJob.run (node:internal/modules/esm/module_job:437:25)
+    at async node:internal/modules/esm/loader:639:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:2044:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 5000
+}
+
+Node.js v24.15.0
+09:24:10 [tsx] change in ./src\services\emailService.ts Rerunning...
+c🚀 Genzura API running on http://localhost:5000
+⏰ Initializing cron scheduler...
+✅ Cron scheduler initialized
+   📅 Subscription expiry check: Daily at 2:00 AM (Africa/Kigali)
+▶️ All cron tasks started
+09:26:33 [tsx] change in ./src\services\emailService.ts Rerunning...
+cnode:events:487
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use :::5000
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at <anonymous> (C:\Users\KEVIN\Desktop\Genzura\genzura-api\src\index.ts:82:12)
+    at ModuleJob.run (node:internal/modules/esm/module_job:437:25)
+    at async node:internal/modules/esm/loader:639:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:2044:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 5000
+}
+
+Node.js v24.15.0
+09:26:43 [tsx] change in ./src\services\emailService.ts Rerunning...
+c🚀 Genzura API running on http://localhost:5000
+⏰ Initializing cron scheduler...
+✅ Cron scheduler initialized
+   📅 Subscription expiry check: Daily at 2:00 AM (Africa/Kigali)
+▶️ All cron tasks started
