@@ -5,6 +5,13 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 export class UserService {
     static async createUser(data) {
+        // Check if user already exists
+        const existingUser = await prisma.user.findUnique({
+            where: { email: data.email }
+        });
+        if (existingUser) {
+            throw new Error('An account with this email already exists');
+        }
         const passwordHash = await bcrypt.hash(data.password || 'Genzura2026!', 10);
         return prisma.user.create({
             data: {

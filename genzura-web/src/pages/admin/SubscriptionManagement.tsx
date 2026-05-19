@@ -24,6 +24,7 @@ const PLAN_INFO = {
   Genzura: {
     name: 'Genzura',
     price: 0,
+    duration: undefined as string | undefined,
     color: 'text-slate-600',
     bg: 'bg-slate-50',
     icon: Shield,
@@ -109,8 +110,6 @@ export default function SubscriptionManagement() {
           arr,
           conversionRate: parseFloat(conversionRate as string)
         });
-      } catch (error) {
-        console.error('Failed to fetch subscription data:', error);
     } catch (error) {
       console.error('Failed to fetch subscription data:', error);
     } finally {
@@ -332,10 +331,10 @@ export default function SubscriptionManagement() {
                             {formatDate(user.subscriptionEndDate)}
                           </span>
                           {expiring && !expired && (
-                            <AlertCircle size={14} className="text-amber-500" title="Expiring soon" />
+                            <AlertCircle size={14} className="text-amber-500" aria-label="Expiring soon" />
                           )}
                           {expired && (
-                            <AlertCircle size={14} className="text-red-500" title="Expired" />
+                            <AlertCircle size={14} className="text-red-500" aria-label="Expired" />
                           )}
                         </div>
                       </td>

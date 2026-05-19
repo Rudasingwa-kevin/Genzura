@@ -219,6 +219,213 @@ export class EmailService {
         }
     }
     /**
+     * Send subscription expiry warning
+     */
+    static async sendSubscriptionExpiryWarning(email, name, plan, expiryDate, daysUntil) {
+        const transporter = createTransporter();
+        const urgencyColor = daysUntil === 1 ? '#dc2626' : daysUntil === 3 ? '#f59e0b' : '#3b82f6';
+        const urgencyEmoji = daysUntil === 1 ? '🚨' : daysUntil === 3 ? '⚠️' : '📅';
+        const formattedDate = expiryDate.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        try {
+            await transporter.sendMail({
+                from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
+                to: email,
+                subject: `${urgencyEmoji} Your ${plan} subscription expires in ${daysUntil} day${daysUntil > 1 ? 's' : ''}`,
+                html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid ${urgencyColor}; border-radius: 12px;">
+            <div style="text-align: center; margin-bottom: 30px; background-color: ${urgencyColor}; padding: 15px; border-radius: 8px;">
+              <h1 style="color: white; margin: 0;">${urgencyEmoji} Subscription Expiring Soon</h1>
+            </div>
+
+            <h2 style="color: #1e293b; margin-bottom: 20px;">Hi ${name},</h2>
+
+            <p style="color: #475569; line-height: 1.6; margin-bottom: 20px;">
+              Your <strong>${plan}</strong> subscription will expire in <strong style="color: ${urgencyColor};">${daysUntil} day${daysUntil > 1 ? 's' : ''}</strong> on <strong>${formattedDate}</strong>.
+            </p>
+
+            <div style="background-color: #fef2f2; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid ${urgencyColor};">
+              <h3 style="margin-top: 0; color: #1e293b;">What happens after expiry?</h3>
+              <ul style="color: #475569; line-height: 1.8;">
+                <li>Your account will be moved to the <strong>Genzura (Free)</strong> plan</li>
+                <li>You'll keep all your existing cases and documents</li>
+                <li>New case creation limited to 20 cases total</li>
+                <li>New document uploads limited to 20 documents total</li>
+                <li>Document downloads will be disabled</li>
+              </ul>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 30px;">
+              <a href="${process.env.FRONTEND_URL}/subscription" style="background-color: ${urgencyColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin-right: 10px;">
+                Renew Now
+              </a>
+              <a href="${process.env.FRONTEND_URL}/subscription/plans" style="background-color: #f1f5f9; color: #1e293b; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                View Plans
+              </a>
+            </div>
+
+            <p style="color: #475569; line-height: 1.6; font-size: 14px;">
+              Questions? Contact our support team at support@genzura.rw
+            </p>
+
+            <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 30px; font-size: 12px; color: #94a3b8; text-align: center;">
+              <p>&copy; 2026 Genzura Legal Management. All rights reserved.</p>
+            </div>
+          </div>
+        `
+            });
+            console.log(`✅ Expiry warning sent to ${email} (${daysUntil} days)`);
+        }
+        catch (error) {
+            console.error('❌ Failed to send expiry warning:', error);
+        }
+    }
+    /**
+     * Send grace period warning
+     */
+    static async sendGracePeriodWarning(email, name, plan, daysExpired) {
+        const transporter = createTransporter();
+        const daysRemaining = 3 - daysExpired;
+        try {
+            await transporter.sendMail({
+                from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
+                to: email,
+                subject: `⚠️ Grace Period: ${daysRemaining} day${daysRemaining > 1 ? 's' : ''} until downgrade`,
+                html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #dc2626; border-radius: 12px;">
+            <div style="text-align: center; margin-bottom: 30px; background-color: #dc2626; padding: 15px; border-radius: 8px;">
+              <h1 style="color: white; margin: 0;">⚠️ Subscription Expired - Grace Period Active</h1>
+            </div>
+
+            <h2 style="color: #1e293b; margin-bottom: 20px;">Hi ${name},</h2>
+
+            <p style="color: #475569; line-height: 1.6; margin-bottom: 20px;">
+              Your <strong>${plan}</strong> subscription has expired. You're currently in a <strong style="color: #dc2626;">3-day grace period</strong>.
+            </p>
+
+            <div style="background-color: #fef2f2; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #dc2626;">
+              <h3 style="margin-top: 0; color: #dc2626;">⏰ ${daysRemaining} day${daysRemaining > 1 ? 's' : ''} remaining</h3>
+              <p style="color: #475569; margin: 10px 0;">
+                Your account will be automatically downgraded to the <strong>Free Plan</strong> in ${daysRemaining} day${daysRemaining > 1 ? 's' : ''} if not renewed.
+              </p>
+              <ul style="color: #475569; line-height: 1.8; margin-top: 15px;">
+                <li>All your data will be preserved</li>
+                <li>Creation of new cases/documents will be limited</li>
+                <li>Premium features will be disabled</li>
+              </ul>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 30px;">
+              <a href="${process.env.FRONTEND_URL}/subscription" style="background-color: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                Renew Now to Keep Your Plan
+              </a>
+            </div>
+
+            <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 30px; font-size: 12px; color: #94a3b8; text-align: center;">
+              <p>&copy; 2026 Genzura Legal Management</p>
+            </div>
+          </div>
+        `
+            });
+            console.log(`✅ Grace period warning sent to ${email} (${daysRemaining} days left)`);
+        }
+        catch (error) {
+            console.error('❌ Failed to send grace period warning:', error);
+        }
+    }
+    /**
+     * Send subscription expired notification
+     */
+    static async sendSubscriptionExpiredEmail(email, name, previousPlan, casesCount, docsCount, caseOverage, docOverage) {
+        const transporter = createTransporter();
+        try {
+            await transporter.sendMail({
+                from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
+                to: email,
+                subject: '📋 Your subscription has expired - Now on Free Plan',
+                html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
+            <div style="text-align: center; margin-bottom: 30px; background-color: #f1f5f9; padding: 15px; border-radius: 8px;">
+              <h1 style="color: #1e293b; margin: 0;">📋 Subscription Expired</h1>
+            </div>
+
+            <h2 style="color: #1e293b; margin-bottom: 20px;">Hi ${name},</h2>
+
+            <p style="color: #475569; line-height: 1.6; margin-bottom: 20px;">
+              Your <strong>${previousPlan}</strong> subscription has expired. Your account has been moved to the <strong>Genzura (Free)</strong> plan.
+            </p>
+
+            <div style="background-color: #f1f5f9; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+              <h3 style="margin-top: 0; color: #1e293b;">Your Account Status:</h3>
+              <table style="width: 100%; color: #475569;">
+                <tr>
+                  <td style="padding: 8px 0;"><strong>Cases:</strong></td>
+                  <td style="padding: 8px 0; text-align: right;">${casesCount} ${caseOverage > 0 ? `<span style="color: #f59e0b;">(${caseOverage} over limit)</span>` : ''}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0;"><strong>Documents:</strong></td>
+                  <td style="padding: 8px 0; text-align: right;">${docsCount} ${docOverage > 0 ? `<span style="color: #f59e0b;">(${docOverage} over limit)</span>` : ''}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0;"><strong>Free Plan Limit:</strong></td>
+                  <td style="padding: 8px 0; text-align: right;">20 cases, 20 documents</td>
+                </tr>
+              </table>
+            </div>
+
+            ${caseOverage > 0 || docOverage > 0 ? `
+            <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #f59e0b;">
+              <h3 style="margin-top: 0; color: #92400e;">⚠️ You're over the free plan limits</h3>
+              <p style="color: #78350f; margin: 10px 0;">
+                <strong>Good news:</strong> All your existing data is safe and accessible!
+              </p>
+              <p style="color: #78350f; margin: 10px 0;">
+                However, you cannot create new cases or upload new documents until you:
+              </p>
+              <ul style="color: #78350f; line-height: 1.8;">
+                ${caseOverage > 0 ? `<li>Delete at least ${caseOverage} case${caseOverage > 1 ? 's' : ''}</li>` : ''}
+                ${docOverage > 0 ? `<li>Delete at least ${docOverage} document${docOverage > 1 ? 's' : ''}</li>` : ''}
+                <li><strong>OR</strong> upgrade to a paid plan for unlimited access</li>
+              </ul>
+            </div>
+            ` : `
+            <div style="background-color: #d1fae5; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #10b981;">
+              <p style="color: #065f46; margin: 0;">
+                ✅ You're within the free plan limits. You can continue creating cases and uploading documents!
+              </p>
+            </div>
+            `}
+
+            <div style="text-align: center; margin-bottom: 30px;">
+              <a href="${process.env.FRONTEND_URL}/subscription" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin-right: 10px;">
+                Upgrade Now
+              </a>
+              <a href="${process.env.FRONTEND_URL}/cases" style="background-color: #f1f5f9; color: #1e293b; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                Manage Cases
+              </a>
+            </div>
+
+            <p style="color: #475569; line-height: 1.6; font-size: 14px;">
+              Thank you for using Genzura. We hope you'll upgrade again soon!
+            </p>
+
+            <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 30px; font-size: 12px; color: #94a3b8; text-align: center;">
+              <p>&copy; 2026 Genzura Legal Management. All rights reserved.</p>
+            </div>
+          </div>
+        `
+            });
+            console.log(`✅ Subscription expired email sent to ${email}`);
+        }
+        catch (error) {
+            console.error('❌ Failed to send subscription expired email:', error);
+        }
+    }
+    /**
      * Test email configuration
      */
     static async testConnection() {

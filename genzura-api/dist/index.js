@@ -12,10 +12,15 @@ import searchRoutes from './routes/searchRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
 import clientRoutes from './routes/clientRoutes.js';
 import calendarRoutes from './routes/calendarRoutes.js';
+import subscriptionRoutes from './routes/subscriptionRoutes.js';
+import adminSubscriptionRoutes from './routes/adminSubscriptionRoutes.js';
+import planRoutes from './routes/planRoutes.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 import { createServer } from 'http';
 import { initSocket } from './socket.js';
 import { DateService } from './utils/dateUtils.js';
+import { CronScheduler } from './utils/cronScheduler.js';
+import adminJobsRoutes from './routes/adminJobsRoutes.js';
 dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
@@ -35,6 +40,11 @@ app.use('/api/search', searchRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/calendar', calendarRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/api/admin/subscriptions', adminSubscriptionRoutes);
+app.use('/api/admin/plans', planRoutes);
+app.use('/api/plans', planRoutes);
+app.use('/api/admin/jobs', adminJobsRoutes);
 // Error Handling
 app.use(errorHandler);
 // Enhanced health check with system clock validation
@@ -59,9 +69,15 @@ const httpServer = createServer(app);
 initSocket(httpServer);
 httpServer.listen(PORT, () => {
     console.log(`🚀 Genzura API running on http://localhost:${PORT}`);
+    // Initialize and start cron jobs
+    CronScheduler.initialize();
+    CronScheduler.start();
 });
 // Graceful shutdown
 process.on('SIGTERM', async () => {
+    console.log('🛑 Shutting down gracefully...');
+    CronScheduler.stop();
+    CronScheduler.destroy();
     await prisma.$disconnect();
     process.exit(0);
 });

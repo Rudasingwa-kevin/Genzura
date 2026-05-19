@@ -46,13 +46,26 @@ export class AuthController {
     static async register(req, res) {
         try {
             const { email, password, name, role } = req.body;
+            // Validate required fields
+            if (!email || !password || !name) {
+                return res.status(400).json({ error: 'Name, email, and password are required' });
+            }
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                return res.status(400).json({ error: 'Invalid email format' });
+            }
+            // Validate password strength
+            if (password.length < 8) {
+                return res.status(400).json({ error: 'Password must be at least 8 characters' });
+            }
             const initials = name
                 .split(' ')
                 .map((n) => n[0])
                 .join('')
                 .toUpperCase();
             const user = await UserService.createUser({
-                email,
+                email: email.toLowerCase().trim(),
                 password,
                 name,
                 role: role || 'Attorney',
@@ -65,7 +78,12 @@ export class AuthController {
             res.status(201).json({ user: userWithoutPassword, token });
         }
         catch (error) {
-            res.status(400).json({ error: error.message });
+            console.error('Registration error:', error);
+            // Handle specific error cases
+            if (error.message.includes('already exists')) {
+                return res.status(409).json({ error: error.message });
+            }
+            res.status(400).json({ error: error.message || 'Failed to create account' });
         }
     }
     static async forgotPassword(req, res) {
