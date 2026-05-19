@@ -83,3 +83,50 @@ Node.js v24.15.0
 ✅ Cron scheduler initialized
    📅 Subscription expiry check: Daily at 2:00 AM (Africa/Kigali)
 ▶️ All cron tasks started
+10:14:21 [tsx] change in ./src\services\userService.ts Rerunning...
+c🚀 Genzura API running on http://localhost:5000
+⏰ Initializing cron scheduler...
+✅ Cron scheduler initialized
+   📅 Subscription expiry check: Daily at 2:00 AM (Africa/Kigali)
+▶️ All cron tasks started
+User connected: Dmo4WzotqXwbJ-nEAAAB
+User cmpc9izcm000014kuilpgdpw3 joined their personal room
+10:14:28 [tsx] change in ./src\controllers\userController.ts Restarting...
+cnode:events:487
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use :::5000
+    at Server.setupListenHandle [as _listen2] (node:net:2008:16)
+    at listenInCluster (node:net:2065:12)
+    at Server.listen (node:net:2170:7)
+    at <anonymous> (C:\Users\KEVIN\Desktop\Genzura\genzura-api\src\index.ts:82:12)
+    at ModuleJob.run (node:internal/modules/esm/module_job:437:25)
+    at async node:internal/modules/esm/loader:639:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:2044:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 5000
+}
+
+Node.js v24.15.0
+10:14:34 [tsx] change in ./src\routes\userRoutes.ts Rerunning...
+c🚀 Genzura API running on http://localhost:5000
+⏰ Initializing cron scheduler...
+✅ Cron scheduler initialized
+   📅 Subscription expiry check: Daily at 2:00 AM (Africa/Kigali)
+▶️ All cron tasks started
+User connected: GzuYl8V2uRyzwnpZAAAB
+User cmpc9izcm000014kuilpgdpw3 joined their personal room
+User disconnected
+[Login] Attempt failed: User not found for email "kevincracker02@gmail.com"
+[Login] Attempt failed: User not found for email "kevincracker02@gmail.com"
+[Login] Attempt failed: User not found for email "kevincracker02@gmail.com"
+[Login] Attempt failed: User not found for email "kevincracker02@gmail.com"
+[Login] Attempt failed: User not found for email "j.wilson@genzura.law"
+✅ Email service connected successfully
