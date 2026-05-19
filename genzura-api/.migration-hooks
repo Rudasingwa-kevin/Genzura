@@ -1,0 +1,55 @@
+#!/bin/bash
+#
+# Migration Safety Hooks
+# Automatically runs before migrations to ensure data safety
+#
+
+echo ""
+echo "🔒 Running pre-migration safety checks..."
+echo ""
+
+# Check if in production
+if [ "$NODE_ENV" = "production" ]; then
+    echo "⚠️  PRODUCTION ENVIRONMENT DETECTED"
+    echo ""
+
+    # Force backup in production
+    echo "📦 Creating automatic backup..."
+    npm run db:backup
+
+    if [ $? -ne 0 ]; then
+        echo ""
+        echo "❌ Backup failed! Migration aborted."
+        echo "   Cannot proceed without backup in production."
+        exit 1
+    fi
+
+    echo ""
+    echo "✅ Backup completed successfully"
+
+    # Require confirmation
+    echo ""
+    read -p "⚠️  Continue with migration? (yes/no): " confirm
+
+    if [ "$confirm" != "yes" ]; then
+        echo ""
+        echo "❌ Migration cancelled"
+        exit 1
+    fi
+fi
+
+# Check database connection
+echo ""
+echo "🔌 Testing database connection..."
+npm run db:check > /dev/null 2>&1
+
+if [ $? -ne 0 ]; then
+    echo "❌ Database connection failed!"
+    echo "   Check DATABASE_URL and ensure PostgreSQL is running"
+    exit 1
+fi
+
+echo "✅ Database connection OK"
+echo ""
+echo "🚀 Proceeding with migration..."
+echo ""

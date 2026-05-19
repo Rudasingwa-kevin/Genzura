@@ -3,3 +3,15 @@ node_modules
 .env
 
 /src/generated/prisma
+
+# Database backups (local only, not in version control)
+backups/
+*.sql
+
+# Log files
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
