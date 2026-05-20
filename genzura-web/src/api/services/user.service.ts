@@ -6,6 +6,11 @@ export const userService = {
     return response.data;
   },
 
+  getActiveUsers: async () => {
+    const response = await apiClient.get('/users/active');
+    return response.data;
+  },
+
   getById: async (id: string) => {
     const response = await apiClient.get(`/users/${id}`);
     return response.data;

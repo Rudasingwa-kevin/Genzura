@@ -163,19 +163,49 @@ export class CaseService {
   }
 
   static async addTeamMember(caseId: string, userId: string) {
-    const caseTeam = await prisma.caseTeam.create({
+    // Create the team member
+    await prisma.caseTeam.create({
       data: {
         caseId,
         userId,
         role: 'Collaborator' // Default role
-      },
-      include: {
-        user: true
       }
     });
 
-    emitToAll('case_team_updated', { caseId, teamMember: caseTeam });
-    return caseTeam;
+    // Return the full updated case with all relationships
+    const updatedCase = await prisma.case.findUnique({
+      where: { id: caseId },
+      include: {
+        client: true,
+        attorney: true,
+        team: {
+          include: {
+            user: true
+          }
+        },
+        timeline: {
+          include: {
+            author: true
+          },
+          orderBy: { timestamp: 'desc' }
+        },
+        documents: {
+          include: {
+            uploadedBy: true
+          },
+          orderBy: { uploadedAt: 'desc' }
+        },
+        notes: {
+          include: {
+            author: true
+          },
+          orderBy: { timestamp: 'desc' }
+        }
+      }
+    });
+
+    emitToAll('case_team_updated', { caseId, case: updatedCase });
+    return updatedCase;
   }
 
   static async updateCase(idOrCaseNumber: string, data: any) {

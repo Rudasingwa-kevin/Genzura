@@ -11,6 +11,15 @@ export class UserController {
     }
   }
 
+  static async getActiveUsers(req: Request, res: Response) {
+    try {
+      const users = await UserService.getActiveUsers();
+      res.json(users);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   static async getOne(req: Request, res: Response) {
     try {
       const { id } = req.params;

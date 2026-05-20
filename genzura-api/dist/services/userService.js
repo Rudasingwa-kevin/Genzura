@@ -1,5 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, UserStatus } from '@prisma/client';
 import { createRequire } from 'module';
+import crypto from 'crypto';
+import { EmailService } from './emailService.js';
 const require = createRequire(import.meta.url);
 const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
@@ -36,6 +38,28 @@ export class UserService {
     static async getAllUsers() {
         return prisma.user.findMany({
             orderBy: { createdAt: 'desc' },
+        });
+    }
+    /**
+     * Get active users for case collaboration (accessible to all authenticated users)
+     */
+    static async getActiveUsers() {
+        return prisma.user.findMany({
+            where: {
+                status: UserStatus.Active,
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                initials: true,
+                status: true,
+                phone: true,
+                location: true,
+                jobTitle: true,
+            },
+            orderBy: { name: 'asc' },
         });
     }
     static async updateStatus(id, status) {
@@ -80,6 +104,114 @@ export class UserService {
             where: { id },
             data: { passwordHash },
         });
+    }
+    static async updateProfile(id, data) {
+        return prisma.user.update({
+            where: { id },
+            data: {
+                ...(data.name && { name: data.name }),
+                ...(data.phone !== undefined && { phone: data.phone }),
+                ...(data.location !== undefined && { location: data.location }),
+                ...(data.jobTitle !== undefined && { jobTitle: data.jobTitle }),
+                ...(data.language && { language: data.language }),
+            },
+        });
+    }
+    /**
+     * Invite a new user to the platform
+     */
+    static async inviteUser(data) {
+        // Check if user already exists
+        const existingUser = await prisma.user.findUnique({
+            where: { email: data.email }
+        });
+        if (existingUser) {
+            throw new Error('A user with this email already exists');
+        }
+        // Generate invitation token (valid for 7 days)
+        const invitationToken = crypto.randomBytes(32).toString('hex');
+        const invitationExpiry = new Date();
+        invitationExpiry.setDate(invitationExpiry.getDate() + 7);
+        // Generate initials from name
+        const nameParts = data.name.trim().split(' ');
+        const initials = nameParts.length >= 2
+            ? `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase()
+            : nameParts[0].substring(0, 2).toUpperCase();
+        // Create temporary password hash (will be replaced when user accepts invitation)
+        const tempPasswordHash = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 10);
+        // Create user with Invited status
+        const newUser = await prisma.user.create({
+            data: {
+                name: data.name,
+                email: data.email,
+                role: data.role,
+                status: UserStatus.Invited,
+                initials,
+                passwordHash: tempPasswordHash,
+                phone: data.phone,
+                location: data.location,
+                jobTitle: data.jobTitle || data.role,
+                invitationToken,
+                invitationExpiry,
+            },
+        });
+        // Send invitation email
+        try {
+            await EmailService.sendInvitationEmail(data.email, data.name, data.role, invitationToken, data.invitedBy);
+        }
+        catch (emailError) {
+            // If email fails, delete the user and throw error
+            await prisma.user.delete({ where: { id: newUser.id } });
+            throw new Error('Failed to send invitation email. Please try again.');
+        }
+        // Return user without sensitive data
+        const { passwordHash, invitationToken: token, ...userWithoutSensitiveData } = newUser;
+        return userWithoutSensitiveData;
+    }
+    /**
+     * Verify invitation token
+     */
+    static async verifyInvitationToken(token) {
+        const user = await prisma.user.findUnique({
+            where: { invitationToken: token }
+        });
+        if (!user) {
+            throw new Error('Invalid invitation token');
+        }
+        if (!user.invitationExpiry || user.invitationExpiry < new Date()) {
+            throw new Error('Invitation has expired');
+        }
+        if (user.status !== UserStatus.Invited) {
+            throw new Error('Invitation has already been accepted');
+        }
+        return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role
+        };
+    }
+    /**
+     * Accept invitation and set password
+     */
+    static async acceptInvitation(token, password) {
+        // Verify token first
+        const userInfo = await this.verifyInvitationToken(token);
+        // Hash the new password
+        const passwordHash = await bcrypt.hash(password, 10);
+        // Update user: set password, clear token, activate account
+        const updatedUser = await prisma.user.update({
+            where: { id: userInfo.id },
+            data: {
+                passwordHash,
+                status: UserStatus.Active,
+                invitationToken: null,
+                invitationExpiry: null,
+            },
+        });
+        // Return user without password
+        const { passwordHash: _, ...userWithoutPassword } = updatedUser;
+        return userWithoutPassword;
     }
 }
 //# sourceMappingURL=userService.js.map

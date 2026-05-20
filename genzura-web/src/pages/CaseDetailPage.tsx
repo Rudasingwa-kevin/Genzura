@@ -934,17 +934,35 @@ export default function CaseDetailPage() {
         </div>
       </div>
       {/* Invite Modal */}
-      <InviteCollaboratorModal 
-        isOpen={showInviteModal} 
+      <InviteCollaboratorModal
+        isOpen={showInviteModal}
         onClose={() => setShowInviteModal(false)}
         existingTeam={caseData.team}
         onInvite={async (userId) => {
           try {
-            const updatedCase = await caseService.addTeamMember(caseData.id, userId);
-            setCurrentCase(updatedCase);
+            const data = await caseService.addTeamMember(caseData.id, userId);
+
+            // Transform the response to match the expected format
+            const transformedCase = {
+              ...data,
+              client: data.client?.name || data.clientName || 'Unknown Client',
+              clientEmail: data.client?.email || data.clientEmail || '',
+              clientPhone: data.client?.phone || data.clientPhone || '',
+              clientCompany: data.client?.company || data.clientCompany || '',
+              attorney: data.attorney?.name || data.attorneyName || 'Unknown Attorney',
+              clientObject: data.client,
+              attorneyObject: data.attorney,
+              team: data.team || [],
+              timeline: data.timeline || [],
+              documents: data.documents || [],
+              notes: data.notes || [],
+            };
+
+            setCurrentCase(transformedCase);
             setShowInviteModal(false);
             toast.success('Team member added successfully');
           } catch (error) {
+            console.error('Failed to add team member:', error);
             toast.error('Failed to add team member');
           }
         }}
@@ -975,12 +993,27 @@ const InviteCollaboratorModal = ({
       const fetchUsers = async () => {
         setIsLoading(true);
         try {
-          const allUsers = await userService.getAll();
+          // Get only active users (this endpoint is accessible to all authenticated users)
+          const activeUsers = await userService.getActiveUsers();
+          console.log('📋 Active users fetched:', activeUsers.length);
+          console.log('👥 Existing team members:', existingTeam.map(m => m.name || m.email));
+
           // Filter out users already in the team
-          const filtered = allUsers.filter((u: any) => !existingTeam.find(m => m.id === u.id));
+          const filtered = activeUsers.filter((u: any) => {
+            const notInTeam = !existingTeam.find(m => m.id === u.id);
+
+            if (!notInTeam) {
+              console.log(`✓ Skipping ${u.name} - already on team`);
+            }
+
+            return notInTeam;
+          });
+
+          console.log('✅ Available users:', filtered.map(u => `${u.name} (${u.email})`));
           setUsers(filtered);
         } catch (error) {
           console.error('Failed to fetch users:', error);
+          toast.error('Failed to load users');
         } finally {
           setIsLoading(false);
         }
@@ -991,9 +1024,10 @@ const InviteCollaboratorModal = ({
 
   if (!isOpen) return null;
 
-  const filteredUsers = users.filter(u => 
-    u.name.toLowerCase().includes(search.toLowerCase()) || 
-    u.email.toLowerCase().includes(search.toLowerCase())
+  const filteredUsers = users.filter(u =>
+    u.name.toLowerCase().includes(search.toLowerCase()) ||
+    u.email.toLowerCase().includes(search.toLowerCase()) ||
+    u.role.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -1008,26 +1042,58 @@ const InviteCollaboratorModal = ({
             </button>
           </div>
           <p className="text-xs font-bold text-text-muted uppercase tracking-widest">Add an attorney or paralegal to this case</p>
+          {users.length > 0 && (
+            <div className="mt-3 text-xs text-text-muted">
+              <span className="font-bold text-brand-blue">{users.length}</span> active user{users.length !== 1 ? 's' : ''} available
+            </div>
+          )}
         </div>
 
         <div className="p-8 space-y-6">
           <div className="relative group">
             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted group-focus-within:text-brand-blue transition-colors" />
-            <input 
+            <input
               autoFocus
-              type="text" 
-              placeholder="Search by name or email..." 
+              type="text"
+              placeholder="Search by name, email, or role..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full h-12 pl-12 pr-5 rounded-2xl border border-border-base focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/5 outline-none transition-all font-medium text-sm"
             />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-brand-dark transition-colors"
+              >
+                <X size={16} />
+              </button>
+            )}
           </div>
 
           <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
             {isLoading ? (
               <div className="py-10 text-center"><Loader2 className="animate-spin mx-auto text-brand-blue" /></div>
+            ) : users.length === 0 ? (
+              <div className="py-10 text-center space-y-3">
+                <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mx-auto">
+                  <User size={24} className="text-amber-600" />
+                </div>
+                <div>
+                  <p className="font-bold text-brand-dark mb-1">No Available Users</p>
+                  <p className="text-xs text-text-muted">All active users are already on this case,</p>
+                  <p className="text-xs text-text-muted">or invite new team members first.</p>
+                </div>
+              </div>
             ) : filteredUsers.length === 0 ? (
-              <div className="py-10 text-center text-text-muted font-bold text-xs uppercase tracking-widest">No users found</div>
+              <div className="py-10 text-center space-y-3">
+                <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center mx-auto">
+                  <Search size={24} className="text-slate-400" />
+                </div>
+                <div>
+                  <p className="font-bold text-brand-dark mb-1">No matches for "{search}"</p>
+                  <p className="text-xs text-text-muted">Try a different search term or clear the filter</p>
+                </div>
+              </div>
             ) : (
               filteredUsers.map(user => (
                 <div 

@@ -56,6 +56,29 @@ export class UserService {
     });
   }
 
+  /**
+   * Get active users for case collaboration (accessible to all authenticated users)
+   */
+  static async getActiveUsers() {
+    return prisma.user.findMany({
+      where: {
+        status: UserStatus.Active,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        initials: true,
+        status: true,
+        phone: true,
+        location: true,
+        jobTitle: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+  }
+
   static async updateStatus(id: string, status: any) {
     return prisma.user.update({
       where: { id },
