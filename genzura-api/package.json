@@ -20,7 +20,8 @@
     "db:check": "node scripts/check-db.js",
     "db:seed": "node --loader ts-node/esm prisma/seed.ts",
     "db:check-data": "node scripts/check-seed-data.mjs",
-    "db:add-data": "node scripts/add-more-data.mjs"
+    "db:add-data": "node scripts/add-more-data.mjs",
+    "test:invitation": "node test-invitation.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.x.x",

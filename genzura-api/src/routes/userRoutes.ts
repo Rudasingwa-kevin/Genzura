@@ -15,6 +15,7 @@ router.get('/', UserController.getAll);
 router.get('/analytics', UserController.getAnalytics);
 router.get('/:id', UserController.getOne);
 router.post('/', UserController.create);
+router.post('/invite', UserController.inviteUser);
 router.patch('/:id/status', UserController.updateStatus);
 
 export default router;

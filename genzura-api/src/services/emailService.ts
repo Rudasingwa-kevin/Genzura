@@ -511,6 +511,75 @@ export class EmailService {
   }
 
   /**
+   * Send invitation email to new team member
+   */
+  static async sendInvitationEmail(
+    email: string,
+    name: string,
+    role: string,
+    invitationToken: string,
+    invitedBy: string
+  ) {
+    const transporter = createTransporter();
+    const inviteLink = `${process.env.FRONTEND_URL}/accept-invitation?token=${invitationToken}`;
+
+    try {
+      await transporter.sendMail({
+        from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
+        to: email,
+        subject: `You're invited to join Genzura Legal Management`,
+        html: `
+          <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            ${getEmailHeader('Welcome to the Team! 🎉')}
+
+            <div style="padding: 35px 30px;">
+              <h2 style="color: ${BRAND_COLORS.dark}; margin: 0 0 20px 0; font-size: 22px; font-weight: 700;">Hi ${name},</h2>
+
+              <p style="color: #475569; line-height: 1.7; margin-bottom: 25px; font-size: 15px;">
+                <strong style="color: ${BRAND_COLORS.dark};">${invitedBy}</strong> has invited you to join their team on <strong>Genzura Legal Management</strong> as a <strong style="color: ${BRAND_COLORS.blue};">${role}</strong>.
+              </p>
+
+              <div style="background: ${BRAND_COLORS.light}; padding: 25px; border-radius: 10px; margin-bottom: 30px; border-left: 4px solid ${BRAND_COLORS.blue};">
+                <h3 style="margin: 0 0 15px 0; color: ${BRAND_COLORS.dark}; font-size: 16px; font-weight: 700;">What you'll get access to:</h3>
+                <ul style="color: #475569; line-height: 2; margin: 0; padding-left: 20px; font-size: 14px;">
+                  <li>📂 Comprehensive case management system</li>
+                  <li>📄 Document storage and collaboration</li>
+                  <li>📅 Integrated calendar and deadline tracking</li>
+                  <li>👥 Team collaboration tools</li>
+                  <li>📊 Real-time case updates and notifications</li>
+                </ul>
+              </div>
+
+              <div style="text-align: center; margin-bottom: 30px;">
+                <a href="${inviteLink}" style="background: linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.dark} 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 700; display: inline-block; font-size: 15px; box-shadow: 0 4px 12px rgba(24, 95, 165, 0.3);">
+                  Accept Invitation & Set Password →
+                </a>
+              </div>
+
+              <div style="background: linear-gradient(135deg, #fef3c7 0%, #fef9e7 100%); padding: 20px; border-radius: 10px; margin-bottom: 25px; border-left: 4px solid #f59e0b;">
+                <p style="color: #78350f; margin: 0; font-size: 13px; font-weight: 600;">
+                  ⏰ <strong>Note:</strong> This invitation link will expire in 7 days for security reasons.
+                </p>
+              </div>
+
+              <p style="color: #64748b; line-height: 1.6; font-size: 13px; text-align: center;">
+                Need help? Contact us at <a href="mailto:support@genzura.rw" style="color: ${BRAND_COLORS.blue}; text-decoration: none; font-weight: 600;">support@genzura.rw</a>
+              </p>
+
+              ${getEmailFooter()}
+            </div>
+          </div>
+        `
+      });
+
+      console.log(`✅ Invitation email sent to ${email}`);
+    } catch (error) {
+      console.error('❌ Failed to send invitation email:', error);
+      throw new Error('Failed to send invitation email');
+    }
+  }
+
+  /**
    * Test email configuration
    */
   static async testConnection() {

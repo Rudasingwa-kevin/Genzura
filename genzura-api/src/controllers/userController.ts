@@ -75,4 +75,33 @@ export class UserController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  static async inviteUser(req: any, res: Response) {
+    try {
+      const { name, email, role, phone, location, jobTitle } = req.body;
+      const invitedBy = req.user.name; // Name of the user sending the invitation
+
+      // Validate required fields
+      if (!name || !email || !role) {
+        return res.status(400).json({ error: 'Name, email, and role are required' });
+      }
+
+      const newUser = await UserService.inviteUser({
+        name,
+        email,
+        role,
+        phone,
+        location,
+        jobTitle,
+        invitedBy,
+      });
+
+      res.status(201).json({
+        message: 'Invitation sent successfully',
+        user: newUser
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 }

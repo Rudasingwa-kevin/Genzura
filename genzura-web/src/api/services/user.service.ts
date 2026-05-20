@@ -20,4 +20,16 @@ export const userService = {
     const response = await apiClient.get('/users/analytics');
     return response.data;
   },
+
+  inviteUser: async (data: {
+    name: string;
+    email: string;
+    role: string;
+    phone?: string;
+    location?: string;
+    jobTitle?: string;
+  }) => {
+    const response = await apiClient.post('/users/invite', data);
+    return response.data;
+  },
 };

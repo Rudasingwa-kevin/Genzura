@@ -43,20 +43,45 @@ const PLAN_STYLES: Record<string, { bg: string; text: string; icon: any }> = {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function InviteUserModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+function InviteUserModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose: () => void; onSuccess: () => void }) {
   const [isSending, setIsSending] = useState(false);
-  
-  const handleInvite = (e: React.FormEvent) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    role: 'Attorney',
+    phone: '',
+    location: 'Kigali, Rwanda',
+    jobTitle: ''
+  });
+
+  const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSending(true);
-    setTimeout(() => {
-      setIsSending(false);
-      toast.success('Invitation dispatched to team member!', {
+
+    try {
+      await userService.inviteUser(formData);
+      toast.success('Invitation sent successfully!', {
         icon: '📨',
         style: { borderRadius: '1.25rem', fontWeight: 'bold' }
       });
+      setFormData({
+        name: '',
+        email: '',
+        role: 'Attorney',
+        phone: '',
+        location: 'Kigali, Rwanda',
+        jobTitle: ''
+      });
+      onSuccess(); // Refresh the user list
       onClose();
-    }, 1500);
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Failed to send invitation', {
+        icon: '❌',
+        style: { borderRadius: '1.25rem', fontWeight: 'bold' }
+      });
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -69,20 +94,52 @@ function InviteUserModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
         </div>
         <form onSubmit={handleInvite} className="space-y-6">
           <div className="space-y-2">
+            <label className="text-[10px] font-bold text-brand-dark uppercase tracking-widest ml-1">Full Name</label>
+            <input
+              required
+              type="text"
+              placeholder="John Doe"
+              value={formData.name}
+              onChange={(e) => setFormData({...formData, name: e.target.value})}
+              className="w-full h-14 px-6 rounded-2xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-brand-dark"
+            />
+          </div>
+          <div className="space-y-2">
             <label className="text-[10px] font-bold text-brand-dark uppercase tracking-widest ml-1">Email Address</label>
             <div className="relative">
               <Mail size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-text-muted" />
-              <input required type="email" placeholder="attorney@genzura.law" className="w-full h-14 pl-14 pr-6 rounded-2xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-brand-dark" />
+              <input
+                required
+                type="email"
+                placeholder="attorney@genzura.law"
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                className="w-full h-14 pl-14 pr-6 rounded-2xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-brand-dark"
+              />
             </div>
           </div>
           <div className="space-y-2">
             <label className="text-[10px] font-bold text-brand-dark uppercase tracking-widest ml-1">Assigned Role</label>
-            <select className="w-full h-14 px-6 rounded-2xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-brand-dark text-sm appearance-none cursor-pointer">
-              <option>Senior Attorney</option>
-              <option>Attorney</option>
-              <option>Paralegal</option>
-              <option>Support Staff</option>
+            <select
+              value={formData.role}
+              onChange={(e) => setFormData({...formData, role: e.target.value, jobTitle: e.target.value})}
+              className="w-full h-14 px-6 rounded-2xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-brand-dark text-sm appearance-none cursor-pointer"
+            >
+              <option value="Senior_Attorney">Senior Attorney</option>
+              <option value="Attorney">Attorney</option>
+              <option value="Paralegal">Paralegal</option>
+              <option value="Support">Support</option>
             </select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-brand-dark uppercase tracking-widest ml-1">Phone (Optional)</label>
+            <input
+              type="tel"
+              placeholder="+250 788 123 456"
+              value={formData.phone}
+              onChange={(e) => setFormData({...formData, phone: e.target.value})}
+              className="w-full h-14 px-6 rounded-2xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-brand-dark"
+            />
           </div>
           <button type="submit" disabled={isSending} className="w-full h-14 bg-brand-blue text-white rounded-2xl font-bold shadow-xl shadow-brand-blue/20 hover:shadow-2xl hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-3 disabled:opacity-70 mt-4">
             {isSending ? <Loader2 size={20} className="animate-spin" /> : <Zap size={20} />}
@@ -102,17 +159,19 @@ export default function UserManagement() {
   const [search, setSearch] = useState('');
   const [users, setUsers] = useState<any[]>([]);
 
+  const fetchUsers = async () => {
+    try {
+      setIsLoading(true);
+      const data = await userService.getAll();
+      setUsers(data);
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const data = await userService.getAll();
-        setUsers(data);
-      } catch (error) {
-        console.error('Failed to fetch users:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchUsers();
   }, []);
 
@@ -124,7 +183,11 @@ export default function UserManagement() {
 
   return (
     <AdminLayout title="User Management">
-      <InviteUserModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <InviteUserModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={fetchUsers}
+      />
       
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
         <div>

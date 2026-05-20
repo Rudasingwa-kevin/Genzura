@@ -99,6 +99,9 @@ model User {
   subscriptionPlan      SubscriptionPlan @default(Genzura)
   subscriptionStartDate DateTime?
   subscriptionEndDate   DateTime?
+  // Invitation fields
+  invitationToken       String?          @unique
+  invitationExpiry      DateTime?
   // Relations
   cases                 Case[]           @relation("AttorneyCases")
   teamMemberships       CaseTeam[]

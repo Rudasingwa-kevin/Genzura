@@ -8,6 +8,8 @@ router.post('/login', AuthController.login);
 router.post('/register', AuthController.register);
 router.post('/forgot-password', AuthController.forgotPassword);
 router.post('/reset-password', AuthController.resetPassword);
+router.get('/verify-invitation/:token', AuthController.verifyInvitation);
+router.post('/accept-invitation', AuthController.acceptInvitation);
 router.get('/me', authenticate, AuthController.me);
 
 
