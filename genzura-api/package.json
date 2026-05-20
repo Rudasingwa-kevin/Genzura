@@ -17,7 +17,10 @@
     "migrate:reset": "prisma migrate reset",
     "db:backup": "node scripts/backup-db.js",
     "db:restore": "node scripts/restore-db.js",
-    "db:check": "node scripts/check-db.js"
+    "db:check": "node scripts/check-db.js",
+    "db:seed": "node --loader ts-node/esm prisma/seed.ts",
+    "db:check-data": "node scripts/check-seed-data.mjs",
+    "db:add-data": "node scripts/add-more-data.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.x.x",
