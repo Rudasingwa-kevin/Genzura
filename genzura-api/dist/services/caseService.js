@@ -4,7 +4,33 @@ import { NotificationService } from './notificationService.js';
 import { DateService } from '../utils/dateUtils.js';
 const prisma = new PrismaClient();
 export class CaseService {
-    static async getAllCases() {
+    static async getAllCases(userId) {
+        // If userId is provided, filter cases where user is attorney or team member
+        if (userId) {
+            return prisma.case.findMany({
+                where: {
+                    OR: [
+                        { attorneyId: userId },
+                        {
+                            team: {
+                                some: {
+                                    userId: userId
+                                }
+                            }
+                        }
+                    ]
+                },
+                include: {
+                    attorney: true,
+                    client: true,
+                    team: {
+                        include: { user: true }
+                    }
+                },
+                orderBy: { updatedAt: 'desc' }
+            });
+        }
+        // Admin users can see all cases (when no userId filter)
         return prisma.case.findMany({
             include: {
                 attorney: true,
@@ -16,36 +42,15 @@ export class CaseService {
             orderBy: { updatedAt: 'desc' }
         });
     }
-    static async getCaseById(idOrCaseNumber) {
+    static async getCaseById(idOrCaseNumber, userId, userRole) {
         // Try to find by caseNumber first (if it matches the pattern), then by ID
         // Flexible pattern: PREFIX-NUMBERS (e.g., CV-2025-003, CV-2026-0482, IP-2024-1234)
         const isCaseNumber = /^[A-Z]+-\d+-\d+$/.test(idOrCaseNumber);
-        if (isCaseNumber) {
-            return prisma.case.findUnique({
-                where: { caseNumber: idOrCaseNumber },
-                include: {
-                    attorney: true,
-                    client: true,
-                    team: {
-                        include: { user: true }
-                    },
-                    timeline: {
-                        include: { author: true },
-                        orderBy: { timestamp: 'desc' }
-                    },
-                    documents: {
-                        include: { uploadedBy: true }
-                    },
-                    notes: {
-                        include: { author: true },
-                        orderBy: { timestamp: 'desc' }
-                    }
-                }
-            });
-        }
-        // Otherwise lookup by ID
-        return prisma.case.findUnique({
-            where: { id: idOrCaseNumber },
+        const whereClause = isCaseNumber
+            ? { caseNumber: idOrCaseNumber }
+            : { id: idOrCaseNumber };
+        const caseData = await prisma.case.findUnique({
+            where: whereClause,
             include: {
                 attorney: true,
                 client: true,
@@ -65,6 +70,21 @@ export class CaseService {
                 }
             }
         });
+        // If no case found, return null
+        if (!caseData)
+            return null;
+        // Admin users can access all cases
+        if (userRole === 'Admin')
+            return caseData;
+        // Check if user has access (is attorney or team member)
+        if (userId) {
+            const hasAccess = caseData.attorneyId === userId ||
+                caseData.team.some(member => member.userId === userId);
+            if (!hasAccess) {
+                throw new Error('You do not have permission to access this case');
+            }
+        }
+        return caseData;
     }
     static async createCase(data) {
         return prisma.case.create({
@@ -144,18 +164,47 @@ export class CaseService {
         };
     }
     static async addTeamMember(caseId, userId) {
-        const caseTeam = await prisma.caseTeam.create({
+        // Create the team member
+        await prisma.caseTeam.create({
             data: {
                 caseId,
                 userId,
                 role: 'Collaborator' // Default role
-            },
-            include: {
-                user: true
             }
         });
-        emitToAll('case_team_updated', { caseId, teamMember: caseTeam });
-        return caseTeam;
+        // Return the full updated case with all relationships
+        const updatedCase = await prisma.case.findUnique({
+            where: { id: caseId },
+            include: {
+                client: true,
+                attorney: true,
+                team: {
+                    include: {
+                        user: true
+                    }
+                },
+                timeline: {
+                    include: {
+                        author: true
+                    },
+                    orderBy: { timestamp: 'desc' }
+                },
+                documents: {
+                    include: {
+                        uploadedBy: true
+                    },
+                    orderBy: { uploadedAt: 'desc' }
+                },
+                notes: {
+                    include: {
+                        author: true
+                    },
+                    orderBy: { timestamp: 'desc' }
+                }
+            }
+        });
+        emitToAll('case_team_updated', { caseId, case: updatedCase });
+        return updatedCase;
     }
     static async updateCase(idOrCaseNumber, data) {
         // Support updating by case number or ID

@@ -161,10 +161,25 @@ async function main() {
     const passwordHash = await bcrypt.hash('Genzura2026!', 10);
     console.log('🔑 Password hash generated.');
 
+    // Clear existing data to prevent duplicates (order matters due to foreign keys)
+    console.log('🧹 Cleaning existing seed data...');
+    await prisma.eventAttendee.deleteMany({});
+    await prisma.calendarEvent.deleteMany({});
+    await prisma.notification.deleteMany({});
+    await prisma.caseNote.deleteMany({});
+    await prisma.caseDocument.deleteMany({});
+    await prisma.timelineEvent.deleteMany({});
+    await prisma.caseTeam.deleteMany({});
+    await prisma.case.deleteMany({});
+    await prisma.client.deleteMany({});
+    await prisma.feedback.deleteMany({}); // Delete feedback before users
+    await prisma.user.deleteMany({});
+    console.log('✅ Cleanup complete.');
+
     // Users
     console.log('👥 Seeding users...');
     for (const user of USERS) {
-      console.log(`   - Upserting user: ${user.email}`);
+      console.log(`   - Creating user: ${user.email}`);
       const subscriptionStartDate = user.subscriptionPlan !== 'Genzura' ? new Date('2026-01-01') : null;
       const subscriptionEndDate = user.subscriptionPlan === 'Inkingi'
         ? new Date('2027-01-01')
@@ -172,10 +187,8 @@ async function main() {
           ? new Date('2026-04-01')
           : null;
 
-      await prisma.user.upsert({
-        where: { email: user.email },
-        update: {},
-        create: {
+      await prisma.user.create({
+        data: {
           id: user.id,
           name: user.name,
           email: user.email,
@@ -196,22 +209,18 @@ async function main() {
     // Clients
     console.log('🏢 Seeding clients...');
     for (const client of CLIENTS) {
-      console.log(`   - Upserting client: ${client.email}`);
-      await prisma.client.upsert({
-        where: { email: client.email },
-        update: {},
-        create: client,
+      console.log(`   - Creating client: ${client.email}`);
+      await prisma.client.create({
+        data: client,
       });
     }
 
     // Cases
     console.log('📂 Seeding cases...');
     for (const c of CASES) {
-      console.log(`   - Upserting case: ${c.caseNumber}`);
-      await prisma.case.upsert({
-        where: { caseNumber: c.caseNumber },
-        update: {},
-        create: {
+      console.log(`   - Creating case: ${c.caseNumber}`);
+      await prisma.case.create({
+        data: {
           ...c,
           filedDate: new Date(),
         },

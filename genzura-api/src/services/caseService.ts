@@ -6,51 +6,48 @@ import { DateService } from '../utils/dateUtils.js';
 const prisma = new PrismaClient();
 
 export class CaseService {
-  static async getAllCases() {
-    return prisma.case.findMany({
-      include: {
-        attorney: true,
-        client: true,
-        team: {
-          include: { user: true }
-        }
-      },
-      orderBy: { updatedAt: 'desc' }
-    });
-  }
-
-  static async getCaseById(idOrCaseNumber: string) {
-    // Try to find by caseNumber first (if it matches the pattern), then by ID
-    // Flexible pattern: PREFIX-NUMBERS (e.g., CV-2025-003, CV-2026-0482, IP-2024-1234)
-    const isCaseNumber = /^[A-Z]+-\d+-\d+$/.test(idOrCaseNumber);
-
-    if (isCaseNumber) {
-      return prisma.case.findUnique({
-        where: { caseNumber: idOrCaseNumber },
+  static async getAllCases(userId?: string) {
+    // All users (including admins) only see cases they're assigned to
+    if (userId) {
+      return prisma.case.findMany({
+        where: {
+          OR: [
+            { attorneyId: userId },
+            {
+              team: {
+                some: {
+                  userId: userId
+                }
+              }
+            }
+          ]
+        },
         include: {
           attorney: true,
           client: true,
           team: {
             include: { user: true }
-          },
-          timeline: {
-            include: { author: true },
-            orderBy: { timestamp: 'desc' }
-          },
-          documents: {
-            include: { uploadedBy: true }
-          },
-          notes: {
-            include: { author: true },
-            orderBy: { timestamp: 'desc' }
           }
-        }
+        },
+        orderBy: { updatedAt: 'desc' }
       });
     }
 
-    // Otherwise lookup by ID
-    return prisma.case.findUnique({
-      where: { id: idOrCaseNumber },
+    // If no userId provided, return empty array (no unauthorized access)
+    return [];
+  }
+
+  static async getCaseById(idOrCaseNumber: string, userId?: string, userRole?: string) {
+    // Try to find by caseNumber first (if it matches the pattern), then by ID
+    // Flexible pattern: PREFIX-NUMBERS (e.g., CV-2025-003, CV-2026-0482, IP-2024-1234)
+    const isCaseNumber = /^[A-Z]+-\d+-\d+$/.test(idOrCaseNumber);
+
+    const whereClause = isCaseNumber
+      ? { caseNumber: idOrCaseNumber }
+      : { id: idOrCaseNumber };
+
+    const caseData = await prisma.case.findUnique({
+      where: whereClause,
       include: {
         attorney: true,
         client: true,
@@ -70,6 +67,23 @@ export class CaseService {
         }
       }
     });
+
+    // If no case found, return null
+    if (!caseData) return null;
+
+    // Check if user has access (is attorney or team member)
+    // This applies to ALL users including admins
+    if (userId) {
+      const hasAccess =
+        caseData.attorneyId === userId ||
+        caseData.team.some(member => member.userId === userId);
+
+      if (!hasAccess) {
+        throw new Error('You do not have permission to access this case');
+      }
+    }
+
+    return caseData;
   }
 
   static async createCase(data: any) {

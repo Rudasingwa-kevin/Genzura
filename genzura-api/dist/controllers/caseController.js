@@ -2,7 +2,9 @@ import { CaseService } from '../services/caseService.js';
 export class CaseController {
     static async getAll(req, res) {
         try {
-            const cases = await CaseService.getAllCases();
+            // Admin users can see all cases, others see only their cases
+            const userId = req.user?.role === 'Admin' ? undefined : req.user?.id;
+            const cases = await CaseService.getAllCases(userId);
             res.json(cases);
         }
         catch (error) {
@@ -12,13 +14,17 @@ export class CaseController {
     static async getOne(req, res) {
         try {
             const { id } = req.params;
-            const caseItem = await CaseService.getCaseById(id);
+            const caseItem = await CaseService.getCaseById(id, req.user?.id, req.user?.role);
             if (!caseItem) {
                 return res.status(404).json({ error: 'Case not found' });
             }
             res.json(caseItem);
         }
         catch (error) {
+            // Handle permission errors with 403
+            if (error.message.includes('permission')) {
+                return res.status(403).json({ error: error.message });
+            }
             res.status(500).json({ error: error.message });
         }
     }
