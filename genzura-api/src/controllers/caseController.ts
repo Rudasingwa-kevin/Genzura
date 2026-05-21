@@ -64,9 +64,10 @@ export class CaseController {
     }
   }
 
-  static async getAnalytics(req: Request, res: Response) {
+  static async getAnalytics(req: any, res: Response) {
     try {
-      const analytics = await CaseService.getAnalytics();
+      const userId = req.user?.id;
+      const analytics = await CaseService.getAnalytics(userId);
       res.json(analytics);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

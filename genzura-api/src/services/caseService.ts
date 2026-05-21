@@ -146,33 +146,148 @@ export class CaseService {
     return note;
   }
 
-  static async getAnalytics() {
-    const totalCases = await prisma.case.count();
+  static async getAnalytics(userId?: string) {
+    // Build where clause to filter by user assignment
+    const whereClause = userId ? {
+      OR: [
+        { attorneyId: userId },
+        { team: { some: { userId: userId } } }
+      ]
+    } : {};
+
+    const totalCases = await prisma.case.count({ where: whereClause });
+
     const statusCounts = await prisma.case.groupBy({
       by: ['status'],
-      _count: true
+      _count: true,
+      where: whereClause
     });
+
     const priorityCounts = await prisma.case.groupBy({
       by: ['priority'],
-      _count: true
+      _count: true,
+      where: whereClause
     });
 
-    // Case volume by month (simplified)
-    const cases = await prisma.case.findMany({
-      select: { createdAt: true }
+    // Get all cases with dates for calculations
+    const allCases = await prisma.case.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        filedDate: true,
+        attorneyId: true
+      }
     });
 
+    // Calculate average resolution days (for resolved cases)
+    const resolvedCases = allCases.filter(c => c.status === 'Resolved' || c.status === 'Archived');
+    const avgResolutionDays = resolvedCases.length > 0
+      ? Math.round(
+          resolvedCases.reduce((sum, c) => {
+            const days = Math.floor((c.updatedAt.getTime() - c.filedDate.getTime()) / (1000 * 60 * 60 * 24));
+            return sum + days;
+          }, 0) / resolvedCases.length
+        )
+      : 0;
+
+    // Calculate win rate (resolved vs total closed)
+    const closedCases = allCases.filter(c => c.status === 'Resolved' || c.status === 'Archived');
+    const successfulCases = allCases.filter(c => c.status === 'Resolved');
+    const winRate = closedCases.length > 0
+      ? Math.round((successfulCases.length / closedCases.length) * 100)
+      : 0;
+
+    // Case volume by month (current year)
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const volumeByMonth = months.map(month => ({
+    const currentYear = new Date().getFullYear();
+    const volumeByMonth = months.map((month, index) => ({
       month,
-      count: cases.filter(c => months[c.createdAt.getMonth()] === month).length
+      count: allCases.filter(c =>
+        c.createdAt.getFullYear() === currentYear &&
+        c.createdAt.getMonth() === index
+      ).length
     }));
+
+    // Calculate trends (compare last 30 days vs previous 30 days)
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
+    const casesLast30Days = allCases.filter(c => c.createdAt >= thirtyDaysAgo);
+    const casesPrevious30Days = allCases.filter(c => c.createdAt >= sixtyDaysAgo && c.createdAt < thirtyDaysAgo);
+
+    const openedTrend = casesPrevious30Days.length > 0
+      ? Math.round(((casesLast30Days.length - casesPrevious30Days.length) / casesPrevious30Days.length) * 100)
+      : 0;
+
+    const resolvedLast30 = casesLast30Days.filter(c => c.status === 'Resolved').length;
+    const resolvedPrevious30 = casesPrevious30Days.filter(c => c.status === 'Resolved').length;
+    const closedTrend = resolvedPrevious30 > 0
+      ? Math.round(((resolvedLast30 - resolvedPrevious30) / resolvedPrevious30) * 100)
+      : 0;
+
+    // Attorney leaderboard
+    const attorneys = await prisma.user.findMany({
+      where: {
+        role: { in: ['Attorney', 'Senior_Attorney'] },
+        ...(userId && { id: userId }) // If userId provided, only show that user
+      },
+      select: {
+        id: true,
+        name: true,
+        initials: true,
+        cases: {
+          where: whereClause,
+          select: { status: true }
+        },
+        teamMemberships: {
+          where: {
+            case: whereClause
+          },
+          select: {
+            case: {
+              select: { status: true }
+            }
+          }
+        }
+      }
+    });
+
+    const attorneyStats = attorneys.map(attorney => {
+      const leadCases = attorney.cases;
+      const teamCases = attorney.teamMemberships.map(tm => tm.case);
+      const allAttorneyCases = [...leadCases, ...teamCases];
+
+      const totalCases = allAttorneyCases.length;
+      const resolved = allAttorneyCases.filter(c => c.status === 'Resolved').length;
+      const rate = totalCases > 0 ? Math.round((resolved / totalCases) * 100) : 0;
+
+      return {
+        name: attorney.name,
+        initials: attorney.initials,
+        cases: totalCases,
+        resolved,
+        rate
+      };
+    }).sort((a, b) => b.rate - a.rate).slice(0, 10); // Top 10
 
     return {
       totalCases,
       statusCounts,
       priorityCounts,
-      volumeByMonth
+      volumeByMonth,
+      avgResolutionDays,
+      winRate,
+      trends: {
+        opened: openedTrend,
+        closed: closedTrend,
+        avgDays: 0, // Would need historical data to calculate
+        winRate: 0  // Would need historical data to calculate
+      },
+      attorneyStats
     };
   }
 

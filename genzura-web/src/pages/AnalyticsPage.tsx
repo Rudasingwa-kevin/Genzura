@@ -115,16 +115,17 @@ export default function AnalyticsPage() {
   }, [range]);
 
   const kpi = useMemo(() => {
-    if (!data) return { opened: 0, closed: 0, avgDays: 0, winRate: 0 };
-    
+    if (!data) return { opened: 0, closed: 0, avgDays: 0, winRate: 0, trends: { opened: 0, closed: 0, avgDays: 0, winRate: 0 } };
+
     const statusCounts = data.statusCounts || [];
     const closed = statusCounts.find((s: any) => s.status === 'Resolved')?._count || 0;
-    
+
     return {
       opened: data.totalCases || 0,
       closed,
-      avgDays: 28, // Hardcoded for now until more complex logic added
-      winRate: 85
+      avgDays: data.avgResolutionDays || 0,
+      winRate: data.winRate || 0,
+      trends: data.trends || { opened: 0, closed: 0, avgDays: 0, winRate: 0 }
     };
   }, [data]);
 
@@ -137,13 +138,9 @@ export default function AnalyticsPage() {
   }, [data]);
 
   const leaderboard = useMemo(() => {
-    // Keep mock leaderboard for now as we don't have attorney stats in simple analytics yet
-    return [
-      { name: 'Sarah Miller', cases: 14, resolved: 12, rate: 92, initials: 'SM' },
-      { name: 'James Wilson', cases: 22, resolved: 18, rate: 88, initials: 'JW' },
-      { name: 'David Chen', cases: 9, resolved: 7, rate: 82, initials: 'DC' },
-    ];
-  }, []);
+    if (!data?.attorneyStats) return [];
+    return data.attorneyStats;
+  }, [data]);
 
   return (
     <AppLayout>
@@ -173,10 +170,50 @@ export default function AnalyticsPage() {
           Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} />)
         ) : (
           <>
-            <KpiCard label="Cases Opened"    value={kpi.opened}          sub="new cases filed"     icon={Briefcase}    color="text-brand-blue"    bg="bg-brand-light"   trend="+8%"  trendUp index={0} />
-            <KpiCard label="Cases Closed"    value={kpi.closed}          sub="successfully closed"  icon={CheckCircle2} color="text-emerald-600"  bg="bg-emerald-50"    trend="+12%" trendUp index={1} />
-            <KpiCard label="Avg. Resolution" value={`${kpi.avgDays}d`}     sub="days to close"        icon={Clock}        color="text-amber-600"   bg="bg-amber-50"      trend="-3%"  trendUp index={2} />
-            <KpiCard label="Win Rate"         value={`${kpi.winRate}%`}    sub="favorable outcomes"   icon={BarChart3}    color="text-violet-600"  bg="bg-violet-50"     trend="+2%"  trendUp index={3} />
+            <KpiCard
+              label="Cases Opened"
+              value={kpi.opened}
+              sub="new cases filed"
+              icon={Briefcase}
+              color="text-brand-blue"
+              bg="bg-brand-light"
+              trend={kpi.trends.opened > 0 ? `+${kpi.trends.opened}%` : `${kpi.trends.opened}%`}
+              trendUp={kpi.trends.opened >= 0}
+              index={0}
+            />
+            <KpiCard
+              label="Cases Closed"
+              value={kpi.closed}
+              sub="successfully closed"
+              icon={CheckCircle2}
+              color="text-emerald-600"
+              bg="bg-emerald-50"
+              trend={kpi.trends.closed > 0 ? `+${kpi.trends.closed}%` : `${kpi.trends.closed}%`}
+              trendUp={kpi.trends.closed >= 0}
+              index={1}
+            />
+            <KpiCard
+              label="Avg. Resolution"
+              value={`${kpi.avgDays}d`}
+              sub="days to close"
+              icon={Clock}
+              color="text-amber-600"
+              bg="bg-amber-50"
+              trend={kpi.trends.avgDays === 0 ? "N/A" : (kpi.trends.avgDays < 0 ? `${kpi.trends.avgDays}%` : `+${kpi.trends.avgDays}%`)}
+              trendUp={kpi.trends.avgDays <= 0}
+              index={2}
+            />
+            <KpiCard
+              label="Win Rate"
+              value={`${kpi.winRate}%`}
+              sub="favorable outcomes"
+              icon={BarChart3}
+              color="text-violet-600"
+              bg="bg-violet-50"
+              trend={kpi.trends.winRate === 0 ? "N/A" : (kpi.trends.winRate > 0 ? `+${kpi.trends.winRate}%` : `${kpi.trends.winRate}%`)}
+              trendUp={kpi.trends.winRate >= 0}
+              index={3}
+            />
           </>
         )}
       </div>
@@ -212,27 +249,45 @@ export default function AnalyticsPage() {
               </tr>
             </thead>
             <tbody>
-              {leaderboard.map((a) => (
-                <tr key={a.name} className="border-b border-border-base last:border-0 hover:bg-page-bg/40 transition-colors">
-                  <td className="py-5 px-8">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-brand-blue text-white font-bold text-xs flex items-center justify-center shrink-0">{a.initials}</div>
-                      <p className="font-semibold text-brand-dark text-sm">{a.name}</p>
-                    </div>
-                  </td>
-                  <td className="py-5 px-8 font-bold text-brand-dark">{a.cases}</td>
-                  <td className="py-5 px-8 font-bold text-emerald-600">{a.resolved}</td>
-                  <td className="py-5 px-8 font-bold text-brand-dark">{a.rate}%</td>
-                  <td className="py-5 px-8 w-48">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 h-2 bg-page-bg rounded-full overflow-hidden">
-                        <div className="h-full bg-brand-blue rounded-full" style={{ width: `${a.rate}%` }} />
-                      </div>
-                      <ChevronRight size={16} className="text-text-muted" />
-                    </div>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={5} className="py-12 px-8 text-center">
+                    <Skeleton className="w-full h-12 rounded-xl mb-2" />
+                    <Skeleton className="w-full h-12 rounded-xl mb-2" />
+                    <Skeleton className="w-full h-12 rounded-xl" />
                   </td>
                 </tr>
-              ))}
+              ) : leaderboard.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-12 px-8 text-center text-text-muted">
+                    <BarChart3 size={48} className="mx-auto mb-4 opacity-20" />
+                    <p className="font-semibold">No attorney performance data available</p>
+                    <p className="text-sm mt-1">Attorney statistics will appear once cases are assigned</p>
+                  </td>
+                </tr>
+              ) : (
+                leaderboard.map((a) => (
+                  <tr key={a.name} className="border-b border-border-base last:border-0 hover:bg-page-bg/40 transition-colors">
+                    <td className="py-5 px-8">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-brand-blue text-white font-bold text-xs flex items-center justify-center shrink-0">{a.initials}</div>
+                        <p className="font-semibold text-brand-dark text-sm">{a.name}</p>
+                      </div>
+                    </td>
+                    <td className="py-5 px-8 font-bold text-brand-dark">{a.cases}</td>
+                    <td className="py-5 px-8 font-bold text-emerald-600">{a.resolved}</td>
+                    <td className="py-5 px-8 font-bold text-brand-dark">{a.rate}%</td>
+                    <td className="py-5 px-8 w-48">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 h-2 bg-page-bg rounded-full overflow-hidden">
+                          <div className="h-full bg-brand-blue rounded-full" style={{ width: `${a.rate}%` }} />
+                        </div>
+                        <ChevronRight size={16} className="text-text-muted" />
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
