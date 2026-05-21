@@ -1,34 +1,121 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import { ArrowLeft, User, Mail, Lock, Building, ShieldCheck, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ArrowLeft, User, Mail, Lock, Building, ShieldCheck, ArrowRight, Eye, EyeOff, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
+
+// Password strength calculator
+const calculatePasswordStrength = (password: string) => {
+  let score = 0;
+  const feedback: string[] = [];
+
+  if (password.length === 0) return { score: 0, label: '', color: '', feedback: [] };
+  if (password.length < 8) return { score: 0, label: 'Too Short', color: 'bg-red-500', feedback: ['At least 8 characters required'] };
+
+  if (password.length >= 8) score++;
+  if (password.length >= 12) score++;
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
+  if (/\d/.test(password)) score++;
+  if (/[^a-zA-Z0-9]/.test(password)) score++;
+
+  // Penalize common patterns
+  if (/^password/i.test(password) || /^123456/.test(password) || /^qwerty/i.test(password)) {
+    score = Math.max(0, score - 2);
+    feedback.push('Avoid common patterns');
+  }
+
+  const labels = ['Weak', 'Fair', 'Good', 'Strong'];
+  const colors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-emerald-500'];
+
+  return {
+    score: Math.min(score, 4),
+    label: labels[Math.min(score - 1, 3)] || 'Weak',
+    color: colors[Math.min(score - 1, 3)] || 'bg-red-500',
+    feedback
+  };
+};
+
+// Email validation
+const validateEmail = (email: string) => {
+  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+  return emailRegex.test(email);
+};
 
 const RegisterPage = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
-  
+
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(calculatePasswordStrength(''));
+
+  useEffect(() => {
+    setPasswordStrength(calculatePasswordStrength(password));
+  }, [password]);
+
+  const isEmailValid = validateEmail(email);
+  const isPasswordStrong = passwordStrength.score >= 3;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Mark fields as touched
+    setEmailTouched(true);
+    setPasswordTouched(true);
+
+    // Validation
+    if (!firstName.trim() || !lastName.trim()) {
+      toast.error('Please enter your full name');
+      return;
+    }
+
+    if (!isEmailValid) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    if (!isPasswordStrong) {
+      toast.error('Please use a stronger password');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      await register({
-        name: `${firstName} ${lastName}`,
-        email,
+      const response = await register({
+        name: `${firstName.trim()} ${lastName.trim()}`,
+        email: email.trim().toLowerCase(),
         password
       });
+
+      // Show warnings if any
+      if (response?.warnings && response.warnings.length > 0) {
+        response.warnings.forEach((warning: string) => toast(warning, { icon: '⚠️' }));
+      }
+
       toast.success('Account created successfully!');
       navigate('/dashboard', { replace: true });
     } catch (error: any) {
       console.error('Failed to register', error);
-      toast.error(error.response?.data?.error || 'Failed to create account');
+      const errorMessage = error.response?.data?.error || 'Failed to create account';
+
+      // Show password strength feedback if available
+      if (error.response?.data?.passwordStrength) {
+        const strength = error.response.data.passwordStrength;
+        if (strength.feedback && strength.feedback.length > 0) {
+          toast.error(`Password issue: ${strength.feedback.join(', ')}`);
+        } else {
+          toast.error(errorMessage);
+        }
+      } else {
+        toast.error(errorMessage);
+      }
+
       setIsLoading(false);
     }
   };
@@ -98,14 +185,38 @@ const RegisterPage = () => {
               <label className="text-sm font-bold text-brand-dark ml-1 flex items-center gap-2">
                 <Mail size={14} className="text-brand-blue" /> Corporate Email
               </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-                className="w-full h-12 px-4 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all bg-page-bg/50"
-                placeholder="name@company.com"
-              />
+              <div className="relative">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onBlur={() => setEmailTouched(true)}
+                  autoComplete="email"
+                  required
+                  className={`w-full h-12 pl-4 pr-12 rounded-xl border outline-none transition-all bg-page-bg/50 ${
+                    emailTouched
+                      ? isEmailValid
+                        ? 'border-emerald-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20'
+                        : 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                      : 'border-border-base focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20'
+                  }`}
+                  placeholder="name@company.com"
+                />
+                {emailTouched && email && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                    {isEmailValid ? (
+                      <CheckCircle2 size={18} className="text-emerald-500" />
+                    ) : (
+                      <XCircle size={18} className="text-red-500" />
+                    )}
+                  </div>
+                )}
+              </div>
+              {emailTouched && email && !isEmailValid && (
+                <p className="text-xs text-red-500 ml-1 flex items-center gap-1">
+                  <AlertCircle size={12} /> Please enter a valid email address
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -117,8 +228,16 @@ const RegisterPage = () => {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onBlur={() => setPasswordTouched(true)}
                   autoComplete="new-password"
-                  className="w-full h-12 pl-4 pr-12 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all bg-page-bg/50"
+                  required
+                  className={`w-full h-12 pl-4 pr-12 rounded-xl border outline-none transition-all bg-page-bg/50 ${
+                    passwordTouched && password
+                      ? passwordStrength.score >= 3
+                        ? 'border-emerald-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20'
+                        : 'border-orange-500 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20'
+                      : 'border-border-base focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20'
+                  }`}
                   placeholder="At least 8 characters"
                 />
                 <button
@@ -129,6 +248,47 @@ const RegisterPage = () => {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+
+              {/* Password Strength Indicator */}
+              {password && (
+                <div className="space-y-2 mt-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-text-muted font-medium">Password Strength</span>
+                    <span className={`font-bold ${passwordStrength.score >= 3 ? 'text-emerald-600' : 'text-orange-600'}`}>
+                      {passwordStrength.label}
+                    </span>
+                  </div>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4].map((level) => (
+                      <div
+                        key={level}
+                        className={`h-1.5 flex-1 rounded-full transition-all ${
+                          level <= passwordStrength.score ? passwordStrength.color : 'bg-gray-200'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    {[
+                      { label: '8+ chars', check: password.length >= 8 },
+                      { label: 'Uppercase', check: /[A-Z]/.test(password) },
+                      { label: 'Lowercase', check: /[a-z]/.test(password) },
+                      { label: 'Number', check: /\d/.test(password) },
+                      { label: 'Special', check: /[^a-zA-Z0-9]/.test(password) },
+                    ].map((req) => (
+                      <span
+                        key={req.label}
+                        className={`flex items-center gap-1 px-2 py-0.5 rounded-md ${
+                          req.check ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'
+                        }`}
+                      >
+                        {req.check ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+                        {req.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex items-start gap-2 ml-1 pt-2">
