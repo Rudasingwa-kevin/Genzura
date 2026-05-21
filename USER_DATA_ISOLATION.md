@@ -5,11 +5,17 @@ When creating a new user, they could see all existing cases and documents in the
 
 ## Solution Implemented
 
-### 1. **Case Access Control (Backend)**
+### 1. **Complete Data Access Control (Backend)**
 
 #### Modified Files:
 - `genzura-api/src/services/caseService.ts`
 - `genzura-api/src/controllers/caseController.ts`
+- `genzura-api/src/services/clientService.ts`
+- `genzura-api/src/controllers/clientController.ts`
+- `genzura-api/src/services/documentService.ts`
+- `genzura-api/src/controllers/documentController.ts`
+- `genzura-api/src/services/searchService.ts`
+- `genzura-api/src/controllers/searchController.ts`
 
 #### Changes:
 
@@ -34,6 +40,44 @@ When creating a new user, they could see all existing cases and documents in the
 **d) `CaseController.getOne()`**
 - Passes user info to `getCaseById` for permission checking
 - Returns 403 status for unauthorized access attempts
+
+#### Client Access Control:
+
+**e) `ClientService.getAllClients(userId?)`**
+- Returns only clients that have cases assigned to the user
+- Filters both the client list and the cases within each client
+
+**f) `ClientService.getClientById(id, userId?)`**
+- Checks if user has access to at least one case for this client
+- Returns 403 error if user has no cases with this client
+
+**g) `ClientController.getAll()` and `ClientController.getOne()`**
+- Pass userId to service methods for filtering
+- Handle 403 permission errors
+
+#### Document Access Control:
+
+**h) `DocumentService.getAllDocuments(userId?)`**
+- Returns only documents from cases assigned to the user
+- Filters by case attorney or team membership
+
+**i) `DocumentService.getCaseDocuments(caseId, userId?)`**
+- Verifies user has access to the case before returning documents
+- Returns 403 error for unauthorized case access
+
+**j) `DocumentController.getAll()` and `DocumentController.getByCase()`**
+- Pass userId to service methods for filtering
+- Handle 403 permission errors
+
+#### Search Access Control:
+
+**k) `SearchService.globalSearch(query, userId?)`**
+- Only searches within cases, documents accessible to the user
+- User search remains open (for collaboration purposes)
+- Returns empty results if no userId provided
+
+**l) `SearchController.globalSearch()`**
+- Passes userId to search service for filtering
 
 ### 2. **Database Seeding (Improved)**
 
@@ -121,29 +165,41 @@ This will:
 3. Should see 0 cases (admin is not assigned to any cases)
 4. Admin role does NOT grant automatic access to all cases
 
-### Test Case 3: New User Has No Cases
+### Test Case 3: New User Has No Data
 1. Create a new user via invitation or direct creation
 2. Login with that user
-3. Should see empty cases list
-4. Should NOT see any existing cases from other users
+3. Should see:
+   - Empty cases list (0 cases)
+   - Empty clients list (0 clients)
+   - Empty documents list (0 documents)
+   - Search returns no results
+4. Should NOT see any existing data from other users
 
 ### Test Case 4: Permission Denied on Direct Access
 1. Login as `d.chen@genzura.law`
 2. Try to access case `IP-2026-7712` (belongs to Grace Mugisha)
 3. Should get 403 Forbidden error
+4. Try to access a client with no shared cases
+5. Should get 403 Forbidden error or see 0 cases for that client
+6. Try to access documents from another user's case
+7. Should get 403 Forbidden error
 
 ## Benefits
 
-✅ **Data Privacy**: Users can only see cases they're involved with
-✅ **Security**: Prevents unauthorized access to sensitive case information
-✅ **Clean Start**: New users start with empty case list
-✅ **Strict Access Control**: Even admins must be assigned to cases to view them
+✅ **Complete Data Privacy**: Users can only see data (cases, clients, documents) they're involved with
+✅ **Security**: Prevents unauthorized access to sensitive information across all entities
+✅ **Clean Start**: New users start with completely empty state (0 cases, 0 clients, 0 documents)
+✅ **Strict Access Control**: Even admins must be assigned to cases to view any data
 ✅ **Team Collaboration**: Users can see cases where they're team members
 ✅ **Assignment-Based Access**: Access is based solely on case assignments, not user roles
+✅ **Filtered Search**: Search results only include accessible cases and documents
+✅ **Client Isolation**: Users only see clients from their assigned cases
 
 ## Notes
 
 - The seed data is for **development and testing only**
 - In production, you should NOT run the seed script
 - All seed users have the same password: `Genzura2026!`
-- Case access is based on `attorneyId` and `CaseTeam` relationships
+- Data access is based on `attorneyId` and `CaseTeam` relationships
+- **All entities** (cases, clients, documents, search) are filtered by user assignment
+- Notifications and calendar events were already user-specific (no changes needed)

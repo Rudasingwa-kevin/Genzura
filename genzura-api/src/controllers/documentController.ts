@@ -3,21 +3,27 @@ import path from 'path';
 import { DocumentService } from '../services/documentService.js';
 
 export class DocumentController {
-  static async getAll(req: Request, res: Response) {
+  static async getAll(req: any, res: Response) {
     try {
-      const documents = await DocumentService.getAllDocuments();
+      const userId = req.user?.id;
+      const documents = await DocumentService.getAllDocuments(userId);
       res.json(documents);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   }
 
-  static async getByCase(req: Request, res: Response) {
+  static async getByCase(req: any, res: Response) {
     try {
       const { caseId } = req.params;
-      const documents = await DocumentService.getCaseDocuments(caseId);
+      const userId = req.user?.id;
+      const documents = await DocumentService.getCaseDocuments(caseId, userId);
       res.json(documents);
     } catch (error: any) {
+      // Handle permission errors with 403
+      if (error.message.includes('permission')) {
+        return res.status(403).json({ error: error.message });
+      }
       res.status(500).json({ error: error.message });
     }
   }
