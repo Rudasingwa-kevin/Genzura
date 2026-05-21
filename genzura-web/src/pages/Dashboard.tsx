@@ -7,6 +7,7 @@ import {
   AlertCircle,
   Filter,
   MoreHorizontal,
+  Users,
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import { type CaseStatus } from '../data/cases';
@@ -94,6 +95,12 @@ const Dashboard = () => {
   const pendingCases = cases.filter(c => c.status === 'Pending');
   const resolvedCases = cases.filter(c => c.status === 'Resolved');
   const highPriorityCases = cases.filter(c => c.priority === 'High' && c.status !== 'Archived');
+
+  // Get user info from localStorage to check team assignments
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const assignedAsMember = cases.filter(c =>
+    c.team && c.team.some((t: any) => t.userId === currentUser.id)
+  );
   
   const displayCases = cases.filter(c => {
     if (statusFilter === 'High') return c.priority === 'High' && c.status !== 'Archived';
@@ -108,33 +115,50 @@ const Dashboard = () => {
     { label: 'Pending Review',  value: pendingCases.length,     icon: Clock,        color: 'text-amber-600',   bg: 'bg-amber-50/50',   status: 'Pending' as const },
     { label: 'Resolved',        value: resolvedCases.length,    icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50/50', status: 'Resolved' as const },
     { label: 'High Priority',   value: highPriorityCases.length,icon: AlertCircle,  color: 'text-red-600',     bg: 'bg-red-50/50',     status: 'High' as const },
+    { label: 'Team Assigned',   value: assignedAsMember.length, icon: Users,        color: 'text-violet-600',  bg: 'bg-violet-50/50',  status: null },
   ];
 
   return (
     <AppLayout>
       {/* Stats Grid */}
-      <div className="grid md:grid-cols-4 gap-8">
+      <div className="grid md:grid-cols-5 gap-6">
         {isLoading ? (
-          Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} />)
+          Array.from({ length: 5 }).map((_, i) => <CardSkeleton key={i} />)
         ) : (
           stats.map((stat, i) => (
-            <button 
-              key={i} 
-              onClick={() => setStatusFilter(stat.status)}
-              className={`bg-white p-7 rounded-[2rem] border transition-all text-left animate-in-up delay-${(i + 1) * 100} ${
-                statusFilter === stat.status 
-                  ? 'border-brand-blue shadow-lg shadow-brand-blue/10 ring-1 ring-brand-blue/50' 
-                  : 'border-border-base shadow-sm hover:shadow-md'
-              }`}
-            >
-              <div className="flex justify-between items-start mb-6">
-                <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color}`}>
-                  <stat.icon size={26} />
+            stat.status !== null ? (
+              <button
+                key={i}
+                onClick={() => setStatusFilter(stat.status as any)}
+                className={`bg-white p-7 rounded-[2rem] border transition-all text-left animate-in-up delay-${(i + 1) * 100} ${
+                  statusFilter === stat.status
+                    ? 'border-brand-blue shadow-lg shadow-brand-blue/10 ring-1 ring-brand-blue/50'
+                    : 'border-border-base shadow-sm hover:shadow-md'
+                }`}
+              >
+                <div className="flex justify-between items-start mb-6">
+                  <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color}`}>
+                    <stat.icon size={26} />
+                  </div>
                 </div>
+                <p className="text-text-muted text-[10px] font-bold uppercase tracking-[0.1em] mb-2">{stat.label}</p>
+                <p className="text-4xl font-bold text-brand-dark tracking-tighter">{stat.value}</p>
+              </button>
+            ) : (
+              <div
+                key={i}
+                className="bg-white p-7 rounded-[2rem] border border-border-base shadow-sm text-left animate-in-up delay-500"
+              >
+                <div className="flex justify-between items-start mb-6">
+                  <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color}`}>
+                    <stat.icon size={26} />
+                  </div>
+                </div>
+                <p className="text-text-muted text-[10px] font-bold uppercase tracking-[0.1em] mb-2">{stat.label}</p>
+                <p className="text-4xl font-bold text-brand-dark tracking-tighter">{stat.value}</p>
+                <p className="text-xs text-text-muted mt-2">Cases as team member</p>
               </div>
-              <p className="text-text-muted text-[10px] font-bold uppercase tracking-[0.1em] mb-2">{stat.label}</p>
-              <p className="text-4xl font-bold text-brand-dark tracking-tighter">{stat.value}</p>
-            </button>
+            )
           ))
         )}
       </div>

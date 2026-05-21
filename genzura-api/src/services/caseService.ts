@@ -229,50 +229,95 @@ export class CaseService {
       ? Math.round(((resolvedLast30 - resolvedPrevious30) / resolvedPrevious30) * 100)
       : 0;
 
-    // Attorney leaderboard
-    const attorneys = await prisma.user.findMany({
-      where: {
-        role: { in: ['Attorney', 'Senior_Attorney'] },
-        ...(userId && { id: userId }) // If userId provided, only show that user
-      },
-      select: {
-        id: true,
-        name: true,
-        initials: true,
-        cases: {
-          where: whereClause,
-          select: { status: true }
-        },
-        teamMemberships: {
-          where: {
-            case: whereClause
+    // Attorney leaderboard - Only show attorneys who work on cases the user has access to
+    let attorneyStats: any[] = [];
+
+    if (userId) {
+      // For regular users: Only show yourself in the leaderboard
+      const currentUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          name: true,
+          initials: true,
+          role: true,
+          cases: {
+            where: whereClause,
+            select: { status: true }
           },
-          select: {
-            case: {
-              select: { status: true }
+          teamMemberships: {
+            where: {
+              case: whereClause
+            },
+            select: {
+              case: {
+                select: { status: true }
+              }
             }
           }
         }
+      });
+
+      if (currentUser && ['Attorney', 'Senior_Attorney'].includes(currentUser.role)) {
+        const leadCases = currentUser.cases;
+        const teamCases = currentUser.teamMemberships.map(tm => tm.case);
+        const allAttorneyCases = [...leadCases, ...teamCases];
+
+        const totalCases = allAttorneyCases.length;
+        const resolved = allAttorneyCases.filter(c => c.status === 'Resolved').length;
+        const rate = totalCases > 0 ? Math.round((resolved / totalCases) * 100) : 0;
+
+        attorneyStats = [{
+          name: currentUser.name,
+          initials: currentUser.initials,
+          cases: totalCases,
+          resolved,
+          rate
+        }];
       }
-    });
+    } else {
+      // For admin/system view (no userId): Show all attorneys with their stats
+      const attorneys = await prisma.user.findMany({
+        where: {
+          role: { in: ['Attorney', 'Senior_Attorney'] }
+        },
+        select: {
+          id: true,
+          name: true,
+          initials: true,
+          cases: {
+            select: { status: true }
+          },
+          teamMemberships: {
+            select: {
+              case: {
+                select: { status: true }
+              }
+            }
+          }
+        }
+      });
 
-    const attorneyStats = attorneys.map(attorney => {
-      const leadCases = attorney.cases;
-      const teamCases = attorney.teamMemberships.map(tm => tm.case);
-      const allAttorneyCases = [...leadCases, ...teamCases];
+      attorneyStats = attorneys.map(attorney => {
+        const leadCases = attorney.cases;
+        const teamCases = attorney.teamMemberships.map(tm => tm.case);
+        const allAttorneyCases = [...leadCases, ...teamCases];
 
-      const totalCases = allAttorneyCases.length;
-      const resolved = allAttorneyCases.filter(c => c.status === 'Resolved').length;
-      const rate = totalCases > 0 ? Math.round((resolved / totalCases) * 100) : 0;
+        const totalCases = allAttorneyCases.length;
+        const resolved = allAttorneyCases.filter(c => c.status === 'Resolved').length;
+        const rate = totalCases > 0 ? Math.round((resolved / totalCases) * 100) : 0;
 
-      return {
-        name: attorney.name,
-        initials: attorney.initials,
-        cases: totalCases,
-        resolved,
-        rate
-      };
-    }).sort((a, b) => b.rate - a.rate).slice(0, 10); // Top 10
+        return {
+          name: attorney.name,
+          initials: attorney.initials,
+          cases: totalCases,
+          resolved,
+          rate
+        };
+      }).filter(a => a.cases > 0) // Only show attorneys with cases
+        .sort((a, b) => b.rate - a.rate)
+        .slice(0, 10); // Top 10
+    }
 
     return {
       totalCases,

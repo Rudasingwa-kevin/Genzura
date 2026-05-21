@@ -51,10 +51,13 @@ attorneyStats: [{
   rate: number          // Success rate percentage
 }]
 ```
+- **For regular users:** Only shows YOUR OWN performance (not other attorneys)
+- **For system/admin view (no userId):** Shows all attorneys with cases
 - Only includes users with role 'Attorney' or 'Senior_Attorney'
 - Combines cases where user is lead attorney AND team member
 - Sorted by success rate (descending)
-- Returns top 10 attorneys
+- Returns top 10 attorneys (system view only)
+- **Privacy Protection:** Users cannot see other attorneys' performance data
 
 **5. User Data Isolation**
 - All analytics now filtered by `userId`
