@@ -4,13 +4,14 @@ const prisma = new PrismaClient();
 
 export class SearchService {
   static async globalSearch(query: string, userId?: string) {
-    const q = query.toLowerCase().trim();
-    if (!q || q.length < 2) return { cases: [], users: [], documents: [] };
+    try {
+      const q = query.toLowerCase().trim();
+      if (!q || q.length < 2) return { cases: [], users: [], documents: [] };
 
-    // If no userId, return empty results
-    if (!userId) return { cases: [], users: [], documents: [] };
+      // If no userId, return empty results
+      if (!userId) return { cases: [], users: [], documents: [] };
 
-    const [cases, users, documents] = await Promise.all([
+      const [cases, users, documents] = await Promise.all([
       // Only search in cases the user has access to
       prisma.case.findMany({
         where: {
@@ -24,6 +25,7 @@ export class SearchService {
             {
               OR: [
                 { title:       { contains: q, mode: 'insensitive' } },
+                { caseNumber:  { contains: q, mode: 'insensitive' } },
                 { client:      { name: { contains: q, mode: 'insensitive' } } },
                 { client:      { company: { contains: q, mode: 'insensitive' } } },
                 { description: { contains: q, mode: 'insensitive' } },
@@ -31,7 +33,18 @@ export class SearchService {
             }
           ]
         },
-        select: { id: true, title: true, client: true, status: true, priority: true },
+        select: {
+          id: true,
+          caseNumber: true,
+          title: true,
+          status: true,
+          priority: true,
+          client: {
+            select: {
+              name: true,
+            }
+          }
+        },
         take: 5,
       }),
       // Users search can be open (for collaboration purposes)
@@ -67,6 +80,25 @@ export class SearchService {
       }),
     ]);
 
-    return { cases, users, documents };
+    // Transform cases to match frontend expected format
+    const transformedCases = cases.map(c => ({
+      id: c.id,
+      caseNumber: c.caseNumber,
+      title: c.title,
+      client: c.client?.name || 'Unknown Client',
+      status: c.status,
+      priority: c.priority,
+    }));
+
+      return {
+        cases: transformedCases,
+        users,
+        documents
+      };
+    } catch (error) {
+      console.error('Search error:', error);
+      // Return empty results on error instead of throwing
+      return { cases: [], users: [], documents: [] };
+    }
   }
 }

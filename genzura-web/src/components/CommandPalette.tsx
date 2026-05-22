@@ -67,9 +67,11 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
     debounceRef.current = setTimeout(async () => {
       try {
         const { data } = await apiClient.get(`/search?q=${encodeURIComponent(query)}`);
-        setResults(data);
+        console.log('Search results:', data);
+        setResults(data || { cases: [], users: [], documents: [] });
         setActiveIndex(0);
-      } catch {
+      } catch (error) {
+        console.error('Search error:', error);
         setResults({ cases: [], users: [], documents: [] });
       } finally {
         setIsLoading(false);
