@@ -5,7 +5,7 @@ import { DateService } from '../utils/dateUtils.js';
 const prisma = new PrismaClient();
 export class CaseService {
     static async getAllCases(userId) {
-        // If userId is provided, filter cases where user is attorney or team member
+        // All users (including admins) only see cases they're assigned to
         if (userId) {
             return prisma.case.findMany({
                 where: {
@@ -30,17 +30,8 @@ export class CaseService {
                 orderBy: { updatedAt: 'desc' }
             });
         }
-        // Admin users can see all cases (when no userId filter)
-        return prisma.case.findMany({
-            include: {
-                attorney: true,
-                client: true,
-                team: {
-                    include: { user: true }
-                }
-            },
-            orderBy: { updatedAt: 'desc' }
-        });
+        // If no userId provided, return empty array (no unauthorized access)
+        return [];
     }
     static async getCaseById(idOrCaseNumber, userId, userRole) {
         // Try to find by caseNumber first (if it matches the pattern), then by ID
@@ -73,10 +64,8 @@ export class CaseService {
         // If no case found, return null
         if (!caseData)
             return null;
-        // Admin users can access all cases
-        if (userRole === 'Admin')
-            return caseData;
         // Check if user has access (is attorney or team member)
+        // This applies to ALL users including admins
         if (userId) {
             const hasAccess = caseData.attorneyId === userId ||
                 caseData.team.some(member => member.userId === userId);
@@ -137,30 +126,170 @@ export class CaseService {
         emitToAll('new_case_note', { caseId, note });
         return note;
     }
-    static async getAnalytics() {
-        const totalCases = await prisma.case.count();
+    static async getAnalytics(userId) {
+        // Build where clause to filter by user assignment
+        const whereClause = userId ? {
+            OR: [
+                { attorneyId: userId },
+                { team: { some: { userId: userId } } }
+            ]
+        } : {};
+        const totalCases = await prisma.case.count({ where: whereClause });
         const statusCounts = await prisma.case.groupBy({
             by: ['status'],
-            _count: true
+            _count: true,
+            where: whereClause
         });
         const priorityCounts = await prisma.case.groupBy({
             by: ['priority'],
-            _count: true
+            _count: true,
+            where: whereClause
         });
-        // Case volume by month (simplified)
-        const cases = await prisma.case.findMany({
-            select: { createdAt: true }
+        // Get all cases with dates for calculations
+        const allCases = await prisma.case.findMany({
+            where: whereClause,
+            select: {
+                id: true,
+                status: true,
+                createdAt: true,
+                updatedAt: true,
+                filedDate: true,
+                attorneyId: true
+            }
         });
+        // Calculate average resolution days (for resolved cases)
+        const resolvedCases = allCases.filter(c => c.status === 'Resolved' || c.status === 'Archived');
+        const avgResolutionDays = resolvedCases.length > 0
+            ? Math.round(resolvedCases.reduce((sum, c) => {
+                const days = Math.floor((c.updatedAt.getTime() - c.filedDate.getTime()) / (1000 * 60 * 60 * 24));
+                return sum + days;
+            }, 0) / resolvedCases.length)
+            : 0;
+        // Calculate win rate (resolved vs total closed)
+        const closedCases = allCases.filter(c => c.status === 'Resolved' || c.status === 'Archived');
+        const successfulCases = allCases.filter(c => c.status === 'Resolved');
+        const winRate = closedCases.length > 0
+            ? Math.round((successfulCases.length / closedCases.length) * 100)
+            : 0;
+        // Case volume by month (current year)
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const volumeByMonth = months.map(month => ({
+        const currentYear = new Date().getFullYear();
+        const volumeByMonth = months.map((month, index) => ({
             month,
-            count: cases.filter(c => months[c.createdAt.getMonth()] === month).length
+            count: allCases.filter(c => c.createdAt.getFullYear() === currentYear &&
+                c.createdAt.getMonth() === index).length
         }));
+        // Calculate trends (compare last 30 days vs previous 30 days)
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+        const casesLast30Days = allCases.filter(c => c.createdAt >= thirtyDaysAgo);
+        const casesPrevious30Days = allCases.filter(c => c.createdAt >= sixtyDaysAgo && c.createdAt < thirtyDaysAgo);
+        const openedTrend = casesPrevious30Days.length > 0
+            ? Math.round(((casesLast30Days.length - casesPrevious30Days.length) / casesPrevious30Days.length) * 100)
+            : 0;
+        const resolvedLast30 = casesLast30Days.filter(c => c.status === 'Resolved').length;
+        const resolvedPrevious30 = casesPrevious30Days.filter(c => c.status === 'Resolved').length;
+        const closedTrend = resolvedPrevious30 > 0
+            ? Math.round(((resolvedLast30 - resolvedPrevious30) / resolvedPrevious30) * 100)
+            : 0;
+        // Attorney leaderboard - Only show attorneys who work on cases the user has access to
+        let attorneyStats = [];
+        if (userId) {
+            // For regular users: Only show yourself in the leaderboard
+            const currentUser = await prisma.user.findUnique({
+                where: { id: userId },
+                select: {
+                    id: true,
+                    name: true,
+                    initials: true,
+                    role: true,
+                    cases: {
+                        where: whereClause,
+                        select: { status: true }
+                    },
+                    teamMemberships: {
+                        where: {
+                            case: whereClause
+                        },
+                        select: {
+                            case: {
+                                select: { status: true }
+                            }
+                        }
+                    }
+                }
+            });
+            if (currentUser && ['Attorney', 'Senior_Attorney'].includes(currentUser.role)) {
+                const leadCases = currentUser.cases;
+                const teamCases = currentUser.teamMemberships.map(tm => tm.case);
+                const allAttorneyCases = [...leadCases, ...teamCases];
+                const totalCases = allAttorneyCases.length;
+                const resolved = allAttorneyCases.filter(c => c.status === 'Resolved').length;
+                const rate = totalCases > 0 ? Math.round((resolved / totalCases) * 100) : 0;
+                attorneyStats = [{
+                        name: currentUser.name,
+                        initials: currentUser.initials,
+                        cases: totalCases,
+                        resolved,
+                        rate
+                    }];
+            }
+        }
+        else {
+            // For admin/system view (no userId): Show all attorneys with their stats
+            const attorneys = await prisma.user.findMany({
+                where: {
+                    role: { in: ['Attorney', 'Senior_Attorney'] }
+                },
+                select: {
+                    id: true,
+                    name: true,
+                    initials: true,
+                    cases: {
+                        select: { status: true }
+                    },
+                    teamMemberships: {
+                        select: {
+                            case: {
+                                select: { status: true }
+                            }
+                        }
+                    }
+                }
+            });
+            attorneyStats = attorneys.map(attorney => {
+                const leadCases = attorney.cases;
+                const teamCases = attorney.teamMemberships.map(tm => tm.case);
+                const allAttorneyCases = [...leadCases, ...teamCases];
+                const totalCases = allAttorneyCases.length;
+                const resolved = allAttorneyCases.filter(c => c.status === 'Resolved').length;
+                const rate = totalCases > 0 ? Math.round((resolved / totalCases) * 100) : 0;
+                return {
+                    name: attorney.name,
+                    initials: attorney.initials,
+                    cases: totalCases,
+                    resolved,
+                    rate
+                };
+            }).filter(a => a.cases > 0) // Only show attorneys with cases
+                .sort((a, b) => b.rate - a.rate)
+                .slice(0, 10); // Top 10
+        }
         return {
             totalCases,
             statusCounts,
             priorityCounts,
-            volumeByMonth
+            volumeByMonth,
+            avgResolutionDays,
+            winRate,
+            trends: {
+                opened: openedTrend,
+                closed: closedTrend,
+                avgDays: 0, // Would need historical data to calculate
+                winRate: 0 // Would need historical data to calculate
+            },
+            attorneyStats
         };
     }
     static async addTeamMember(caseId, userId) {

@@ -79,6 +79,7 @@ enum NotificationType {
   document
   alert
   resolved
+  invitation
 }
 
 model User {
@@ -218,7 +219,26 @@ model Notification {
   body      String
   read      Boolean          @default(false)
   link      String?
+  metadata  Json?            // Additional data (e.g., invitationId, caseId)
   createdAt DateTime         @default(now())
+}
+
+enum InvitationStatus {
+  Pending
+  Approved
+  Rejected
+}
+
+model CaseInvitation {
+  id           String           @id @default(cuid())
+  caseId       String
+  inviteeId    String           // User being invited
+  inviterId    String           // User who sent the invitation
+  role         String           // Role in the case (e.g., "Team Member")
+  status       InvitationStatus @default(Pending)
+  message      String?          @db.Text
+  createdAt    DateTime         @default(now())
+  respondedAt  DateTime?
 }
 
 model SystemSetting {

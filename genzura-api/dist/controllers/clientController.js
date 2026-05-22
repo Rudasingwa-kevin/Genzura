@@ -2,7 +2,8 @@ import { ClientService } from '../services/clientService.js';
 export class ClientController {
     static async getAll(req, res) {
         try {
-            const clients = await ClientService.getAllClients();
+            const userId = req.user?.id;
+            const clients = await ClientService.getAllClients(userId);
             res.json(clients);
         }
         catch (error) {
@@ -12,13 +13,18 @@ export class ClientController {
     static async getOne(req, res) {
         try {
             const { id } = req.params;
-            const client = await ClientService.getClientById(id);
+            const userId = req.user?.id;
+            const client = await ClientService.getClientById(id, userId);
             if (!client) {
                 return res.status(404).json({ error: 'Client not found' });
             }
             res.json(client);
         }
         catch (error) {
+            // Handle permission errors with 403
+            if (error.message.includes('permission')) {
+                return res.status(403).json({ error: error.message });
+            }
             res.status(500).json({ error: error.message });
         }
     }

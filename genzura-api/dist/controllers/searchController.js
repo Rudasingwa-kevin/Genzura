@@ -6,7 +6,8 @@ export class SearchController {
             if (!q || typeof q !== 'string') {
                 return res.json({ cases: [], users: [], documents: [] });
             }
-            const results = await SearchService.globalSearch(q);
+            const userId = req.user?.id;
+            const results = await SearchService.globalSearch(q, userId);
             res.json(results);
         }
         catch (error) {

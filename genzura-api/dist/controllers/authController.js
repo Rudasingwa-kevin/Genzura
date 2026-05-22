@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 import jwt from 'jsonwebtoken';
 import { UserService } from '../services/userService.js';
 import { EmailService } from '../services/emailService.js';
+import { EmailValidator, PasswordValidator, Sanitizer, RateLimiter } from '../utils/validation.js';
 export class AuthController {
     static async login(req, res) {
         try {
@@ -46,28 +47,50 @@ export class AuthController {
     static async register(req, res) {
         try {
             const { email, password, name, role } = req.body;
+            // Rate limiting by IP address
+            const clientIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+            if (RateLimiter.shouldLimit(`register:${clientIp}`, 5, 15 * 60 * 1000)) {
+                return res.status(429).json({ error: 'Too many registration attempts. Please try again in 15 minutes.' });
+            }
             // Validate required fields
             if (!email || !password || !name) {
                 return res.status(400).json({ error: 'Name, email, and password are required' });
             }
-            // Validate email format
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                return res.status(400).json({ error: 'Invalid email format' });
+            // Sanitize inputs
+            const sanitizedEmail = Sanitizer.sanitizeEmail(email);
+            const sanitizedName = Sanitizer.sanitizeName(name);
+            // Validate name
+            if (sanitizedName.length < 2) {
+                return res.status(400).json({ error: 'Name must be at least 2 characters' });
             }
-            // Validate password strength
-            if (password.length < 8) {
-                return res.status(400).json({ error: 'Password must be at least 8 characters' });
+            if (sanitizedName.length > 100) {
+                return res.status(400).json({ error: 'Name is too long' });
             }
-            const initials = name
-                .split(' ')
-                .map((n) => n[0])
-                .join('')
-                .toUpperCase();
+            if (!/^[a-zA-Z\s'-]+$/.test(sanitizedName)) {
+                return res.status(400).json({ error: 'Name contains invalid characters' });
+            }
+            // Comprehensive email validation
+            const emailValidation = EmailValidator.validate(sanitizedEmail, { allowFreeEmail: true });
+            if (!emailValidation.valid) {
+                return res.status(400).json({ error: emailValidation.error });
+            }
+            // Comprehensive password validation
+            const passwordValidation = PasswordValidator.validate(password);
+            if (!passwordValidation.valid) {
+                return res.status(400).json({
+                    error: passwordValidation.error,
+                    passwordStrength: passwordValidation.strength
+                });
+            }
+            // Generate initials (max 3 characters)
+            const nameParts = sanitizedName.split(' ').filter(Boolean);
+            const initials = nameParts.length >= 2
+                ? `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase()
+                : sanitizedName.substring(0, 2).toUpperCase();
             const user = await UserService.createUser({
-                email: email.toLowerCase().trim(),
+                email: sanitizedEmail,
                 password,
-                name,
+                name: sanitizedName,
                 role: role || 'Attorney',
                 initials
             });
@@ -75,7 +98,13 @@ export class AuthController {
             const { passwordHash, ...userWithoutPassword } = user;
             // Send welcome email (don't wait for it)
             EmailService.sendWelcomeEmail(user.email, user.name).catch(err => console.error('Welcome email failed:', err));
-            res.status(201).json({ user: userWithoutPassword, token });
+            // Clear rate limit on successful registration
+            RateLimiter.clear(`register:${clientIp}`);
+            res.status(201).json({
+                user: userWithoutPassword,
+                token,
+                warnings: emailValidation.warnings
+            });
         }
         catch (error) {
             console.error('Registration error:', error);

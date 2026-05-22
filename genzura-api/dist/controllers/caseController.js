@@ -2,8 +2,8 @@ import { CaseService } from '../services/caseService.js';
 export class CaseController {
     static async getAll(req, res) {
         try {
-            // Admin users can see all cases, others see only their cases
-            const userId = req.user?.role === 'Admin' ? undefined : req.user?.id;
+            // All users (including admins) only see their assigned cases
+            const userId = req.user?.id;
             const cases = await CaseService.getAllCases(userId);
             res.json(cases);
         }
@@ -64,7 +64,8 @@ export class CaseController {
     }
     static async getAnalytics(req, res) {
         try {
-            const analytics = await CaseService.getAnalytics();
+            const userId = req.user?.id;
+            const analytics = await CaseService.getAnalytics(userId);
             res.json(analytics);
         }
         catch (error) {
@@ -74,12 +75,19 @@ export class CaseController {
     static async addTeamMember(req, res) {
         try {
             const { id } = req.params;
-            const { userId } = req.body;
-            const caseItem = await CaseService.addTeamMember(id, userId);
-            res.json(caseItem);
+            const { userId, message } = req.body;
+            const inviterId = req.user.id;
+            // Import InvitationService
+            const { InvitationService } = await import('../services/invitationService.js');
+            // Send invitation instead of directly adding
+            const invitation = await InvitationService.createInvitation(id, userId, inviterId, 'Team Member', message);
+            res.json({
+                message: 'Invitation sent successfully. User will be added after approval.',
+                invitation
+            });
         }
         catch (error) {
-            res.status(500).json({ error: error.message });
+            res.status(400).json({ error: error.message });
         }
     }
     static async update(req, res) {

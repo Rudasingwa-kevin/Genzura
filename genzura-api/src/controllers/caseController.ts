@@ -73,14 +73,30 @@ export class CaseController {
       res.status(500).json({ error: error.message });
     }
   }
-  static async addTeamMember(req: Request, res: Response) {
+  static async addTeamMember(req: any, res: Response) {
     try {
       const { id } = req.params;
-      const { userId } = req.body;
-      const caseItem = await CaseService.addTeamMember(id, userId);
-      res.json(caseItem);
+      const { userId, message } = req.body;
+      const inviterId = req.user.id;
+
+      // Import InvitationService
+      const { InvitationService } = await import('../services/invitationService.js');
+
+      // Send invitation instead of directly adding
+      const invitation = await InvitationService.createInvitation(
+        id,
+        userId,
+        inviterId,
+        'Team Member',
+        message
+      );
+
+      res.json({
+        message: 'Invitation sent successfully. User will be added after approval.',
+        invitation
+      });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(400).json({ error: error.message });
     }
   }
 

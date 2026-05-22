@@ -3,7 +3,8 @@ import { DocumentService } from '../services/documentService.js';
 export class DocumentController {
     static async getAll(req, res) {
         try {
-            const documents = await DocumentService.getAllDocuments();
+            const userId = req.user?.id;
+            const documents = await DocumentService.getAllDocuments(userId);
             res.json(documents);
         }
         catch (error) {
@@ -13,10 +14,15 @@ export class DocumentController {
     static async getByCase(req, res) {
         try {
             const { caseId } = req.params;
-            const documents = await DocumentService.getCaseDocuments(caseId);
+            const userId = req.user?.id;
+            const documents = await DocumentService.getCaseDocuments(caseId, userId);
             res.json(documents);
         }
         catch (error) {
+            // Handle permission errors with 403
+            if (error.message.includes('permission')) {
+                return res.status(403).json({ error: error.message });
+            }
             res.status(500).json({ error: error.message });
         }
     }
