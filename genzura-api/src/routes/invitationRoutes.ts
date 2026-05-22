@@ -1,9 +1,11 @@
 import express from 'express';
 import { InvitationController } from '../controllers/invitationController.js';
+import { authenticate } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// All routes require authentication (handled by parent router)
+// All routes require authentication
+router.use(authenticate);
 
 // Get my pending invitations
 router.get('/my-invitations', InvitationController.getMyInvitations);

@@ -64,10 +64,20 @@ function NotificationPanel({
   const navigate = useNavigate();
   const [processingInvitation, setProcessingInvitation] = useState<string | null>(null);
 
-  const handleApproveInvitation = async (e: React.MouseEvent, notif: any) => {
+  const handleApproveInvitation = async (e: React.MouseEvent, notif: any, parsedMetadata: any) => {
     e.stopPropagation();
-    const invitationId = notif.metadata?.invitationId;
-    if (!invitationId) return;
+
+    console.log('🔍 Notification object:', notif);
+    console.log('🔍 Notification metadata (raw):', notif?.metadata);
+    console.log('🔍 Parsed metadata:', parsedMetadata);
+
+    const invitationId = parsedMetadata?.invitationId;
+
+    if (!invitationId) {
+      console.error('❌ No invitationId found in notification:', notif);
+      toast.error('Invalid invitation data. Please refresh and try again.');
+      return;
+    }
 
     setProcessingInvitation(invitationId);
     try {
@@ -85,16 +95,30 @@ function NotificationPanel({
         }, 1000);
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to approve invitation');
+      console.error('❌ Error approving invitation:', error);
+      console.error('❌ Error response:', error.response?.data);
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to approve invitation';
+      toast.error(`Error: ${errorMessage}`, {
+        duration: 5000,
+      });
     } finally {
       setProcessingInvitation(null);
     }
   };
 
-  const handleRejectInvitation = async (e: React.MouseEvent, notif: any) => {
+  const handleRejectInvitation = async (e: React.MouseEvent, notif: any, parsedMetadata: any) => {
     e.stopPropagation();
-    const invitationId = notif.metadata?.invitationId;
-    if (!invitationId) return;
+
+    console.log('🔍 Notification object (reject):', notif);
+    console.log('🔍 Parsed metadata:', parsedMetadata);
+
+    const invitationId = parsedMetadata?.invitationId;
+
+    if (!invitationId) {
+      console.error('❌ No invitationId found in notification:', notif);
+      toast.error('Invalid invitation data. Please refresh and try again.');
+      return;
+    }
 
     setProcessingInvitation(invitationId);
     try {
@@ -105,6 +129,7 @@ function NotificationPanel({
         duration: 3000,
       });
     } catch (error: any) {
+      console.error('❌ Error rejecting invitation:', error);
       toast.error(error.response?.data?.error || 'Failed to reject invitation');
     } finally {
       setProcessingInvitation(null);
@@ -155,8 +180,20 @@ function NotificationPanel({
           notifs.map((notif) => {
             const cfg = notifIcon[notif.type] || notifIcon.info;
             const IconComp = cfg.icon;
-            const isInvitation = notif.type === 'invitation' && notif.metadata?.invitationId;
-            const isProcessing = processingInvitation === notif.metadata?.invitationId;
+
+            // Parse metadata if it's a string (sometimes Prisma returns JSON as string)
+            let metadata = notif.metadata;
+            if (typeof metadata === 'string') {
+              try {
+                metadata = JSON.parse(metadata);
+              } catch (e) {
+                console.error('Failed to parse notification metadata:', e);
+                metadata = null;
+              }
+            }
+
+            const isInvitation = notif.type === 'invitation' && metadata?.invitationId;
+            const isProcessing = processingInvitation === metadata?.invitationId;
 
             return (
               <div
@@ -186,7 +223,7 @@ function NotificationPanel({
                   {isInvitation && !notif.read && (
                     <div className="flex gap-2 mt-3">
                       <button
-                        onClick={(e) => handleApproveInvitation(e, notif)}
+                        onClick={(e) => handleApproveInvitation(e, notif, metadata)}
                         disabled={isProcessing}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-bold hover:bg-emerald-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
@@ -194,7 +231,7 @@ function NotificationPanel({
                         {isProcessing ? 'Processing...' : 'Approve'}
                       </button>
                       <button
-                        onClick={(e) => handleRejectInvitation(e, notif)}
+                        onClick={(e) => handleRejectInvitation(e, notif, metadata)}
                         disabled={isProcessing}
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >

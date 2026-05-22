@@ -22,9 +22,12 @@ export class InvitationController {
     try {
       const userId = (req as any).user.id;
       const { invitationId } = req.params;
+      console.log('🔍 Approving invitation:', { invitationId, userId });
       const result = await InvitationService.approveInvitation(invitationId, userId);
+      console.log('✅ Invitation approved:', result);
       res.json({ message: 'Invitation approved', data: result });
     } catch (error: any) {
+      console.error('❌ Error approving invitation:', error.message, error.stack);
       res.status(400).json({ error: error.message });
     }
   }
