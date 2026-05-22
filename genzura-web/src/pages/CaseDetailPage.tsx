@@ -940,30 +940,22 @@ export default function CaseDetailPage() {
         existingTeam={caseData.team}
         onInvite={async (userId) => {
           try {
-            const data = await caseService.addTeamMember(caseData.id, userId);
+            const response = await caseService.addTeamMember(caseData.id, userId);
 
-            // Transform the response to match the expected format
-            const transformedCase = {
-              ...data,
-              client: data.client?.name || data.clientName || 'Unknown Client',
-              clientEmail: data.client?.email || data.clientEmail || '',
-              clientPhone: data.client?.phone || data.clientPhone || '',
-              clientCompany: data.client?.company || data.clientCompany || '',
-              attorney: data.attorney?.name || data.attorneyName || 'Unknown Attorney',
-              clientObject: data.client,
-              attorneyObject: data.attorney,
-              team: data.team || [],
-              timeline: data.timeline || [],
-              documents: data.documents || [],
-              notes: data.notes || [],
-            };
-
-            setCurrentCase(transformedCase);
+            // Backend now returns an invitation object, not the full case
+            // The user won't be added to the team until they approve the invitation
             setShowInviteModal(false);
-            toast.success('Team member added successfully');
-          } catch (error) {
-            console.error('Failed to add team member:', error);
-            toast.error('Failed to add team member');
+            toast.success(
+              response.message || 'Invitation sent! User will be added after approval.',
+              {
+                duration: 5000,
+                icon: '📨',
+                style: { borderRadius: '1rem', background: '#1e293b', color: '#fff', fontWeight: 'bold' }
+              }
+            );
+          } catch (error: any) {
+            console.error('Failed to send invitation:', error);
+            toast.error(error.response?.data?.error || 'Failed to send invitation');
           }
         }}
       />

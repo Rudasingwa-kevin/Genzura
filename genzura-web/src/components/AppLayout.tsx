@@ -20,6 +20,8 @@ import {
   CheckCircle2,
   Menu,
   MessageSquare,
+  Check,
+  XCircle,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
@@ -27,36 +29,87 @@ import NewCaseModal from './NewCaseModal';
 import Breadcrumbs from './Breadcrumbs';
 import CommandPalette from './CommandPalette';
 import EmptyState from './EmptyState';
+import { invitationService } from '../api/services/invitation.service';
+import { toast } from 'react-hot-toast';
 
 
 
 
 const notifIcon: Record<string, { icon: React.ElementType; bg: string; color: string }> = {
-  alert:    { icon: AlertTriangle, bg: 'bg-red-50',     color: 'text-red-500'      },
-  deadline: { icon: CalIcon,       bg: 'bg-amber-50',   color: 'text-amber-500'    },
-  document: { icon: FileText,      bg: 'bg-blue-50',    color: 'text-blue-500'     },
-  case:     { icon: CaseIcon,      bg: 'bg-brand-light', color: 'text-brand-blue'  },
-  resolved: { icon: CheckCircle2,  bg: 'bg-emerald-50', color: 'text-emerald-500'  },
-  info:     { icon: Bell,          bg: 'bg-brand-light', color: 'text-brand-blue'  },
-  success:  { icon: CheckCircle2,  bg: 'bg-emerald-50', color: 'text-emerald-500'  },
-  warning:  { icon: AlertTriangle, bg: 'bg-amber-50',   color: 'text-amber-500'    },
+  alert:      { icon: AlertTriangle, bg: 'bg-red-50',     color: 'text-red-500'      },
+  deadline:   { icon: CalIcon,       bg: 'bg-amber-50',   color: 'text-amber-500'    },
+  document:   { icon: FileText,      bg: 'bg-blue-50',    color: 'text-blue-500'     },
+  case:       { icon: CaseIcon,      bg: 'bg-brand-light', color: 'text-brand-blue'  },
+  resolved:   { icon: CheckCircle2,  bg: 'bg-emerald-50', color: 'text-emerald-500'  },
+  info:       { icon: Bell,          bg: 'bg-brand-light', color: 'text-brand-blue'  },
+  success:    { icon: CheckCircle2,  bg: 'bg-emerald-50', color: 'text-emerald-500'  },
+  warning:    { icon: AlertTriangle, bg: 'bg-amber-50',   color: 'text-amber-500'    },
+  invitation: { icon: MessageSquare, bg: 'bg-violet-50',  color: 'text-violet-500'   },
 };
 
 // ─── Notification Panel ────────────────────────────────────────────────────────
-function NotificationPanel({ 
-  onClose, 
-  notifs, 
-  unreadCount, 
-  markRead, 
-  markAllRead 
-}: { 
-  onClose: () => void, 
-  notifs: any[], 
-  unreadCount: number, 
-  markRead: (id: string) => void, 
-  markAllRead: () => void 
+function NotificationPanel({
+  onClose,
+  notifs,
+  unreadCount,
+  markRead,
+  markAllRead
+}: {
+  onClose: () => void,
+  notifs: any[],
+  unreadCount: number,
+  markRead: (id: string) => void,
+  markAllRead: () => void
 }) {
   const navigate = useNavigate();
+  const [processingInvitation, setProcessingInvitation] = useState<string | null>(null);
+
+  const handleApproveInvitation = async (e: React.MouseEvent, notif: any) => {
+    e.stopPropagation();
+    const invitationId = notif.metadata?.invitationId;
+    if (!invitationId) return;
+
+    setProcessingInvitation(invitationId);
+    try {
+      await invitationService.approveInvitation(invitationId);
+      markRead(notif.id);
+      toast.success('Invitation accepted! You have been added to the case team.', {
+        icon: '✅',
+        duration: 4000,
+      });
+      // Optionally navigate to the case
+      if (notif.link) {
+        setTimeout(() => {
+          onClose();
+          navigate(notif.link);
+        }, 1000);
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Failed to approve invitation');
+    } finally {
+      setProcessingInvitation(null);
+    }
+  };
+
+  const handleRejectInvitation = async (e: React.MouseEvent, notif: any) => {
+    e.stopPropagation();
+    const invitationId = notif.metadata?.invitationId;
+    if (!invitationId) return;
+
+    setProcessingInvitation(invitationId);
+    try {
+      await invitationService.rejectInvitation(invitationId);
+      markRead(notif.id);
+      toast.success('Invitation declined.', {
+        icon: 'ℹ️',
+        duration: 3000,
+      });
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Failed to reject invitation');
+    } finally {
+      setProcessingInvitation(null);
+    }
+  };
 
   return (
     <div className="absolute top-[calc(100%+8px)] right-0 w-[400px] bg-white rounded-[1.5rem] border border-border-base shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
@@ -100,15 +153,20 @@ function NotificationPanel({
           </div>
         ) : (
           notifs.map((notif) => {
-            const cfg = notifIcon[notif.type];
+            const cfg = notifIcon[notif.type] || notifIcon.info;
             const IconComp = cfg.icon;
+            const isInvitation = notif.type === 'invitation' && notif.metadata?.invitationId;
+            const isProcessing = processingInvitation === notif.metadata?.invitationId;
+
             return (
               <div
                 key={notif.id}
-                className={`flex gap-4 px-5 py-4 hover:bg-page-bg/60 transition-colors group cursor-pointer ${!notif.read ? 'bg-brand-light/20' : ''}`}
+                className={`flex gap-4 px-5 py-4 hover:bg-page-bg/60 transition-colors group ${!isInvitation ? 'cursor-pointer' : ''} ${!notif.read ? 'bg-brand-light/20' : ''}`}
                 onClick={() => {
-                  markRead(notif.id);
-                  if (notif.link) { onClose(); navigate(notif.link); }
+                  if (!isInvitation) {
+                    markRead(notif.id);
+                    if (notif.link) { onClose(); navigate(notif.link); }
+                  }
                 }}
               >
                 {/* Icon */}
@@ -123,15 +181,39 @@ function NotificationPanel({
                   <p className="text-[10px] text-text-muted mt-2 font-bold uppercase tracking-wider">
                     {notif.time || (notif.createdAt ? new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '')}
                   </p>
+
+                  {/* Invitation Actions */}
+                  {isInvitation && !notif.read && (
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={(e) => handleApproveInvitation(e, notif)}
+                        disabled={isProcessing}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-bold hover:bg-emerald-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Check size={14} />
+                        {isProcessing ? 'Processing...' : 'Approve'}
+                      </button>
+                      <button
+                        onClick={(e) => handleRejectInvitation(e, notif)}
+                        disabled={isProcessing}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <XCircle size={14} />
+                        Decline
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Dismiss */}
-                <button
-                  onClick={(e) => { e.stopPropagation(); markRead(notif.id); }}
-                  className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-border-base text-text-muted transition-all shrink-0 mt-0.5"
-                >
-                  <X size={13} />
-                </button>
+                {!isInvitation && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); markRead(notif.id); }}
+                    className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-border-base text-text-muted transition-all shrink-0 mt-0.5"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
               </div>
             );
           })

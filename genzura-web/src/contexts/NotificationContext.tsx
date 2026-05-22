@@ -12,6 +12,13 @@ interface Notification {
   read: boolean;
   type: string;
   link?: string;
+  metadata?: {
+    invitationId?: string;
+    caseId?: string;
+    inviterId?: string;
+    role?: string;
+    [key: string]: any;
+  };
 }
 
 interface NotificationContextType {
