@@ -24,6 +24,7 @@ export default function FeedbackPage() {
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
+  const [selectedFeedback, setSelectedFeedback] = useState<any>(null);
 
   const fetchHistory = async () => {
     try {
@@ -203,9 +204,12 @@ export default function FeedbackPage() {
                         <Clock size={12} />
                         <span className="text-[10px] font-bold">{new Date(item.createdAt).toLocaleDateString()}</span>
                       </div>
-                      <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider flex items-center gap-1 group-hover:text-brand-blue transition-colors cursor-pointer">
+                      <button
+                        onClick={() => setSelectedFeedback(item)}
+                        className="text-[10px] font-bold text-text-muted uppercase tracking-wider flex items-center gap-1 group-hover:text-brand-blue transition-colors cursor-pointer"
+                      >
                         Details <ArrowRight size={12} />
-                      </div>
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -232,14 +236,86 @@ export default function FeedbackPage() {
                   <h4 className="font-bold text-lg mb-2">Need urgent help?</h4>
                   <p className="text-sm text-white/60 font-medium">If you are experiencing a system-wide outage, please contact our emergency support line.</p>
                 </div>
-                <button className="w-full py-4 bg-white/10 hover:bg-white text-white hover:text-brand-dark rounded-2xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2">
+                <a
+                  href="mailto:support@genzura.com?subject=Urgent Support Request"
+                  className="w-full py-4 bg-white/10 hover:bg-white text-white hover:text-brand-dark rounded-2xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 no-underline"
+                >
                   <CheckCircle2 size={16} /> Contact Support
-                </button>
+                </a>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Feedback Details Modal */}
+      {selectedFeedback && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-dark/40 backdrop-blur-sm animate-in fade-in"
+          onClick={() => setSelectedFeedback(null)}
+        >
+          <div
+            className="bg-white rounded-[2.5rem] max-w-2xl w-full p-8 shadow-2xl animate-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-bold text-brand-dark">{selectedFeedback.subject}</h3>
+                <p className="text-sm text-text-muted mt-1">
+                  Submitted on {new Date(selectedFeedback.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedFeedback(null)}
+                className="p-2 rounded-xl hover:bg-page-bg transition-colors text-text-muted hover:text-brand-dark"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-page-bg rounded-xl p-4">
+                  <p className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Category</p>
+                  <p className="text-sm font-bold text-brand-dark">{selectedFeedback.category}</p>
+                </div>
+                <div className="bg-page-bg rounded-xl p-4">
+                  <p className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Status</p>
+                  <span className={`text-xs font-bold uppercase px-3 py-1.5 rounded-full border border-current/10 inline-block ${STATUS_COLORS[selectedFeedback.status]}`}>
+                    {selectedFeedback.status.replace('_', ' ')}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold text-text-muted uppercase tracking-wider mb-3">Your Message</p>
+                <div className="bg-page-bg rounded-2xl p-6">
+                  <p className="text-sm text-brand-dark leading-relaxed whitespace-pre-wrap">{selectedFeedback.message}</p>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-border-base">
+                <p className="text-xs text-text-muted">
+                  <span className="font-bold">Feedback ID:</span> {selectedFeedback.id}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setSelectedFeedback(null)}
+                className="w-full py-3 bg-brand-blue text-white rounded-xl font-bold hover:shadow-lg transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }

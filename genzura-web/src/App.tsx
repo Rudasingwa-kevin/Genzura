@@ -32,6 +32,7 @@ import SystemSettings from './pages/admin/SystemSettings';
 import AuditLogPage   from './pages/admin/AuditLogPage';
 import SubscriptionManagement from './pages/admin/SubscriptionManagement';
 import PlanManagement from './pages/admin/PlanManagement';
+import FeedbackManagement from './pages/admin/FeedbackManagement';
 
 function App() {
   return (
@@ -66,6 +67,7 @@ function App() {
             <Route path="/admin/users"    element={<AdminRoute><UserManagement /></AdminRoute>} />
             <Route path="/admin/subscriptions" element={<AdminRoute><SubscriptionManagement /></AdminRoute>} />
             <Route path="/admin/plans"    element={<AdminRoute><PlanManagement /></AdminRoute>} />
+            <Route path="/admin/feedback" element={<AdminRoute><FeedbackManagement /></AdminRoute>} />
             <Route path="/admin/settings" element={<AdminRoute><SystemSettings /></AdminRoute>} />
             <Route path="/admin/audit"    element={<AdminRoute><AuditLogPage /></AdminRoute>} />
           </Routes>

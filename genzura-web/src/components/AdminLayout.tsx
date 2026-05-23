@@ -10,7 +10,8 @@ import {
   X,
   BarChart3,
   CreditCard,
-  DollarSign
+  DollarSign,
+  MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -20,6 +21,7 @@ const adminNavItems = [
   { icon: Users,           label: 'Team Management', to: '/admin/users' },
   { icon: CreditCard,      label: 'Subscriptions',   to: '/admin/subscriptions' },
   { icon: DollarSign,      label: 'Plan Pricing',    to: '/admin/plans' },
+  { icon: MessageSquare,   label: 'User Feedback',   to: '/admin/feedback' },
   { icon: Settings,        label: 'System Config',   to: '/admin/settings' },
   { icon: Activity,        label: 'Audit Trail',     to: '/admin/audit' },
 ];
