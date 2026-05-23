@@ -117,10 +117,11 @@ export class CaseController {
     }
   }
 
-  static async update(req: Request, res: Response) {
+  static async update(req: any, res: Response) {
     try {
       const { id } = req.params;
-      const updatedCase = await CaseService.updateCase(id, req.body);
+      const userId = req.user?.id; // Get user from auth middleware
+      const updatedCase = await CaseService.updateCase(id, req.body, userId);
       res.json(updatedCase);
     } catch (error: any) {
       res.status(500).json({ error: error.message });

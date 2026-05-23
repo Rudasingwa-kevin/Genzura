@@ -16,6 +16,7 @@ import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import adminSubscriptionRoutes from './routes/adminSubscriptionRoutes.js';
 import planRoutes from './routes/planRoutes.js';
 import invitationRoutes from './routes/invitationRoutes.js';
+import notificationPreferenceRoutes from './routes/notificationPreferenceRoutes.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 import { createServer } from 'http';
 import { initSocket } from './socket.js';
@@ -52,6 +53,7 @@ app.use('/api/admin/plans', planRoutes);
 app.use('/api/plans', planRoutes);
 app.use('/api/admin/jobs', adminJobsRoutes);
 app.use('/api/invitations', invitationRoutes);
+app.use('/api/notification-preferences', notificationPreferenceRoutes);
 
 // Error Handling
 app.use(errorHandler);

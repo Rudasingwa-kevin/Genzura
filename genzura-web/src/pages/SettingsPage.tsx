@@ -1,29 +1,26 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import {
   User as UserIcon,
   Building,
   Shield,
   Bell,
   Camera,
-  Monitor,
   Loader2,
-  Palette,
   Lock,
   ChevronRight,
   ShieldCheck,
   Zap,
-  Moon,
-  Sun,
-  Layout,
   CreditCard
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import AppLayout from '../components/AppLayout';
 import { useAuth } from '../contexts/AuthContext';
 import PricingPage from './PricingPage';
+import { authService } from '../api/services/auth.service';
+import { notificationPreferencesService, type NotificationPreferences } from '../api/services/notificationPreferences.service';
 
 // ─── Tab types ────────────────────────────────────────────────────────────────
-type Tab = 'profile' | 'organization' | 'security' | 'notifications' | 'appearance' | 'subscription';
+type Tab = 'profile' | 'organization' | 'security' | 'notifications' | 'subscription';
 
 const TABS: { id: Tab; label: string; icon: React.ElementType; color: string }[] = [
   { id: 'profile',      label: 'Personal Profile',    icon: UserIcon,     color: 'text-brand-blue' },
@@ -31,7 +28,6 @@ const TABS: { id: Tab; label: string; icon: React.ElementType; color: string }[]
   { id: 'organization', label: 'Organization Info',   icon: Building,     color: 'text-emerald-600' },
   { id: 'security',     label: 'Security & Access',   icon: Shield,       color: 'text-amber-600' },
   { id: 'notifications',label: 'Notifications',       icon: Bell,         color: 'text-violet-600' },
-  { id: 'appearance',   label: 'Interface Design',    icon: Palette,      color: 'text-rose-500' },
 ];
 
 // ─── Shared form primitives ───────────────────────────────────────────────────
@@ -95,21 +91,65 @@ const Toggle = ({ on, onChange }: { on: boolean; onChange: () => void }) => (
 const ProfileTab = () => {
   const { user, updateUser } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [firstName, setFirstName] = useState(user?.firstName || '');
   const [lastName, setLastName] = useState(user?.lastName || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [location, setLocation] = useState(user?.location || '');
   const [jobTitle, setJobTitle] = useState(user?.jobTitle || '');
-  const [language, setLanguage] = useState(user?.language || 'EN');
+  const fileInputRef = useState<HTMLInputElement | null>(null)[1];
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     setTimeout(() => {
-      updateUser({ firstName, lastName, phone, location, jobTitle, language });
+      updateUser({ firstName, lastName, phone, location, jobTitle });
       setIsSaving(false);
       toast.success('Profile updated successfully!', { icon: '👤' });
     }, 800);
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be smaller than 5MB');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const updatedUser = await authService.uploadAvatar(file);
+      await updateUser(updatedUser);
+      toast.success('Avatar updated successfully!', { icon: '📸' });
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Failed to upload avatar');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    if (!user?.avatarUrl) return;
+
+    setIsUploadingAvatar(true);
+    try {
+      const updatedUser = await authService.removeAvatar();
+      await updateUser(updatedUser);
+      toast.success('Avatar removed', { icon: '🗑️' });
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Failed to remove avatar');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
   };
 
   if (!user) return null;
@@ -121,19 +161,55 @@ const ProfileTab = () => {
       {/* Executive Avatar */}
       <div className="flex flex-col sm:flex-row items-center gap-8 bg-page-bg/50 p-8 rounded-[2rem] border border-border-base shadow-inner">
         <div className="relative group shrink-0">
-          <div className="w-28 h-28 rounded-[2rem] bg-brand-dark text-white font-bold text-4xl flex items-center justify-center shadow-2xl border-4 border-white transition-transform group-hover:scale-105 duration-500">
-            {user.initials}
-          </div>
-          <button type="button" className="absolute -bottom-2 -right-2 w-10 h-10 bg-brand-blue text-white rounded-2xl border-4 border-white shadow-xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95">
-            <Camera size={18} />
+          {user.avatarUrl ? (
+            <img
+              src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${user.avatarUrl}`}
+              alt={user.name}
+              className="w-28 h-28 rounded-[2rem] object-cover shadow-2xl border-4 border-white transition-transform group-hover:scale-105 duration-500"
+            />
+          ) : (
+            <div className="w-28 h-28 rounded-[2rem] bg-brand-dark text-white font-bold text-4xl flex items-center justify-center shadow-2xl border-4 border-white transition-transform group-hover:scale-105 duration-500">
+              {user.initials}
+            </div>
+          )}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleAvatarUpload}
+            className="hidden"
+            ref={(ref) => fileInputRef(ref)}
+          />
+          <button
+            type="button"
+            onClick={() => document.querySelector<HTMLInputElement>('input[type="file"]')?.click()}
+            disabled={isUploadingAvatar}
+            className="absolute -bottom-2 -right-2 w-10 h-10 bg-brand-blue text-white rounded-2xl border-4 border-white shadow-xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95 disabled:opacity-50"
+          >
+            {isUploadingAvatar ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />}
           </button>
         </div>
         <div className="text-center sm:text-left">
           <p className="font-bold text-brand-dark text-2xl tracking-tight">{user.firstName} {user.lastName}</p>
           <p className="text-xs font-bold text-brand-blue uppercase tracking-[0.1em] mt-1">{jobTitle || user.role}</p>
           <div className="flex flex-wrap justify-center sm:justify-start gap-4 mt-6">
-            <button type="button" className="text-xs font-bold text-brand-blue uppercase tracking-[0.1em] hover:bg-white px-4 py-2 rounded-xl transition-all border border-brand-blue/10">Upload Photo</button>
-            <button type="button" className="text-xs font-bold text-red-500 uppercase tracking-[0.1em] hover:bg-white px-4 py-2 rounded-xl transition-all border border-red-500/10">Remove</button>
+            <button
+              type="button"
+              onClick={() => document.querySelector<HTMLInputElement>('input[type="file"]')?.click()}
+              disabled={isUploadingAvatar}
+              className="text-xs font-bold text-brand-blue uppercase tracking-[0.1em] hover:bg-white px-4 py-2 rounded-xl transition-all border border-brand-blue/10 disabled:opacity-50"
+            >
+              {isUploadingAvatar ? 'Uploading...' : 'Upload Photo'}
+            </button>
+            {user.avatarUrl && (
+              <button
+                type="button"
+                onClick={handleAvatarRemove}
+                disabled={isUploadingAvatar}
+                className="text-xs font-bold text-red-500 uppercase tracking-[0.1em] hover:bg-white px-4 py-2 rounded-xl transition-all border border-red-500/10 disabled:opacity-50"
+              >
+                Remove
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -145,7 +221,6 @@ const ProfileTab = () => {
         <Field label="Phone"><Input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+250 XXX XXX XXX" /></Field>
         <Field label="Job Title"><Input value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="e.g., Senior Attorney" /></Field>
         <Field label="Location"><Input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g., Kigali, Rwanda" /></Field>
-        <Field label="Language"><Select value={language} onChange={e => setLanguage(e.target.value)}><option value="EN">English (US)</option><option value="FR">Français</option><option value="RW">Kinyarwanda</option></Select></Field>
       </div>
 
       <div className="pt-8 border-t border-border-base flex justify-end">
@@ -158,20 +233,55 @@ const ProfileTab = () => {
 const SecurityTab = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [is2FAEnabled, setIs2FAEnabled] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const handlePasswordChange = async (e: FormEvent) => {
+    e.preventDefault();
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error('Please fill in all password fields');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+
+    if (newPassword.length < 12) {
+      toast.error('New password must be at least 12 characters');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await authService.changePassword(currentPassword, newPassword);
+      toast.success('Password updated successfully!', { icon: '🔒' });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Failed to update password');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-12 animate-in-fade">
       <SectionHeader title="Security Controls" sub="Protect your legal data and access" />
-      
-      <form onSubmit={(e) => { e.preventDefault(); setIsSaving(true); setTimeout(() => { setIsSaving(false); toast.success('Password updated!'); }, 800); }} className="bg-page-bg/50 rounded-[2rem] p-8 border border-border-base space-y-6">
+
+      <form onSubmit={handlePasswordChange} className="bg-page-bg/50 rounded-[2rem] p-8 border border-border-base space-y-6">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-10 h-10 rounded-xl bg-brand-blue/10 text-brand-blue flex items-center justify-center shadow-inner"><Lock size={20}/></div>
           <h4 className="font-bold text-brand-dark uppercase tracking-[0.1em] text-xs">Update Credentials</h4>
         </div>
-        <Field label="Current Password"><Input type="password" placeholder="••••••••" /></Field>
+        <Field label="Current Password"><Input type="password" placeholder="••••••••" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} /></Field>
         <div className="grid sm:grid-cols-2 gap-6">
-          <Field label="New Password"><Input type="password" placeholder="Min. 12 chars" /></Field>
-          <Field label="Confirm New Password"><Input type="password" placeholder="••••••••" /></Field>
+          <Field label="New Password"><Input type="password" placeholder="Min. 12 chars" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} /></Field>
+          <Field label="Confirm New Password"><Input type="password" placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} /></Field>
         </div>
         <div className="flex justify-end pt-4">
           <SaveButton label="Update Password" isSaving={isSaving} />
@@ -199,69 +309,70 @@ const SecurityTab = () => {
   );
 };
 
-const AppearanceTab = () => {
-  const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('light');
-  
-  return (
-    <div className="space-y-10 animate-in-fade">
-      <SectionHeader title="Interface Design" sub="Customize the look and feel of Genzura" />
-      
-      <div className="grid sm:grid-cols-3 gap-6">
-        {[
-          { id: 'light', label: 'Classic Light', icon: Sun,   bg: 'bg-white', text: 'text-brand-dark' },
-          { id: 'dark',  label: 'Midnight',      icon: Moon,  bg: 'bg-brand-dark', text: 'text-white' },
-          { id: 'auto',  label: 'System Sync',   icon: Monitor, bg: 'bg-page-bg', text: 'text-text-muted' },
-        ].map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTheme(t.id as any)}
-            className={`relative p-6 rounded-[2rem] border-2 transition-all flex flex-col items-center gap-4 text-center group ${
-              theme === t.id ? 'border-brand-blue bg-brand-light/20' : 'border-border-base hover:border-brand-blue/30'
-            }`}
-          >
-            <div className={`w-16 h-16 rounded-2xl ${t.bg} ${t.text} flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform`}>
-              <t.icon size={28} />
-            </div>
-            <div>
-              <p className="font-bold text-brand-dark text-sm tracking-tight">{t.label}</p>
-              {theme === t.id && <span className="text-[9px] font-bold text-brand-blue uppercase tracking-[0.1em] mt-1 block">Active</span>}
-            </div>
-          </button>
-        ))}
-      </div>
-
-      <div className="space-y-4">
-        <h4 className="text-[10px] font-bold text-brand-dark uppercase tracking-[0.1em] ml-1">Sidebar Layout</h4>
-        <div className="bg-page-bg/50 rounded-[2rem] p-8 border border-border-base flex items-center justify-between group">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-white border border-border-base flex items-center justify-center text-brand-blue shadow-sm"><Layout size={24}/></div>
-            <div>
-              <p className="font-bold text-brand-dark text-sm">Compact Navigation</p>
-              <p className="text-xs text-text-muted font-medium">Minimize the sidebar for more focus space</p>
-            </div>
-          </div>
-          <Toggle on={false} onChange={() => {}} />
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const NotificationsTab = () => {
-  const [isSaving] = useState(false);
-  
+  const [isSaving, setIsSaving] = useState(false);
+  const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadPreferences = async () => {
+      try {
+        const prefs = await notificationPreferencesService.get();
+        setPreferences(prefs);
+      } catch (error) {
+        console.error('Failed to load preferences:', error);
+        toast.error('Failed to load notification preferences');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadPreferences();
+  }, []);
+
+  const handleToggle = async (field: keyof NotificationPreferences) => {
+    if (!preferences) return;
+
+    const newValue = !preferences[field];
+    setIsSaving(true);
+
+    try {
+      const updated = await notificationPreferencesService.update({
+        [field]: newValue,
+      });
+      setPreferences(updated);
+      toast.success('Preferences updated', { icon: '🔔' });
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Failed to update preferences');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="py-20 text-center">
+        <Loader2 size={32} className="animate-spin text-brand-blue mx-auto" />
+      </div>
+    );
+  }
+
+  if (!preferences) return null;
+
+  const items = [
+    { key: 'caseAssignments' as const, label: 'Case Assignments', desc: 'When you are added to a new litigation matter' },
+    { key: 'timelineMilestones' as const, label: 'Timeline Milestones', desc: 'Upcoming deadlines and status changes' },
+    { key: 'documentActivity' as const, label: 'Document Activity', desc: 'New uploads or edits to case files' },
+    { key: 'securityAlerts' as const, label: 'Security Alerts', desc: 'Critical login activity and safety reports' },
+  ];
+
   return (
     <div className="space-y-10 animate-in-fade">
       <SectionHeader title="Smart Notifications" sub="Configure when and how you stay informed" />
-      
+
       <div className="space-y-4">
-        {[
-          { label: 'Case Assignments', desc: 'When you are added to a new litigation matter', email: true },
-          { label: 'Timeline Milestones', desc: 'Upcoming deadlines and status changes', email: true },
-          { label: 'Document Activity', desc: 'New uploads or edits to case files', email: false },
-          { label: 'Security Alerts', desc: 'Critical login activity and safety reports', email: true },
-        ].map((item, i) => (
-          <div key={i} className="bg-white border border-border-base rounded-[1.75rem] p-6 flex items-center justify-between group hover:border-brand-blue/20 transition-all shadow-sm">
+        {items.map((item) => (
+          <div key={item.key} className="bg-white border border-border-base rounded-[1.75rem] p-6 flex items-center justify-between group hover:border-brand-blue/20 transition-all shadow-sm">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl bg-page-bg text-text-muted flex items-center justify-center group-hover:text-brand-blue group-hover:bg-brand-light transition-all">
                 <Bell size={20} />
@@ -272,15 +383,13 @@ const NotificationsTab = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-[10px] font-bold text-text-muted uppercase tracking-[0.1em] hidden sm:block">{item.email ? 'Email ON' : 'Email OFF'}</span>
-              <Toggle on={item.email} onChange={() => {}} />
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-[0.1em] hidden sm:block">
+                {preferences[item.key] ? 'Email ON' : 'Email OFF'}
+              </span>
+              <Toggle on={preferences[item.key]} onChange={() => handleToggle(item.key)} />
             </div>
           </div>
         ))}
-      </div>
-
-      <div className="pt-8 border-t border-border-base flex justify-end">
-        <SaveButton label="Save Preferences" isSaving={isSaving} />
       </div>
     </div>
   );
@@ -296,7 +405,6 @@ export default function SettingsPage() {
       case 'profile': return <ProfileTab />;
       case 'subscription': return <PricingPage variant="settings" />;
       case 'security': return <SecurityTab />;
-      case 'appearance': return <AppearanceTab />;
       case 'notifications': return <NotificationsTab />;
       default: return <div className="py-20 text-center text-text-muted font-bold uppercase tracking-[0.1em]">Workspace Management (Coming Soon)</div>;
     }

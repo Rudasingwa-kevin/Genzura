@@ -1,5 +1,7 @@
 import path from 'path';
 import { DocumentService } from '../services/documentService.js';
+import { SettingsService } from '../services/settingsService.js';
+import { SubscriptionService } from '../services/subscriptionService.js';
 export class DocumentController {
     static async getAll(req, res) {
         try {
@@ -35,6 +37,17 @@ export class DocumentController {
             }
             if (!file) {
                 return res.status(400).json({ error: 'No file uploaded' });
+            }
+            // Check subscription enforcement
+            const subscriptionStatus = await SettingsService.getSubscriptionStatus();
+            if (subscriptionStatus === 'ACTIVE') {
+                const canUpload = await SubscriptionService.canUploadDocument(req.user.id);
+                if (!canUpload.allowed) {
+                    return res.status(403).json({
+                        error: canUpload.message,
+                        code: 'SUBSCRIPTION_EXPIRED'
+                    });
+                }
             }
             // Check file size (should be caught by multer, but double-check)
             const maxSize = 100 * 1024 * 1024; // 100MB

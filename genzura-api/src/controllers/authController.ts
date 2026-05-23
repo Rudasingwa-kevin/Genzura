@@ -56,6 +56,45 @@ export class AuthController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  static async changePassword(req: any, res: Response) {
+    try {
+      const userId = req.user.id;
+      const { currentPassword, newPassword } = req.body;
+
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ error: 'Current password and new password are required' });
+      }
+
+      // Validate new password strength
+      const passwordValidation = PasswordValidator.validate(newPassword);
+      if (!passwordValidation.valid) {
+        return res.status(400).json({
+          error: passwordValidation.error,
+          passwordStrength: passwordValidation.strength
+        });
+      }
+
+      // Get user and verify current password
+      const user = await UserService.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!isPasswordValid) {
+        return res.status(401).json({ error: 'Current password is incorrect' });
+      }
+
+      // Hash and update new password
+      const passwordHash = await bcrypt.hash(newPassword, 10);
+      await UserService.updatePassword(userId, passwordHash);
+
+      res.json({ message: 'Password changed successfully' });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
   static async register(req: Request, res: Response) {
     try {
       const { email, password, name, role } = req.body;

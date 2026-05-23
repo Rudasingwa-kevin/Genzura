@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { UserController } from '../controllers/userController.js';
 import { authenticate, authorize } from '../middleware/authMiddleware.js';
+import { uploadAvatar } from '../middleware/upload.js';
 
 const router = Router();
 
@@ -8,6 +9,8 @@ router.use(authenticate);
 
 // Profile update - any authenticated user can update their own profile
 router.put('/profile', UserController.updateProfile);
+router.post('/avatar', uploadAvatar.single('avatar'), UserController.uploadAvatar);
+router.delete('/avatar', UserController.removeAvatar);
 
 // Get active users for collaboration - accessible to all authenticated users
 router.get('/active', UserController.getActiveUsers);

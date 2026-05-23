@@ -27,6 +27,31 @@ export const authService = {
     return response.data;
   },
 
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    const response = await apiClient.post('/auth/change-password', {
+      currentPassword,
+      newPassword,
+    });
+    return response.data;
+  },
+
+  uploadAvatar: async (file: File) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    const response = await apiClient.post('/users/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  removeAvatar: async () => {
+    const response = await apiClient.delete('/users/avatar');
+    return response.data;
+  },
+
   logout: () => {
     localStorage.removeItem('genzura_token');
   },

@@ -1,4 +1,7 @@
 import { UserService } from '../services/userService.js';
+import fs from 'fs';
+import path from 'path';
+import { SubscriptionService } from '../services/subscriptionService.js';
 export class UserController {
     static async getAll(req, res) {
         try {
@@ -80,6 +83,51 @@ export class UserController {
             res.status(500).json({ error: error.message });
         }
     }
+    static async uploadAvatar(req, res) {
+        try {
+            const userId = req.user.id;
+            if (!req.file) {
+                return res.status(400).json({ error: 'No file uploaded' });
+            }
+            // Get current user to check for existing avatar
+            const user = await UserService.getUserById(userId);
+            // Delete old avatar if exists
+            if (user?.avatarUrl) {
+                const oldPath = path.join(process.cwd(), user.avatarUrl);
+                if (fs.existsSync(oldPath)) {
+                    fs.unlinkSync(oldPath);
+                }
+            }
+            // Save new avatar URL
+            const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+            const updated = await UserService.updateProfile(userId, { avatarUrl });
+            const { passwordHash, ...userWithoutPassword } = updated;
+            res.json(userWithoutPassword);
+        }
+        catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+    static async removeAvatar(req, res) {
+        try {
+            const userId = req.user.id;
+            const user = await UserService.getUserById(userId);
+            // Delete avatar file if exists
+            if (user?.avatarUrl) {
+                const avatarPath = path.join(process.cwd(), user.avatarUrl);
+                if (fs.existsSync(avatarPath)) {
+                    fs.unlinkSync(avatarPath);
+                }
+            }
+            // Clear avatar URL in database
+            const updated = await UserService.updateProfile(userId, { avatarUrl: null });
+            const { passwordHash, ...userWithoutPassword } = updated;
+            res.json(userWithoutPassword);
+        }
+        catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
     static async inviteUser(req, res) {
         try {
             const { name, email, role, phone, location, jobTitle } = req.body;
@@ -101,6 +149,16 @@ export class UserController {
                 message: 'Invitation sent successfully',
                 user: newUser
             });
+        }
+        catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+    static async getMySubscription(req, res) {
+        try {
+            const userId = req.user.id;
+            const limits = await SubscriptionService.getSubscriptionLimits(userId);
+            res.json(limits);
         }
         catch (error) {
             res.status(500).json({ error: error.message });

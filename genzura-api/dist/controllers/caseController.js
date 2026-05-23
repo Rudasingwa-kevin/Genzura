@@ -1,4 +1,6 @@
 import { CaseService } from '../services/caseService.js';
+import { SettingsService } from '../services/settingsService.js';
+import { SubscriptionService } from '../services/subscriptionService.js';
 export class CaseController {
     static async getAll(req, res) {
         try {
@@ -30,6 +32,19 @@ export class CaseController {
     }
     static async create(req, res) {
         try {
+            // Check subscription enforcement
+            const subscriptionStatus = await SettingsService.getSubscriptionStatus();
+            if (subscriptionStatus === 'ACTIVE') {
+                const canCreate = await SubscriptionService.canCreateCase(req.user.id);
+                if (!canCreate.allowed) {
+                    return res.status(403).json({
+                        error: canCreate.message,
+                        code: 'SUBSCRIPTION_LIMIT_REACHED',
+                        currentCases: canCreate.currentCases,
+                        maxCases: canCreate.maxCases
+                    });
+                }
+            }
             const newCase = await CaseService.createCase({
                 ...req.body,
                 attorneyId: req.user.id // Automatically assign logged-in user as lead attorney
@@ -105,6 +120,30 @@ export class CaseController {
             const { id } = req.params;
             await CaseService.deleteCase(id);
             res.status(204).send();
+        }
+        catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+    static async removeTeamMember(req, res) {
+        try {
+            const { id, userId } = req.params;
+            const currentUserId = req.user.id;
+            // Get the case to check if current user is the attorney (case creator)
+            const caseData = await CaseService.getCaseById(id, currentUserId, req.user?.role);
+            if (!caseData) {
+                return res.status(404).json({ error: 'Case not found' });
+            }
+            // Only the lead attorney can remove team members
+            if (caseData.attorneyId !== currentUserId) {
+                return res.status(403).json({ error: 'Only the case lead attorney can remove team members' });
+            }
+            // Cannot remove the lead attorney
+            if (userId === caseData.attorneyId) {
+                return res.status(400).json({ error: 'Cannot remove the lead attorney from the case' });
+            }
+            await CaseService.removeTeamMember(id, userId);
+            res.json({ message: 'Team member removed successfully' });
         }
         catch (error) {
             res.status(500).json({ error: error.message });

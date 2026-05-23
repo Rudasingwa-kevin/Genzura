@@ -12,5 +12,6 @@ router.put('/:id', CaseController.update);
 router.delete('/:id', CaseController.delete);
 router.post('/:id/notes', CaseController.addNote);
 router.post('/:id/team', CaseController.addTeamMember);
+router.delete('/:id/team/:userId', CaseController.removeTeamMember);
 export default router;
 //# sourceMappingURL=caseRoutes.js.map

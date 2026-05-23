@@ -91,6 +91,7 @@ model User {
   status                UserStatus       @default(Active)
   lastActive            DateTime         @default(now())
   initials              String
+  avatarUrl             String?
   // Profile fields
   phone                 String?
   location              String?
@@ -113,6 +114,7 @@ model User {
   notifications         Notification[]
   calendarEvents        CalendarEvent[]
   eventAttendees        EventAttendee[]
+  notificationPreferences NotificationPreference?
   createdAt             DateTime         @default(now())
   updatedAt             DateTime         @updatedAt
 }
@@ -335,4 +337,19 @@ model PlanConfig {
   lastModifiedBy  String?
   lastModifiedAt  DateTime         @default(now()) @updatedAt
   createdAt       DateTime         @default(now())
+}
+
+model NotificationPreference {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Email notification preferences
+  caseAssignments       Boolean  @default(true)
+  timelineMilestones    Boolean  @default(true)
+  documentActivity      Boolean  @default(false)
+  securityAlerts        Boolean  @default(true)
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }

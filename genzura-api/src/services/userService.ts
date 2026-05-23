@@ -133,6 +133,7 @@ export class UserService {
     location?: string;
     jobTitle?: string;
     language?: string;
+    avatarUrl?: string;
   }) {
     return prisma.user.update({
       where: { id },
@@ -142,6 +143,7 @@ export class UserService {
         ...(data.location !== undefined && { location: data.location }),
         ...(data.jobTitle !== undefined && { jobTitle: data.jobTitle }),
         ...(data.language && { language: data.language }),
+        ...(data.avatarUrl !== undefined && { avatarUrl: data.avatarUrl }),
       },
     });
   }

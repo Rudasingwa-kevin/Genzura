@@ -382,7 +382,7 @@ export class CaseService {
     return updatedCase;
   }
 
-  static async updateCase(idOrCaseNumber: string, data: any) {
+  static async updateCase(idOrCaseNumber: string, data: any, userId?: string) {
     // Support updating by case number or ID
     const isCaseNumber = /^[A-Z]+-\d+-\d+$/.test(idOrCaseNumber);
 
@@ -390,6 +390,17 @@ export class CaseService {
       ? { caseNumber: idOrCaseNumber }
       : { id: idOrCaseNumber };
 
+    // Get the old case data to track changes
+    const oldCase = await prisma.case.findUnique({
+      where: whereClause,
+      include: { attorney: true, client: true }
+    });
+
+    if (!oldCase) {
+      throw new Error('Case not found');
+    }
+
+    // Update the case
     const updatedCase = await prisma.case.update({
       where: whereClause,
       data: {
@@ -415,6 +426,70 @@ export class CaseService {
         }
       }
     });
+
+    // Track changes in timeline
+    if (userId) {
+      const changes: string[] = [];
+
+      // Define field labels for better readability
+      const fieldLabels: Record<string, string> = {
+        title: 'Title',
+        description: 'Description',
+        status: 'Status',
+        priority: 'Priority',
+        type: 'Type',
+        courtName: 'Court Name',
+        courtLocation: 'Court Location',
+        clientId: 'Client',
+        attorneyId: 'Attorney',
+        filingDate: 'Filing Date',
+        hearingDate: 'Hearing Date',
+        estimatedValue: 'Estimated Value'
+      };
+
+      // Check each field for changes
+      for (const [field, label] of Object.entries(fieldLabels)) {
+        if (data[field] !== undefined && oldCase[field as keyof typeof oldCase] !== data[field]) {
+          const oldValue = oldCase[field as keyof typeof oldCase];
+          const newValue = data[field];
+
+          // Format values for display
+          let oldDisplay = oldValue?.toString() || 'None';
+          let newDisplay = newValue?.toString() || 'None';
+
+          // Special formatting for specific fields
+          if (field === 'clientId') {
+            oldDisplay = oldCase.client?.name || 'None';
+            newDisplay = updatedCase.client?.name || 'None';
+          } else if (field === 'attorneyId') {
+            oldDisplay = oldCase.attorney?.name || 'None';
+            newDisplay = updatedCase.attorney?.name || 'None';
+          } else if (field.includes('Date') && newValue) {
+            newDisplay = new Date(newValue).toLocaleDateString();
+            if (oldValue) oldDisplay = new Date(oldValue).toLocaleDateString();
+          } else if (field === 'estimatedValue' && newValue) {
+            newDisplay = `$${Number(newValue).toLocaleString()}`;
+            if (oldValue) oldDisplay = `$${Number(oldValue).toLocaleString()}`;
+          }
+
+          changes.push(`${label}: ${oldDisplay} → ${newDisplay}`);
+        }
+      }
+
+      // Create timeline entry if there are changes
+      if (changes.length > 0) {
+        await prisma.timelineEvent.create({
+          data: {
+            caseId: updatedCase.id,
+            authorId: userId,
+            event: `Case Updated`,
+            description: changes.join('\n'),
+            timestamp: DateService.now()
+          }
+        });
+      }
+    }
+
     emitToAll('case_updated', updatedCase);
     return updatedCase;
   }

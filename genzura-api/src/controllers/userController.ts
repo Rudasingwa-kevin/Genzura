@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { UserService } from '../services/userService.js';
+import fs from 'fs';
+import path from 'path';
 import { SubscriptionService } from '../services/subscriptionService.js';
 
 export class UserController {
@@ -78,6 +80,59 @@ export class UserController {
         jobTitle,
         language,
       });
+
+      const { passwordHash, ...userWithoutPassword } = updated;
+      res.json(userWithoutPassword);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async uploadAvatar(req: any, res: Response) {
+    try {
+      const userId = req.user.id;
+
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+
+      // Get current user to check for existing avatar
+      const user = await UserService.getUserById(userId);
+
+      // Delete old avatar if exists
+      if (user?.avatarUrl) {
+        const oldPath = path.join(process.cwd(), user.avatarUrl);
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+        }
+      }
+
+      // Save new avatar URL
+      const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+      const updated = await UserService.updateProfile(userId, { avatarUrl });
+
+      const { passwordHash, ...userWithoutPassword } = updated;
+      res.json(userWithoutPassword);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async removeAvatar(req: any, res: Response) {
+    try {
+      const userId = req.user.id;
+      const user = await UserService.getUserById(userId);
+
+      // Delete avatar file if exists
+      if (user?.avatarUrl) {
+        const avatarPath = path.join(process.cwd(), user.avatarUrl);
+        if (fs.existsSync(avatarPath)) {
+          fs.unlinkSync(avatarPath);
+        }
+      }
+
+      // Clear avatar URL in database
+      const updated = await UserService.updateProfile(userId, { avatarUrl: null as any });
 
       const { passwordHash, ...userWithoutPassword } = updated;
       res.json(userWithoutPassword);

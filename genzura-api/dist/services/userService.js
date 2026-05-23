@@ -114,6 +114,7 @@ export class UserService {
                 ...(data.location !== undefined && { location: data.location }),
                 ...(data.jobTitle !== undefined && { jobTitle: data.jobTitle }),
                 ...(data.language && { language: data.language }),
+                ...(data.avatarUrl !== undefined && { avatarUrl: data.avatarUrl }),
             },
         });
     }
