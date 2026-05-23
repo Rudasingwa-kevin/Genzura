@@ -57,6 +57,9 @@ enum TimelineEventType {
   document
   note
   milestone
+  updated
+  team_added
+  team_removed
 }
 
 enum DocumentType {

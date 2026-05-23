@@ -12,7 +12,7 @@ export interface User {
 
 export interface TimelineEvent {
   id: string | number;
-  type: 'filed' | 'status' | 'meeting' | 'document' | 'note' | 'milestone';
+  type: 'filed' | 'status' | 'meeting' | 'document' | 'note' | 'milestone' | 'updated' | 'team_added' | 'team_removed';
   description: string;
   author: User | string;
   timestamp: string;

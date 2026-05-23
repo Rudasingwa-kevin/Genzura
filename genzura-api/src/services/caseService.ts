@@ -95,7 +95,7 @@ export class CaseService {
     });
   }
 
-  static async updateCaseStatus(idOrCaseNumber: string, status: CaseStatus) {
+  static async updateCaseStatus(idOrCaseNumber: string, status: CaseStatus, userId?: string) {
     // Support updating by case number or ID
     const isCaseNumber = /^[A-Z]+-\d+-\d+$/.test(idOrCaseNumber);
 
@@ -103,10 +103,27 @@ export class CaseService {
       ? { caseNumber: idOrCaseNumber }
       : { id: idOrCaseNumber };
 
+    // Get old status
+    const oldCase = await prisma.case.findUnique({ where: whereClause });
+    const oldStatus = oldCase?.status;
+
     const updatedCase = await prisma.case.update({
       where: whereClause,
       data: { status }
     });
+
+    // Create timeline entry for status change
+    if (userId && oldStatus !== status) {
+      await prisma.timelineEvent.create({
+        data: {
+          caseId: updatedCase.id,
+          authorId: userId,
+          type: 'status',
+          description: `Status changed from ${oldStatus} to ${status}`,
+          timestamp: DateService.now()
+        }
+      });
+    }
 
     const notification = await NotificationService.createNotification({
       userId: updatedCase.attorneyId,
@@ -336,7 +353,10 @@ export class CaseService {
     };
   }
 
-  static async addTeamMember(caseId: string, userId: string) {
+  static async addTeamMember(caseId: string, userId: string, addedBy?: string) {
+    // Get user info for timeline
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+
     // Create the team member
     await prisma.caseTeam.create({
       data: {
@@ -345,6 +365,19 @@ export class CaseService {
         role: 'Collaborator' // Default role
       }
     });
+
+    // Create timeline entry
+    if (addedBy && user) {
+      await prisma.timelineEvent.create({
+        data: {
+          caseId,
+          authorId: addedBy,
+          type: 'team_added',
+          description: `${user.name} was added to the case team`,
+          timestamp: DateService.now()
+        }
+      });
+    }
 
     // Return the full updated case with all relationships
     const updatedCase = await prisma.case.findUnique({
@@ -482,7 +515,7 @@ export class CaseService {
           data: {
             caseId: updatedCase.id,
             authorId: userId,
-            event: `Case Updated`,
+            type: 'updated',
             description: changes.join('\n'),
             timestamp: DateService.now()
           }
@@ -521,7 +554,10 @@ export class CaseService {
     return deletedCase;
   }
 
-  static async removeTeamMember(caseId: string, userId: string) {
+  static async removeTeamMember(caseId: string, userId: string, removedBy?: string) {
+    // Get user info for timeline before deletion
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+
     // Delete the team member
     await prisma.caseTeam.deleteMany({
       where: {
@@ -529,6 +565,19 @@ export class CaseService {
         userId
       }
     });
+
+    // Create timeline entry
+    if (removedBy && user) {
+      await prisma.timelineEvent.create({
+        data: {
+          caseId,
+          authorId: removedBy,
+          type: 'team_removed',
+          description: `${user.name} was removed from the case team`,
+          timestamp: DateService.now()
+        }
+      });
+    }
 
     // Return the updated case with all relationships
     const updatedCase = await prisma.case.findUnique({

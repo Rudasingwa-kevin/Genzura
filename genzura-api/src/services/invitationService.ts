@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { DateService } from '../utils/dateUtils.js';
 
 const prisma = new PrismaClient();
 
@@ -186,6 +187,19 @@ export class InvitationService {
         },
       },
     });
+
+    // Create timeline entry for team member added
+    if (caseTeam.user) {
+      await prisma.timelineEvent.create({
+        data: {
+          caseId: invitation.caseId,
+          authorId: invitation.inviterId,
+          type: 'team_added',
+          description: `${caseTeam.user.name} joined the case team`,
+          timestamp: DateService.now()
+        }
+      });
+    }
 
     // Mark the notification as read
     await prisma.notification.updateMany({

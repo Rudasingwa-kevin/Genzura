@@ -16,6 +16,7 @@ import {
 import { caseService } from '../api/services/case.service';
 import { documentService } from '../api/services/document.service';
 import { userService } from '../api/services/user.service';
+import { trackingService } from '../api/services/tracking.service';
 import { useAuth } from '../contexts/AuthContext';
 import EmptyState from '../components/EmptyState';
 import { CaseSummaryPDF } from '../components/CaseSummaryPDF';
@@ -23,12 +24,16 @@ import { CaseSummaryPDF } from '../components/CaseSummaryPDF';
 // ─── Timeline icon map ────────────────────────────────────────────────────────
 const timelineIcon = (type: TimelineEvent['type']) => {
   switch (type) {
-    case 'filed':     return { icon: Flag,           bg: 'bg-brand-light',   color: 'text-brand-blue'    };
-    case 'status':    return { icon: CheckCircle2,   bg: 'bg-emerald-50',    color: 'text-emerald-600'   };
-    case 'meeting':   return { icon: User,           bg: 'bg-violet-50',     color: 'text-violet-600'    };
-    case 'document':  return { icon: FileText,       bg: 'bg-amber-50',      color: 'text-amber-600'     };
-    case 'note':      return { icon: MessageSquare,  bg: 'bg-slate-100',     color: 'text-slate-600'     };
-    case 'milestone': return { icon: AlertTriangle,  bg: 'bg-brand-green-light', color: 'text-brand-green' };
+    case 'filed':        return { icon: Flag,           bg: 'bg-brand-light',   color: 'text-brand-blue'    };
+    case 'status':       return { icon: CheckCircle2,   bg: 'bg-emerald-50',    color: 'text-emerald-600'   };
+    case 'meeting':      return { icon: User,           bg: 'bg-violet-50',     color: 'text-violet-600'    };
+    case 'document':     return { icon: FileText,       bg: 'bg-amber-50',      color: 'text-amber-600'     };
+    case 'note':         return { icon: MessageSquare,  bg: 'bg-slate-100',     color: 'text-slate-600'     };
+    case 'milestone':    return { icon: AlertTriangle,  bg: 'bg-brand-green-light', color: 'text-brand-green' };
+    case 'updated':      return { icon: Edit3,          bg: 'bg-blue-50',       color: 'text-blue-600'      };
+    case 'team_added':   return { icon: User,           bg: 'bg-green-50',      color: 'text-green-600'     };
+    case 'team_removed': return { icon: User,           bg: 'bg-red-50',        color: 'text-red-600'       };
+    default:             return { icon: History,        bg: 'bg-gray-50',       color: 'text-gray-600'      };
   }
 };
 
@@ -85,11 +90,16 @@ const TimelineItem = ({ event, isLast, index }: { event: TimelineEvent; isLast: 
   );
 };
 
-const DocumentRow = ({ doc, index }: { doc: CaseDocument & { fileUrl?: string }; index: number }) => {
-  const handleDownload = () => {
+const DocumentRow = ({ doc, index, caseId }: { doc: CaseDocument & { fileUrl?: string }; index: number; caseId: string }) => {
+  const handleDownload = async () => {
     if (doc.fileUrl) {
       const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
       window.open(`${baseUrl}${doc.fileUrl}`, '_blank');
+
+      // Track the download
+      if (typeof doc.id === 'string') {
+        await trackingService.trackDocumentDownload(doc.id);
+      }
     } else {
       toast.error('Download link not available');
     }
@@ -397,6 +407,9 @@ export default function CaseDetailPage() {
 
       pdf.save(`Case_Summary_${caseData.id}.pdf`);
       toast.success('PDF downloaded successfully!', { id: toastId, icon: '📄', style: { borderRadius: '1rem', background: '#1e293b', color: '#fff', fontWeight: 'bold' } });
+
+      // Track the PDF export
+      await trackingService.trackPDFExport(caseData.id);
     } catch (error) {
       console.error('PDF generation failed:', error);
       toast.error('Failed to generate PDF. Please try again.', { id: toastId });
@@ -819,7 +832,7 @@ export default function CaseDetailPage() {
                           }
                         />
                       ) : (
-                        (caseData.documents || []).map((doc, i) => <DocumentRow key={doc.id} doc={doc} index={i} />)
+                        (caseData.documents || []).map((doc, i) => <DocumentRow key={doc.id} doc={doc} index={i} caseId={caseData.id} />)
                       )}
                     </div>
                   </div>

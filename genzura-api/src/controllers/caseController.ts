@@ -59,11 +59,12 @@ export class CaseController {
     }
   }
 
-  static async updateStatus(req: Request, res: Response) {
+  static async updateStatus(req: any, res: Response) {
     try {
       const { id } = req.params;
       const { status } = req.body;
-      const updatedCase = await CaseService.updateCaseStatus(id, status);
+      const userId = req.user?.id;
+      const updatedCase = await CaseService.updateCaseStatus(id, status, userId);
       res.json(updatedCase);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -160,7 +161,7 @@ export class CaseController {
         return res.status(400).json({ error: 'Cannot remove the lead attorney from the case' });
       }
 
-      await CaseService.removeTeamMember(id, userId);
+      await CaseService.removeTeamMember(id, userId, currentUserId);
       res.json({ message: 'Team member removed successfully' });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
