@@ -157,33 +157,35 @@ function EditCaseModal({ caseData, onClose, onSave }: { caseData: any; onClose: 
   const [description, setDescription] = useState(caseData.description);
   const [status, setStatus] = useState(caseData.status);
   const [priority, setPriority] = useState(caseData.priority);
+  const [extendDate, setExtendDate] = useState(caseData.extendDate ? new Date(caseData.extendDate).toISOString().split('T')[0] : '');
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-brand-dark/20 backdrop-blur-sm animate-in fade-in duration-300" onClick={onClose} />
       <div className="relative bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl border border-border-base p-8 animate-in zoom-in-95 fade-in duration-300 overflow-y-auto max-h-[90vh]">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-xl font-bold text-brand-dark">Edit Case: {caseData.id}</h2>
+          <div>
+            <h2 className="text-xl font-bold text-brand-dark">Edit Case</h2>
+            <p className="text-xs text-text-muted mt-1">Case ID: {caseData.id}</p>
+          </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-page-bg text-text-muted transition-colors">
             <X size={20} />
           </button>
         </div>
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Government Case #</label>
-              <input
-                type="text" value={caseNumber} onChange={e => setCaseNumber(e.target.value)}
-                className="w-full h-12 px-4 rounded-xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Case Title</label>
-              <input
-                type="text" value={title} onChange={e => setTitle(e.target.value)}
-                className="w-full h-12 px-4 rounded-xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-sm"
-              />
-            </div>
+          <div>
+            <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Government Case #</label>
+            <input
+              type="text" value={caseNumber} onChange={e => setCaseNumber(e.target.value)}
+              className="w-full h-12 px-4 rounded-xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Case Title</label>
+            <input
+              type="text" value={title} onChange={e => setTitle(e.target.value)}
+              className="w-full h-12 px-4 rounded-xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-sm"
+            />
           </div>
           <div>
             <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Description</label>
@@ -217,6 +219,13 @@ function EditCaseModal({ caseData, onClose, onSave }: { caseData: any; onClose: 
               </select>
             </div>
           </div>
+          <div>
+            <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Extend Date</label>
+            <input
+              type="date" value={extendDate} onChange={e => setExtendDate(e.target.value)}
+              className="w-full h-12 px-4 rounded-xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-sm"
+            />
+          </div>
           <div className="flex gap-3 pt-4">
             <button onClick={onClose} className="flex-1 h-14 rounded-2xl border border-border-base font-bold text-brand-dark hover:bg-page-bg transition-all">
               Cancel
@@ -230,6 +239,7 @@ function EditCaseModal({ caseData, onClose, onSave }: { caseData: any; onClose: 
                   description,
                   status,
                   priority,
+                  extendDate: extendDate ? new Date(extendDate).toISOString() : null,
                 };
                 onSave(updatedData);
                 onClose();

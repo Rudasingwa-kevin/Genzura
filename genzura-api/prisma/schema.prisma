@@ -143,6 +143,7 @@ model Case {
   priority      CasePriority    @default(Medium)
   type          CaseType
   deadline      DateTime?
+  extendDate    DateTime?
   filedDate     DateTime        @default(now())
   description   String          @db.Text
   team          CaseTeam[]
