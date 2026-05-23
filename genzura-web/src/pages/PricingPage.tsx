@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Check,
   X,
@@ -17,11 +17,13 @@ import {
   Sparkles,
   CheckCircle2,
   AlertCircle,
-  Info
+  Info,
+  Clock
 } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
+import { settingsService } from '../api/services/settings.service';
 
 // Plan configuration
 const PLANS = [
@@ -153,9 +155,26 @@ interface PricingPageProps {
 
 export default function PricingPage({ variant = 'public', limitType }: PricingPageProps) {
   const [billingCycle, setBillingCycle] = useState<'quarterly' | 'yearly'>('yearly');
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string>('PAUSED');
+  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    const fetchSubscriptionStatus = async () => {
+      try {
+        const info = await settingsService.getSubscriptionInfo();
+        setSubscriptionStatus(info.status);
+      } catch (error) {
+        console.error('Failed to fetch subscription status:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSubscriptionStatus();
+  }, []);
 
   const handleSelectPlan = (planId: string) => {
     if (!user) {
@@ -165,6 +184,16 @@ export default function PricingPage({ variant = 'public', limitType }: PricingPa
 
     if (planId === 'genzura') {
       toast.success('You are already on the free plan!');
+      return;
+    }
+
+    // Check if subscriptions are active
+    if (subscriptionStatus === 'PAUSED') {
+      toast('Subscriptions coming soon!', {
+        icon: '⏳',
+        duration: 3000,
+        style: { borderRadius: '1.25rem', fontWeight: 'bold' }
+      });
       return;
     }
 
@@ -346,8 +375,16 @@ export default function PricingPage({ variant = 'public', limitType }: PricingPa
                   : 'bg-brand-dark text-white hover:bg-brand-blue'
               }`}
             >
-              {plan.price === 0 ? 'Get Started' : 'Upgrade Now'}
-              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              {plan.price === 0
+                ? 'Get Started'
+                : subscriptionStatus === 'PAUSED'
+                  ? 'Coming Soon'
+                  : 'Upgrade Now'}
+              {subscriptionStatus === 'PAUSED' && plan.price > 0 ? (
+                <Clock size={16} className="group-hover:scale-110 transition-transform" />
+              ) : (
+                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              )}
             </button>
           )}
 
