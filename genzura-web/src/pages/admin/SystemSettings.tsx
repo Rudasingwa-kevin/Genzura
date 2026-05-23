@@ -1,7 +1,7 @@
-import { 
-  Save, 
-  CheckCircle2, 
-  Layout, 
+import {
+  Save,
+  CheckCircle2,
+  Layout,
   FileText,
   Lock,
   Workflow,
@@ -17,18 +17,24 @@ import {
   Mail,
   Box,
   Cloud,
-  FileCheck
+  FileCheck,
+  CreditCard,
+  AlertTriangle,
+  Play,
+  Pause
 } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { settingsService } from '../../api/services/settings.service';
 
-type Tab = 'branding' | 'practice' | 'security' | 'integrations' | 'infra';
+type Tab = 'branding' | 'practice' | 'security' | 'integrations' | 'infra' | 'subscriptions';
 
 export default function SystemSettings() {
   const [activeTab, setActiveTab] = useState<Tab>('branding');
   const [isSaving, setIsSaving] = useState(false);
+  const [subscriptionInfo, setSubscriptionInfo] = useState<any>(null);
+  const [isLoadingSubscription, setIsLoadingSubscription] = useState(false);
 
   // Settings State
   const [settings, setSettings] = useState<Record<string, string>>({
@@ -51,7 +57,49 @@ export default function SystemSettings() {
       }
     };
     fetchSettings();
+    fetchSubscriptionInfo();
   }, []);
+
+  const fetchSubscriptionInfo = async () => {
+    try {
+      const data = await settingsService.getSubscriptionInfo();
+      setSubscriptionInfo(data);
+    } catch (error) {
+      console.error('Failed to load subscription info', error);
+    }
+  };
+
+  const handleActivateSubscriptions = async () => {
+    setIsLoadingSubscription(true);
+    try {
+      const result = await settingsService.activateSubscriptionSystem();
+      setSubscriptionInfo(result);
+      toast.success('Subscription system activated! Users will be notified.', {
+        icon: '🚀',
+        style: { borderRadius: '1.25rem', fontWeight: 'bold' }
+      });
+    } catch (error) {
+      toast.error('Failed to activate subscription system');
+    } finally {
+      setIsLoadingSubscription(false);
+    }
+  };
+
+  const handlePauseSubscriptions = async () => {
+    setIsLoadingSubscription(true);
+    try {
+      const result = await settingsService.pauseSubscriptionSystem();
+      setSubscriptionInfo(result);
+      toast.success('Subscription system paused', {
+        icon: '⏸️',
+        style: { borderRadius: '1.25rem', fontWeight: 'bold' }
+      });
+    } catch (error) {
+      toast.error('Failed to pause subscription system');
+    } finally {
+      setIsLoadingSubscription(false);
+    }
+  };
 
   const handleChange = (key: string, value: string) => {
     setSettings(prev => ({ ...prev, [key]: value }));
@@ -94,11 +142,12 @@ export default function SystemSettings() {
         <aside className="lg:w-72 shrink-0">
           <div className="bg-white rounded-[2rem] border border-border-base p-4 space-y-2 shadow-sm">
             {[
-              { id: 'branding',     label: 'Firm Branding',    icon: Palette },
-              { id: 'practice',     label: 'Practice Areas',   icon: Layout },
-              { id: 'security',     label: 'Global Security',  icon: Shield },
-              { id: 'integrations', label: 'Integration Hub',  icon: LinkIcon },
-              { id: 'infra',        label: 'Infrastructure',   icon: Database },
+              { id: 'branding',       label: 'Firm Branding',       icon: Palette },
+              { id: 'practice',       label: 'Practice Areas',      icon: Layout },
+              { id: 'security',       label: 'Global Security',     icon: Shield },
+              { id: 'subscriptions',  label: 'Subscriptions',       icon: CreditCard },
+              { id: 'integrations',   label: 'Integration Hub',     icon: LinkIcon },
+              { id: 'infra',          label: 'Infrastructure',      icon: Database },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -230,6 +279,151 @@ export default function SystemSettings() {
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'subscriptions' && (
+              <div className="space-y-8">
+                <div>
+                  <h3 className="text-xl font-bold text-brand-dark mb-2 flex items-center gap-3">
+                    <CreditCard className="text-brand-blue" size={24} /> Subscription System Control
+                  </h3>
+                  <p className="text-sm text-text-muted">Manage when subscription plans will be enforced for all users</p>
+                </div>
+
+                {/* Status Card */}
+                <div className={`p-8 rounded-2xl border-2 ${
+                  subscriptionInfo?.status === 'PAUSED' ? 'bg-amber-50 border-amber-200' :
+                  subscriptionInfo?.status === 'WARNING' ? 'bg-blue-50 border-blue-200' :
+                  'bg-emerald-50 border-emerald-200'
+                }`}>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                          subscriptionInfo?.status === 'PAUSED' ? 'bg-amber-100 text-amber-600' :
+                          subscriptionInfo?.status === 'WARNING' ? 'bg-blue-100 text-blue-600' :
+                          'bg-emerald-100 text-emerald-600'
+                        }`}>
+                          {subscriptionInfo?.status === 'PAUSED' ? <Pause size={24} /> :
+                           subscriptionInfo?.status === 'WARNING' ? <Clock size={24} /> :
+                           <CheckCircle2 size={24} />}
+                        </div>
+                        <div>
+                          <h4 className="text-2xl font-bold text-brand-dark">
+                            {subscriptionInfo?.status === 'PAUSED' ? 'System Paused' :
+                             subscriptionInfo?.status === 'WARNING' ? 'Warning Period Active' :
+                             'Enforcement Active'}
+                          </h4>
+                          <p className="text-sm text-text-muted mt-1">
+                            {subscriptionInfo?.status === 'PAUSED' && 'All users have unlimited access'}
+                            {subscriptionInfo?.status === 'WARNING' && `${subscriptionInfo?.daysRemaining} days until enforcement`}
+                            {subscriptionInfo?.status === 'ACTIVE' && 'Subscription plans are being enforced'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {subscriptionInfo?.status === 'PAUSED' && (
+                        <div className="bg-white/50 rounded-xl p-6 border border-amber-200">
+                          <h5 className="font-bold text-brand-dark mb-2 flex items-center gap-2">
+                            <AlertTriangle size={18} /> What happens when you activate?
+                          </h5>
+                          <ul className="space-y-2 text-sm text-text-secondary">
+                            <li className="flex items-start gap-2">
+                              <span className="text-brand-blue mt-1">•</span>
+                              <span>All users will see a <strong>warning banner</strong> on their dashboard</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="text-brand-blue mt-1">•</span>
+                              <span>They will have <strong>14 days</strong> to choose a subscription plan</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="text-brand-blue mt-1">•</span>
+                              <span>Email reminders sent at <strong>14, 7, 3, and 1 day</strong> before enforcement</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="text-brand-blue mt-1">•</span>
+                              <span>After 14 days, plan limits will be <strong>automatically enforced</strong></span>
+                            </li>
+                          </ul>
+                        </div>
+                      )}
+
+                      {subscriptionInfo?.status === 'WARNING' && subscriptionInfo?.activationDate && (
+                        <div className="bg-white/50 rounded-xl p-6 border border-blue-200">
+                          <div className="grid grid-cols-3 gap-4 text-center">
+                            <div>
+                              <p className="text-xs font-bold text-text-muted uppercase tracking-wider mb-1">Days Remaining</p>
+                              <p className="text-3xl font-bold text-brand-dark">{subscriptionInfo.daysRemaining}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-text-muted uppercase tracking-wider mb-1">Activation Date</p>
+                              <p className="text-lg font-bold text-brand-dark">
+                                {new Date(subscriptionInfo.activationDate).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-text-muted uppercase tracking-wider mb-1">Status</p>
+                              <p className="text-lg font-bold text-blue-600">Warning</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4 mt-6">
+                    {subscriptionInfo?.status === 'PAUSED' && (
+                      <button
+                        onClick={handleActivateSubscriptions}
+                        disabled={isLoadingSubscription}
+                        className="flex items-center gap-2 px-6 py-3 bg-brand-blue text-white rounded-xl font-bold hover:shadow-lg transition-all disabled:opacity-70"
+                      >
+                        {isLoadingSubscription ? (
+                          <Workflow className="animate-spin" size={18} />
+                        ) : (
+                          <Play size={18} />
+                        )}
+                        Activate Subscription System
+                      </button>
+                    )}
+
+                    {(subscriptionInfo?.status === 'WARNING' || subscriptionInfo?.status === 'ACTIVE') && (
+                      <button
+                        onClick={handlePauseSubscriptions}
+                        disabled={isLoadingSubscription}
+                        className="flex items-center gap-2 px-6 py-3 bg-amber-500 text-white rounded-xl font-bold hover:shadow-lg transition-all disabled:opacity-70"
+                      >
+                        {isLoadingSubscription ? (
+                          <Workflow className="animate-spin" size={18} />
+                        ) : (
+                          <Pause size={18} />
+                        )}
+                        Pause System
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Info Cards */}
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="bg-white rounded-xl p-6 border border-border-base">
+                    <h5 className="font-bold text-brand-dark mb-2">Free Tier (Genzura)</h5>
+                    <p className="text-sm text-text-muted">Basic access with limited features</p>
+                  </div>
+                  <div className="bg-white rounded-xl p-6 border border-border-base">
+                    <h5 className="font-bold text-brand-dark mb-2">Intango Plan</h5>
+                    <p className="text-sm text-text-muted">100,000 RWF / 3 months</p>
+                  </div>
+                  <div className="bg-white rounded-xl p-6 border border-border-base">
+                    <h5 className="font-bold text-brand-dark mb-2">Inkingi Plan</h5>
+                    <p className="text-sm text-text-muted">200,000 RWF / 12 months</p>
+                  </div>
                 </div>
               </div>
             )}
