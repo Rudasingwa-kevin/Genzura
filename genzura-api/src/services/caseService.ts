@@ -445,4 +445,49 @@ export class CaseService {
     emitToAll('case_deleted', { id: caseToDelete.id });
     return deletedCase;
   }
+
+  static async removeTeamMember(caseId: string, userId: string) {
+    // Delete the team member
+    await prisma.caseTeam.deleteMany({
+      where: {
+        caseId,
+        userId
+      }
+    });
+
+    // Return the updated case with all relationships
+    const updatedCase = await prisma.case.findUnique({
+      where: { id: caseId },
+      include: {
+        client: true,
+        attorney: true,
+        team: {
+          include: {
+            user: true
+          }
+        },
+        timeline: {
+          include: {
+            author: true
+          },
+          orderBy: { timestamp: 'desc' }
+        },
+        documents: {
+          include: {
+            uploadedBy: true
+          },
+          orderBy: { uploadedAt: 'desc' }
+        },
+        notes: {
+          include: {
+            author: true
+          },
+          orderBy: { timestamp: 'desc' }
+        }
+      }
+    });
+
+    emitToAll('case_team_updated', { caseId, case: updatedCase });
+    return updatedCase;
+  }
 }

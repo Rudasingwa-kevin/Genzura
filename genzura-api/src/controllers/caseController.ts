@@ -119,4 +119,33 @@ export class CaseController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  static async removeTeamMember(req: any, res: Response) {
+    try {
+      const { id, userId } = req.params;
+      const currentUserId = req.user.id;
+
+      // Get the case to check if current user is the attorney (case creator)
+      const caseData = await CaseService.getCaseById(id, currentUserId, req.user?.role);
+
+      if (!caseData) {
+        return res.status(404).json({ error: 'Case not found' });
+      }
+
+      // Only the lead attorney can remove team members
+      if (caseData.attorneyId !== currentUserId) {
+        return res.status(403).json({ error: 'Only the case lead attorney can remove team members' });
+      }
+
+      // Cannot remove the lead attorney
+      if (userId === caseData.attorneyId) {
+        return res.status(400).json({ error: 'Cannot remove the lead attorney from the case' });
+      }
+
+      await CaseService.removeTeamMember(id, userId);
+      res.json({ message: 'Team member removed successfully' });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 }

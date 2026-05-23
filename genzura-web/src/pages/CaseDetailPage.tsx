@@ -843,24 +843,54 @@ export default function CaseDetailPage() {
             <div id="case-team-widget">
               <SectionCard title="Case Team">
                 <div className="space-y-6">
-                  {(caseData.team || []).map((member: any, i: number) => (
-                    <div key={member.user?.id || i} className="flex items-center gap-5 group animate-in-up" style={{ animationDelay: `${i * 100}ms` }}>
-                      <div className="relative">
-                        <div className="w-14 h-14 rounded-[1.25rem] bg-brand-dark text-white font-bold text-base flex items-center justify-center shrink-0 shadow-xl shadow-brand-dark/20 group-hover:scale-110 transition-all duration-500 premium-border">
-                          {member.user?.initials || member.user?.name?.split(' ').map((n: string) => n[0]).join('')}
+                  {(caseData.team || []).map((member: any, i: number) => {
+                    const isLeadAttorney = user?.id === caseData.attorneyId;
+                    const canRemove = isLeadAttorney && member.user?.id !== caseData.attorneyId;
+
+                    return (
+                      <div key={member.user?.id || i} className="flex items-center gap-5 group animate-in-up" style={{ animationDelay: `${i * 100}ms` }}>
+                        <div className="relative">
+                          <div className="w-14 h-14 rounded-[1.25rem] bg-brand-dark text-white font-bold text-base flex items-center justify-center shrink-0 shadow-xl shadow-brand-dark/20 group-hover:scale-110 transition-all duration-500 premium-border">
+                            {member.user?.initials || member.user?.name?.split(' ').map((n: string) => n[0]).join('')}
+                          </div>
+                          <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-lg bg-emerald-500 border-2 border-white shadow-sm" />
                         </div>
-                        <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-lg bg-emerald-500 border-2 border-white shadow-sm" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[15px] font-bold text-brand-dark truncate group-hover:text-brand-blue transition-colors">{member.user?.name}</p>
+                          <p className="text-[10px] font-bold text-text-muted uppercase tracking-[0.15em] mt-1">{member.role}</p>
+                        </div>
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0 transition-all">
+                          <button className="p-3 rounded-xl bg-page-bg/50 hover:bg-brand-blue/5 text-text-muted hover:text-brand-blue transition-all premium-border">
+                            <Mail size={18} />
+                          </button>
+                          {canRemove && (
+                            <button
+                              onClick={async () => {
+                                if (confirm(`Remove ${member.user?.name} from this case?`)) {
+                                  const loadId = toast.loading('Removing team member...');
+                                  try {
+                                    await caseService.removeTeamMember(caseData.id, member.user.id);
+                                    setCurrentCase({
+                                      ...caseData,
+                                      team: caseData.team.filter((m: any) => m.user?.id !== member.user.id)
+                                    });
+                                    toast.success('Team member removed', { id: loadId });
+                                  } catch (error) {
+                                    toast.error('Failed to remove team member', { id: loadId });
+                                  }
+                                }
+                              }}
+                              className="p-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-600 transition-all premium-border"
+                              title="Remove from case"
+                            >
+                              <X size={18} />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[15px] font-bold text-brand-dark truncate group-hover:text-brand-blue transition-colors">{member.user?.name}</p>
-                        <p className="text-[10px] font-bold text-text-muted uppercase tracking-[0.15em] mt-1">{member.role}</p>
-                      </div>
-                      <button className="p-3 rounded-xl bg-page-bg/50 hover:bg-brand-blue/5 text-text-muted hover:text-brand-blue transition-all premium-border opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0">
-                        <Mail size={18} />
-                      </button>
-                    </div>
-                  ))}
-                  <button 
+                    );
+                  })}
+                  <button
                     onClick={() => setShowInviteModal(true)}
                     className="w-full py-5 mt-4 rounded-[1.5rem] border-2 border-dashed border-border-base/60 text-xs font-bold text-text-muted hover:border-brand-blue hover:text-brand-blue hover:bg-brand-blue/5 transition-all flex items-center justify-center gap-3 shimmer"
                   >
