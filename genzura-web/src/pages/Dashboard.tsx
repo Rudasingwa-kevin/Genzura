@@ -13,6 +13,7 @@ import AppLayout from '../components/AppLayout';
 import { type CaseStatus } from '../data/cases';
 import { caseService } from '../api/services/case.service';
 import { CardSkeleton, TableSkeleton, Skeleton } from '../components/Skeleton';
+import { useAuth } from '../contexts/AuthContext';
 
 const CaseRow = ({ id, caseNumber, title, client, status, date }: { id: string; caseNumber?: string; title: string; client: string; status: CaseStatus; date: string }) => {
   const navigate = useNavigate();
@@ -66,8 +67,9 @@ const CaseRow = ({ id, caseNumber, title, client, status, date }: { id: string; 
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
   const [priority, setPriority] = useState<'All' | 'High' | 'Medium' | 'Low'>('All');
-  const [statusFilter, setStatusFilter] = useState<CaseStatus | 'High'>('Active');
+  const [statusFilter, setStatusFilter] = useState<CaseStatus | 'High' | 'TeamAssigned'>('Active');
   const [isLoading, setIsLoading] = useState(true);
   const [cases, setCases] = useState<any[]>([]);
 
@@ -96,14 +98,51 @@ const Dashboard = () => {
   const resolvedCases = cases.filter(c => c.status === 'Resolved');
   const highPriorityCases = cases.filter(c => c.priority === 'High' && c.status !== 'Archived');
 
-  // Get user info from localStorage to check team assignments
-  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-  const assignedAsMember = cases.filter(c =>
-    c.team && c.team.some((t: any) => t.userId === currentUser.id)
-  );
+  // Debug: Log to see the structure
+  console.log('Current User ID:', currentUser?.id);
+  console.log('Current User:', currentUser);
+  console.log('Cases with teams:', cases.map(c => ({
+    title: c.title,
+    attorneyId: c.attorneyId,
+    team: c.team
+  })));
+
+  const assignedAsMember = cases.filter(c => {
+    // Only count cases where user is a team member, NOT the lead attorney
+    if (!currentUser?.id || !c.team || !Array.isArray(c.team)) {
+      return false;
+    }
+
+    const isTeamMember = c.team.some((t: any) => {
+      // Check both direct userId and nested user.id
+      const userIdMatch = t.userId === currentUser.id;
+      const nestedUserMatch = t.user && t.user.id === currentUser.id;
+      const matches = userIdMatch || nestedUserMatch;
+
+      if (matches) {
+        console.log('✅ Found team match in case:', c.title, 'Team member structure:', JSON.stringify(t, null, 2));
+      }
+      return matches;
+    });
+
+    const isLeadAttorney = c.attorneyId === currentUser.id;
+    const shouldCount = isTeamMember && !isLeadAttorney;
+
+    if (shouldCount) {
+      console.log('📊 Counting case:', c.title);
+    }
+
+    return shouldCount;
+  });
   
   const displayCases = cases.filter(c => {
     if (statusFilter === 'High') return c.priority === 'High' && c.status !== 'Archived';
+    if (statusFilter === 'TeamAssigned') {
+      if (!currentUser?.id) return false;
+      const isTeamMember = c.team && c.team.some((t: any) => t.userId === currentUser.id || t.user?.id === currentUser.id);
+      const isLeadAttorney = c.attorneyId === currentUser.id;
+      return isTeamMember && !isLeadAttorney;
+    }
     return c.status === statusFilter;
   });
 
@@ -115,7 +154,7 @@ const Dashboard = () => {
     { label: 'Pending Review',  value: pendingCases.length,     icon: Clock,        color: 'text-amber-600',   bg: 'bg-amber-50/50',   status: 'Pending' as const },
     { label: 'Resolved',        value: resolvedCases.length,    icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50/50', status: 'Resolved' as const },
     { label: 'High Priority',   value: highPriorityCases.length,icon: AlertCircle,  color: 'text-red-600',     bg: 'bg-red-50/50',     status: 'High' as const },
-    { label: 'Team Assigned',   value: assignedAsMember.length, icon: Users,        color: 'text-violet-600',  bg: 'bg-violet-50/50',  status: null },
+    { label: 'Team Assigned',   value: assignedAsMember.length, icon: Users,        color: 'text-violet-600',  bg: 'bg-violet-50/50',  status: 'TeamAssigned' as const },
   ];
 
   return (
@@ -126,39 +165,26 @@ const Dashboard = () => {
           Array.from({ length: 5 }).map((_, i) => <CardSkeleton key={i} />)
         ) : (
           stats.map((stat, i) => (
-            stat.status !== null ? (
-              <button
-                key={i}
-                onClick={() => setStatusFilter(stat.status as any)}
-                className={`bg-white p-7 rounded-[2rem] border transition-all text-left animate-in-up delay-${(i + 1) * 100} ${
-                  statusFilter === stat.status
-                    ? 'border-brand-blue shadow-lg shadow-brand-blue/10 ring-1 ring-brand-blue/50'
-                    : 'border-border-base shadow-sm hover:shadow-md'
-                }`}
-              >
-                <div className="flex justify-between items-start mb-6">
-                  <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color}`}>
-                    <stat.icon size={26} />
-                  </div>
+            <button
+              key={i}
+              onClick={() => setStatusFilter(stat.status as any)}
+              className={`bg-white p-7 rounded-[2rem] border transition-all text-left animate-in-up delay-${(i + 1) * 100} ${
+                statusFilter === stat.status
+                  ? 'border-brand-blue shadow-lg shadow-brand-blue/10 ring-1 ring-brand-blue/50'
+                  : 'border-border-base shadow-sm hover:shadow-md'
+              }`}
+            >
+              <div className="flex justify-between items-start mb-6">
+                <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color}`}>
+                  <stat.icon size={26} />
                 </div>
-                <p className="text-text-muted text-[10px] font-bold uppercase tracking-[0.1em] mb-2">{stat.label}</p>
-                <p className="text-4xl font-bold text-brand-dark tracking-tighter">{stat.value}</p>
-              </button>
-            ) : (
-              <div
-                key={i}
-                className="bg-white p-7 rounded-[2rem] border border-border-base shadow-sm text-left animate-in-up delay-500"
-              >
-                <div className="flex justify-between items-start mb-6">
-                  <div className={`p-4 rounded-2xl ${stat.bg} ${stat.color}`}>
-                    <stat.icon size={26} />
-                  </div>
-                </div>
-                <p className="text-text-muted text-[10px] font-bold uppercase tracking-[0.1em] mb-2">{stat.label}</p>
-                <p className="text-4xl font-bold text-brand-dark tracking-tighter">{stat.value}</p>
-                <p className="text-xs text-text-muted mt-2">Cases as team member</p>
               </div>
-            )
+              <p className="text-text-muted text-[10px] font-bold uppercase tracking-[0.1em] mb-2">{stat.label}</p>
+              <p className="text-4xl font-bold text-brand-dark tracking-tighter">{stat.value}</p>
+              {stat.status === 'TeamAssigned' && (
+                <p className="text-xs text-text-muted mt-2">Cases as team member</p>
+              )}
+            </button>
           ))
         )}
       </div>
@@ -171,11 +197,17 @@ const Dashboard = () => {
           <div className="p-8 border-b border-border-base flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold text-brand-dark">
-                {statusFilter === 'High' ? 'High Priority Matters' : `${statusFilter} Cases`}
+                {statusFilter === 'High'
+                  ? 'High Priority Matters'
+                  : statusFilter === 'TeamAssigned'
+                  ? 'Team Assigned Cases'
+                  : `${statusFilter} Cases`}
               </h2>
               <p className="text-xs text-text-muted mt-1">
-                {statusFilter === 'High' 
-                  ? 'Matters requiring immediate legal attention and oversight' 
+                {statusFilter === 'High'
+                  ? 'Matters requiring immediate legal attention and oversight'
+                  : statusFilter === 'TeamAssigned'
+                  ? `Showing ${recentCases.length} of ${displayCases.length} cases where you are a team member`
                   : `Showing ${recentCases.length} of ${displayCases.length} ${statusFilter.toLowerCase()} cases`
                 }
               </p>
@@ -237,11 +269,11 @@ const Dashboard = () => {
           </div>
 
           <div className="p-6 bg-page-bg/20 text-center">
-            <button 
+            <button
               onClick={() => navigate('/cases')}
               className="text-sm font-bold text-brand-blue hover:underline underline-offset-4"
             >
-              View all {statusFilter === 'High' ? 'priority' : statusFilter.toLowerCase()} cases
+              View all {statusFilter === 'High' ? 'priority' : statusFilter === 'TeamAssigned' ? 'team assigned' : statusFilter.toLowerCase()} cases
             </button>
           </div>
         </div>
