@@ -157,7 +157,7 @@ function EditCaseModal({ caseData, onClose, onSave }: { caseData: any; onClose: 
   const [description, setDescription] = useState(caseData.description);
   const [status, setStatus] = useState(caseData.status);
   const [priority, setPriority] = useState(caseData.priority);
-  const [extendDate, setExtendDate] = useState(caseData.extendDate ? new Date(caseData.extendDate).toISOString().split('T')[0] : '');
+  const [deadline, setDeadline] = useState(caseData.deadline ? new Date(caseData.deadline).toISOString().split('T')[0] : '');
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -220,9 +220,9 @@ function EditCaseModal({ caseData, onClose, onSave }: { caseData: any; onClose: 
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Extend Date</label>
+            <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Deadline</label>
             <input
-              type="date" value={extendDate} onChange={e => setExtendDate(e.target.value)}
+              type="date" value={deadline} onChange={e => setDeadline(e.target.value)}
               className="w-full h-12 px-4 rounded-xl bg-page-bg border border-transparent focus:bg-white focus:border-brand-blue outline-none transition-all font-bold text-sm"
             />
           </div>
@@ -239,7 +239,7 @@ function EditCaseModal({ caseData, onClose, onSave }: { caseData: any; onClose: 
                   description,
                   status,
                   priority,
-                  extendDate: extendDate ? new Date(extendDate).toISOString() : null,
+                  deadline: deadline ? new Date(deadline).toISOString() : null,
                 };
                 onSave(updatedData);
                 onClose();
