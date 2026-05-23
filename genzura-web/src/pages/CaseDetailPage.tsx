@@ -268,6 +268,7 @@ export default function CaseDetailPage() {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [showStatusMenu, setShowStatusMenu] = useState(false);
   const pdfRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -561,9 +562,57 @@ export default function CaseDetailPage() {
                 <span className="bg-brand-blue/5 text-brand-blue font-bold text-[10px] px-4 py-2 rounded-xl tracking-[0.15em] border border-brand-blue/10 shadow-sm backdrop-blur-sm">
                   {caseData.caseNumber}
                 </span>
-                <div className={`inline-flex items-center gap-2.5 px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-[0.15em] border ${STATUS_STYLES[caseData.status]} border-current/10 shadow-sm backdrop-blur-sm`}>
-                  <div className={`w-2 h-2 rounded-full ${STATUS_DOT[caseData.status]} animate-pulse`} />
-                  {caseData.status}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowStatusMenu(!showStatusMenu)}
+                    className={`inline-flex items-center gap-2.5 px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-[0.15em] border ${STATUS_STYLES[caseData.status]} border-current/10 shadow-sm backdrop-blur-sm hover:shadow-md transition-all cursor-pointer`}
+                  >
+                    <div className={`w-2 h-2 rounded-full ${STATUS_DOT[caseData.status]} animate-pulse`} />
+                    {caseData.status}
+                    <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {showStatusMenu && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowStatusMenu(false)} />
+                      <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-border-base p-2 z-50 animate-in fade-in zoom-in-95 duration-200">
+                        {['Active', 'Pending', 'Resolved', 'Archived'].map((status) => (
+                          <button
+                            key={status}
+                            onClick={async () => {
+                              setShowStatusMenu(false);
+                              if (status === caseData.status) return;
+
+                              const loadId = toast.loading('Updating status...');
+                              try {
+                                const updated = await caseService.updateStatus(id!, status);
+                                setCurrentCase({ ...caseData, status: updated.status });
+                                toast.success(`Status changed to ${status}`, { id: loadId });
+                              } catch (error) {
+                                toast.error('Failed to update status', { id: loadId });
+                              }
+                            }}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-page-bg text-sm font-bold transition-all ${
+                              status === caseData.status ? 'bg-page-bg text-brand-blue' : 'text-text-secondary'
+                            }`}
+                          >
+                            <div className={`w-2 h-2 rounded-full ${
+                              status === 'Active' ? 'bg-emerald-500' :
+                              status === 'Pending' ? 'bg-amber-500' :
+                              status === 'Resolved' ? 'bg-blue-500' :
+                              'bg-slate-500'
+                            }`} />
+                            {status}
+                            {status === caseData.status && (
+                              <CheckCircle2 size={14} className="ml-auto" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
                 <span className={`text-[10px] font-bold uppercase tracking-[0.15em] px-4 py-2 rounded-full border border-current/10 shadow-sm backdrop-blur-sm ${PRIORITY_STYLES[caseData.priority]}`}>
                   {caseData.priority} Priority
