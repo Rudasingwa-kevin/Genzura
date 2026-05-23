@@ -22,9 +22,9 @@ enum UserStatus {
 }
 
 enum SubscriptionPlan {
-  Genzura   // Free tier
-  Intango   // 100,000 RWF / 3 months
-  Inkingi   // 200,000 RWF / 12 months
+  Genzura   // Free tier - 20 cases max
+  Intango   // 100,000 RWF / 3 months - unlimited
+  Inkingi   // 250,000 RWF / 12 months - unlimited
 }
 
 enum CaseStatus {

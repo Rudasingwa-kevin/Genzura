@@ -37,4 +37,9 @@ export const userService = {
     const response = await apiClient.post('/users/invite', data);
     return response.data;
   },
+
+  getMySubscription: async () => {
+    const response = await apiClient.get('/users/me/subscription');
+    return response.data;
+  },
 };

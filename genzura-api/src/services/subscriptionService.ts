@@ -6,7 +6,7 @@ export class SubscriptionService {
   /**
    * Check if user can create a new case based on their subscription plan
    */
-  static async canCreateCase(userId: string): Promise<{ allowed: boolean; reason?: string; currentCount?: number; limit?: number }> {
+  static async canCreateCase(userId: string): Promise<{ allowed: boolean; message?: string; currentCases?: number; maxCases?: number }> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -17,58 +17,73 @@ export class SubscriptionService {
     });
 
     if (!user) {
-      return { allowed: false, reason: 'User not found' };
+      return { allowed: false, message: 'User not found' };
     }
 
-    // Free plan (Genzura) has a limit of 20 cases
-    if (user.subscriptionPlan === SubscriptionPlan.Genzura) {
-      const caseCount = user._count.cases;
-      if (caseCount >= 20) {
-        return {
-          allowed: false,
-          reason: 'Free plan limit reached. Upgrade to create unlimited cases.',
-          currentCount: caseCount,
-          limit: 20
-        };
-      }
+    const caseCount = user._count.cases;
+    const now = new Date();
+
+    // Check if user has an active paid subscription (Intango or Inkingi)
+    const hasActivePaidSubscription =
+      (user.subscriptionPlan === SubscriptionPlan.Intango || user.subscriptionPlan === SubscriptionPlan.Inkingi) &&
+      user.subscriptionEndDate &&
+      new Date(user.subscriptionEndDate) > now;
+
+    // If they have an active paid subscription, allow unlimited cases
+    if (hasActivePaidSubscription) {
+      return { allowed: true };
     }
 
-    // Intango and Inkingi have unlimited cases
+    // Free tier or expired subscription: enforce 20-case limit
+    const FREE_TIER_LIMIT = 20;
+
+    if (caseCount >= FREE_TIER_LIMIT) {
+      return {
+        allowed: false,
+        message: `You have reached the limit of ${FREE_TIER_LIMIT} cases. Please upgrade to Intango or Inkingi for unlimited cases.`,
+        currentCases: caseCount,
+        maxCases: FREE_TIER_LIMIT
+      };
+    }
+
     return { allowed: true };
   }
 
   /**
    * Check if user can upload a new document based on their subscription plan
    */
-  static async canUploadDocument(userId: string): Promise<{ allowed: boolean; reason?: string; currentCount?: number; limit?: number }> {
+  static async canUploadDocument(userId: string): Promise<{ allowed: boolean; message?: string }> {
     const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        _count: {
-          select: { uploadedDocs: true }
-        }
-      }
+      where: { id: userId }
     });
 
     if (!user) {
-      return { allowed: false, reason: 'User not found' };
+      return { allowed: false, message: 'User not found' };
     }
 
-    // Free plan (Genzura) has a limit of 20 documents
-    if (user.subscriptionPlan === SubscriptionPlan.Genzura) {
-      const docCount = user._count.uploadedDocs;
-      if (docCount >= 20) {
-        return {
-          allowed: false,
-          reason: 'Free plan limit reached. Upgrade to upload unlimited documents.',
-          currentCount: docCount,
-          limit: 20
-        };
-      }
+    const now = new Date();
+
+    // Check if user has an active paid subscription
+    const hasActivePaidSubscription =
+      (user.subscriptionPlan === SubscriptionPlan.Intango || user.subscriptionPlan === SubscriptionPlan.Inkingi) &&
+      user.subscriptionEndDate &&
+      new Date(user.subscriptionEndDate) > now;
+
+    // If they have an active paid subscription, allow uploads
+    if (hasActivePaidSubscription) {
+      return { allowed: true };
     }
 
-    // Intango and Inkingi have unlimited documents
-    return { allowed: true };
+    // If on free tier (never subscribed or no expiry date), allow uploads
+    if (user.subscriptionPlan === SubscriptionPlan.Genzura && !user.subscriptionEndDate) {
+      return { allowed: true };
+    }
+
+    // Expired subscription: block document uploads
+    return {
+      allowed: false,
+      message: 'Your subscription has expired. Please renew to upload documents.'
+    };
   }
 
   /**
@@ -115,27 +130,43 @@ export class SubscriptionService {
       throw new Error('User not found');
     }
 
+    const now = new Date();
+
+    // Check if paid subscription is active
+    const hasActivePaidSubscription =
+      (user.subscriptionPlan === SubscriptionPlan.Intango || user.subscriptionPlan === SubscriptionPlan.Inkingi) &&
+      user.subscriptionEndDate &&
+      new Date(user.subscriptionEndDate) > now;
+
+    // If subscription expired, treat as free tier
+    const effectivePlan = hasActivePaidSubscription ? user.subscriptionPlan : SubscriptionPlan.Genzura;
+    const isExpired = user.subscriptionEndDate && new Date(user.subscriptionEndDate) < now;
+
     const limits = {
       plan: user.subscriptionPlan,
+      effectivePlan,
+      isExpired,
       subscriptionStartDate: user.subscriptionStartDate,
       subscriptionEndDate: user.subscriptionEndDate,
+      daysRemaining: user.subscriptionEndDate
+        ? Math.max(0, Math.ceil((new Date(user.subscriptionEndDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+        : null,
       cases: {
         current: user._count.cases,
-        limit: user.subscriptionPlan === SubscriptionPlan.Genzura ? 20 : null, // null means unlimited
+        limit: effectivePlan === SubscriptionPlan.Genzura ? 20 : null, // null means unlimited
         canCreate: true
       },
       documents: {
         current: user._count.uploadedDocs,
-        limit: user.subscriptionPlan === SubscriptionPlan.Genzura ? 20 : null,
         canUpload: true,
-        canDownload: user.subscriptionPlan !== SubscriptionPlan.Genzura
+        canDownload: effectivePlan !== SubscriptionPlan.Genzura
       }
     };
 
-    // Check if limits are reached
-    if (user.subscriptionPlan === SubscriptionPlan.Genzura) {
+    // Check if limits are reached for free tier or expired subscriptions
+    if (effectivePlan === SubscriptionPlan.Genzura) {
       limits.cases.canCreate = user._count.cases < 20;
-      limits.documents.canUpload = user._count.uploadedDocs < 20;
+      limits.documents.canUpload = !isExpired; // Expired users can't upload
     }
 
     return limits;

@@ -422,7 +422,7 @@ export default function SystemSettings() {
                   </div>
                   <div className="bg-white rounded-xl p-6 border border-border-base">
                     <h5 className="font-bold text-brand-dark mb-2">Inkingi Plan</h5>
-                    <p className="text-sm text-text-muted">200,000 RWF / 12 months</p>
+                    <p className="text-sm text-text-muted">250,000 RWF / 12 months</p>
                   </div>
                 </div>
               </div>

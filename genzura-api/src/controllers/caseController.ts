@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { CaseService } from '../services/caseService.js';
+import { SettingsService } from '../services/settingsService.js';
+import { SubscriptionService } from '../services/subscriptionService.js';
 
 export class CaseController {
   static async getAll(req: any, res: Response) {
@@ -32,6 +34,21 @@ export class CaseController {
 
   static async create(req: any, res: Response) {
     try {
+      // Check subscription enforcement
+      const subscriptionStatus = await SettingsService.getSubscriptionStatus();
+
+      if (subscriptionStatus === 'ACTIVE') {
+        const canCreate = await SubscriptionService.canCreateCase(req.user.id);
+        if (!canCreate.allowed) {
+          return res.status(403).json({
+            error: canCreate.message,
+            code: 'SUBSCRIPTION_LIMIT_REACHED',
+            currentCases: canCreate.currentCases,
+            maxCases: canCreate.maxCases
+          });
+        }
+      }
+
       const newCase = await CaseService.createCase({
         ...req.body,
         attorneyId: req.user.id // Automatically assign logged-in user as lead attorney

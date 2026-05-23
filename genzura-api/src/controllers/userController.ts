@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { UserService } from '../services/userService.js';
+import { SubscriptionService } from '../services/subscriptionService.js';
 
 export class UserController {
   static async getAll(req: Request, res: Response) {
@@ -109,6 +110,16 @@ export class UserController {
         message: 'Invitation sent successfully',
         user: newUser
       });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async getMySubscription(req: any, res: Response) {
+    try {
+      const userId = req.user.id;
+      const limits = await SubscriptionService.getSubscriptionLimits(userId);
+      res.json(limits);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

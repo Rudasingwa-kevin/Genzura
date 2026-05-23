@@ -12,6 +12,9 @@ router.put('/profile', UserController.updateProfile);
 // Get active users for collaboration - accessible to all authenticated users
 router.get('/active', UserController.getActiveUsers);
 
+// Get own subscription info - accessible to all authenticated users
+router.get('/me/subscription', UserController.getMySubscription);
+
 // Admin-only routes
 router.use(authorize(['Admin']));
 router.get('/', UserController.getAll);
