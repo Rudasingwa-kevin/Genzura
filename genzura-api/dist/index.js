@@ -17,6 +17,7 @@ import adminSubscriptionRoutes from './routes/adminSubscriptionRoutes.js';
 import planRoutes from './routes/planRoutes.js';
 import invitationRoutes from './routes/invitationRoutes.js';
 import notificationPreferenceRoutes from './routes/notificationPreferenceRoutes.js';
+import trackingRoutes from './routes/trackingRoutes.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 import { createServer } from 'http';
 import { initSocket } from './socket.js';
@@ -50,6 +51,7 @@ app.use('/api/plans', planRoutes);
 app.use('/api/admin/jobs', adminJobsRoutes);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/notification-preferences', notificationPreferenceRoutes);
+app.use('/api/tracking', trackingRoutes);
 // Error Handling
 app.use(errorHandler);
 // Enhanced health check with system clock validation

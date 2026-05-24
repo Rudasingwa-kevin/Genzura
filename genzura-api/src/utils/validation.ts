@@ -53,9 +53,7 @@ export class EmailValidator {
   /**
    * Check if email looks professional (has company domain)
    */
-  static looksP
-
-rofessional(email: string): boolean {
+  static looksProfessional(email: string): boolean {
     const domain = email.split('@')[1]?.toLowerCase();
     const freeDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com'];
     return domain ? !freeDomains.includes(domain) : false;

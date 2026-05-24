@@ -83,16 +83,31 @@ export class CaseService {
             }
         });
     }
-    static async updateCaseStatus(idOrCaseNumber, status) {
+    static async updateCaseStatus(idOrCaseNumber, status, userId) {
         // Support updating by case number or ID
         const isCaseNumber = /^[A-Z]+-\d+-\d+$/.test(idOrCaseNumber);
         const whereClause = isCaseNumber
             ? { caseNumber: idOrCaseNumber }
             : { id: idOrCaseNumber };
+        // Get old status
+        const oldCase = await prisma.case.findUnique({ where: whereClause });
+        const oldStatus = oldCase?.status;
         const updatedCase = await prisma.case.update({
             where: whereClause,
             data: { status }
         });
+        // Create timeline entry for status change
+        if (userId && oldStatus !== status) {
+            await prisma.timelineEvent.create({
+                data: {
+                    caseId: updatedCase.id,
+                    authorId: userId,
+                    type: 'status',
+                    description: `Status changed from ${oldStatus} to ${status}`,
+                    timestamp: DateService.now()
+                }
+            });
+        }
         const notification = await NotificationService.createNotification({
             userId: updatedCase.attorneyId,
             type: 'case',
@@ -292,7 +307,9 @@ export class CaseService {
             attorneyStats
         };
     }
-    static async addTeamMember(caseId, userId) {
+    static async addTeamMember(caseId, userId, addedBy) {
+        // Get user info for timeline
+        const user = await prisma.user.findUnique({ where: { id: userId } });
         // Create the team member
         await prisma.caseTeam.create({
             data: {
@@ -301,6 +318,18 @@ export class CaseService {
                 role: 'Collaborator' // Default role
             }
         });
+        // Create timeline entry
+        if (addedBy && user) {
+            await prisma.timelineEvent.create({
+                data: {
+                    caseId,
+                    authorId: addedBy,
+                    type: 'team_added',
+                    description: `${user.name} was added to the case team`,
+                    timestamp: DateService.now()
+                }
+            });
+        }
         // Return the full updated case with all relationships
         const updatedCase = await prisma.case.findUnique({
             where: { id: caseId },
@@ -335,12 +364,21 @@ export class CaseService {
         emitToAll('case_team_updated', { caseId, case: updatedCase });
         return updatedCase;
     }
-    static async updateCase(idOrCaseNumber, data) {
+    static async updateCase(idOrCaseNumber, data, userId) {
         // Support updating by case number or ID
         const isCaseNumber = /^[A-Z]+-\d+-\d+$/.test(idOrCaseNumber);
         const whereClause = isCaseNumber
             ? { caseNumber: idOrCaseNumber }
             : { id: idOrCaseNumber };
+        // Get the old case data to track changes
+        const oldCase = await prisma.case.findUnique({
+            where: whereClause,
+            include: { attorney: true, client: true }
+        });
+        if (!oldCase) {
+            throw new Error('Case not found');
+        }
+        // Update the case
         const updatedCase = await prisma.case.update({
             where: whereClause,
             data: {
@@ -366,6 +404,67 @@ export class CaseService {
                 }
             }
         });
+        // Track changes in timeline
+        if (userId) {
+            const changes = [];
+            // Define field labels for better readability
+            const fieldLabels = {
+                title: 'Title',
+                description: 'Description',
+                status: 'Status',
+                priority: 'Priority',
+                type: 'Type',
+                courtName: 'Court Name',
+                courtLocation: 'Court Location',
+                clientId: 'Client',
+                attorneyId: 'Attorney',
+                filingDate: 'Filing Date',
+                hearingDate: 'Hearing Date',
+                estimatedValue: 'Estimated Value'
+            };
+            // Check each field for changes
+            for (const [field, label] of Object.entries(fieldLabels)) {
+                if (data[field] !== undefined && oldCase[field] !== data[field]) {
+                    const oldValue = oldCase[field];
+                    const newValue = data[field];
+                    // Format values for display
+                    let oldDisplay = oldValue?.toString() || 'None';
+                    let newDisplay = newValue?.toString() || 'None';
+                    // Special formatting for specific fields
+                    if (field === 'clientId') {
+                        oldDisplay = oldCase.client?.name || 'None';
+                        newDisplay = updatedCase.client?.name || 'None';
+                    }
+                    else if (field === 'attorneyId') {
+                        oldDisplay = oldCase.attorney?.name || 'None';
+                        newDisplay = updatedCase.attorney?.name || 'None';
+                    }
+                    else if (field.includes('Date') && newValue) {
+                        newDisplay = new Date(newValue).toLocaleDateString();
+                        if (oldValue)
+                            oldDisplay = new Date(oldValue).toLocaleDateString();
+                    }
+                    else if (field === 'estimatedValue' && newValue) {
+                        newDisplay = `$${Number(newValue).toLocaleString()}`;
+                        if (oldValue)
+                            oldDisplay = `$${Number(oldValue).toLocaleString()}`;
+                    }
+                    changes.push(`${label}: ${oldDisplay} → ${newDisplay}`);
+                }
+            }
+            // Create timeline entry if there are changes
+            if (changes.length > 0) {
+                await prisma.timelineEvent.create({
+                    data: {
+                        caseId: updatedCase.id,
+                        authorId: userId,
+                        type: 'updated',
+                        description: changes.join('\n'),
+                        timestamp: DateService.now()
+                    }
+                });
+            }
+        }
         emitToAll('case_updated', updatedCase);
         return updatedCase;
     }
@@ -391,7 +490,9 @@ export class CaseService {
         emitToAll('case_deleted', { id: caseToDelete.id });
         return deletedCase;
     }
-    static async removeTeamMember(caseId, userId) {
+    static async removeTeamMember(caseId, userId, removedBy) {
+        // Get user info for timeline before deletion
+        const user = await prisma.user.findUnique({ where: { id: userId } });
         // Delete the team member
         await prisma.caseTeam.deleteMany({
             where: {
@@ -399,6 +500,18 @@ export class CaseService {
                 userId
             }
         });
+        // Create timeline entry
+        if (removedBy && user) {
+            await prisma.timelineEvent.create({
+                data: {
+                    caseId,
+                    authorId: removedBy,
+                    type: 'team_removed',
+                    description: `${user.name} was removed from the case team`,
+                    timestamp: DateService.now()
+                }
+            });
+        }
         // Return the updated case with all relationships
         const updatedCase = await prisma.case.findUnique({
             where: { id: caseId },

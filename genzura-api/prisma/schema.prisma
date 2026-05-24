@@ -97,6 +97,7 @@ model User {
   avatarUrl             String?
   // Profile fields
   phone                 String?
+  company               String?
   location              String?
   jobTitle              String?
   language              String?          @default("EN")

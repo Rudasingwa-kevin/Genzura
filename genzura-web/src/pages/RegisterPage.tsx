@@ -1,8 +1,9 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { ArrowLeft, User, Mail, Lock, Building, ShieldCheck, ArrowRight, Eye, EyeOff, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, User, Mail, Lock, Building, ShieldCheck, ArrowRight, Eye, EyeOff, CheckCircle2, XCircle, AlertCircle, Phone, Send, CheckCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-hot-toast';
+import { authService } from '../api/services/auth.service';
 
 // Password strength calculator
 const calculatePasswordStrength = (password: string) => {
@@ -48,12 +49,27 @@ const RegisterPage = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [organization, setOrganization] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [emailTouched, setEmailTouched] = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
+  const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(calculatePasswordStrength(''));
+  const [termsAccepted, setTermsAccepted] = useState(false);
+
+  // OTP verification states
+  const [showOtpVerification, setShowOtpVerification] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [devOtpCode, setDevOtpCode] = useState<string>('');
 
   useEffect(() => {
     setPasswordStrength(calculatePasswordStrength(password));
@@ -61,6 +77,78 @@ const RegisterPage = () => {
 
   const isEmailValid = validateEmail(email);
   const isPasswordStrong = passwordStrength.score >= 3;
+  const doPasswordsMatch = password === confirmPassword && confirmPassword.length > 0;
+
+  const handleSendOtp = async () => {
+    if (!isEmailValid) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    setIsSendingOtp(true);
+    try {
+      const response = await authService.sendOtp(email.trim().toLowerCase());
+
+      setOtpSent(true);
+      setShowOtpVerification(true);
+
+      // Show OTP code in development mode
+      if (response.devMode && response.devOtp) {
+        // Store the OTP code to display in modal
+        setDevOtpCode(response.devOtp);
+
+        // Show a prominent toast with the OTP code
+        toast.success(`🔑 Your verification code is: ${response.devOtp}`, {
+          duration: 15000,
+          style: {
+            background: '#185FA5',
+            color: 'white',
+            fontSize: '18px',
+            fontWeight: 'bold',
+            padding: '20px',
+            borderRadius: '16px'
+          }
+        });
+
+        // Also show a second toast as backup
+        setTimeout(() => {
+          toast(`Development Mode: Code = ${response.devOtp}`, {
+            icon: '💻',
+            duration: 10000
+          });
+        }, 500);
+      } else {
+        toast.success('Verification code sent to your email!');
+      }
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || 'Failed to send verification code';
+      toast.error(errorMessage);
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otp.length !== 6) {
+      toast.error('Please enter the 6-digit verification code');
+      return;
+    }
+
+    setIsVerifyingOtp(true);
+    try {
+      await authService.verifyOtp(email.trim().toLowerCase(), otp);
+
+      setEmailVerified(true);
+      setShowOtpVerification(false);
+      setOtp('');
+      toast.success('Email verified successfully!');
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || 'Invalid verification code';
+      toast.error(errorMessage);
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +156,7 @@ const RegisterPage = () => {
     // Mark fields as touched
     setEmailTouched(true);
     setPasswordTouched(true);
+    setConfirmPasswordTouched(true);
 
     // Validation
     if (!firstName.trim() || !lastName.trim()) {
@@ -80,8 +169,28 @@ const RegisterPage = () => {
       return;
     }
 
+    if (!emailVerified) {
+      toast.error('Please verify your email address');
+      return;
+    }
+
+    if (!phone.trim()) {
+      toast.error('Please enter your phone number');
+      return;
+    }
+
     if (!isPasswordStrong) {
       toast.error('Please use a stronger password');
+      return;
+    }
+
+    if (!doPasswordsMatch) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    if (!termsAccepted) {
+      toast.error('Please accept the Terms of Service and Privacy Policy');
       return;
     }
 
@@ -90,6 +199,8 @@ const RegisterPage = () => {
       const response = await register({
         name: `${firstName.trim()} ${lastName.trim()}`,
         email: email.trim().toLowerCase(),
+        phone: phone.trim(),
+        organization: organization.trim(),
         password
       });
 
@@ -171,19 +282,7 @@ const RegisterPage = () => {
 
             <div className="space-y-2">
               <label className="text-sm font-bold text-brand-dark ml-1 flex items-center gap-2">
-                <Building size={14} className="text-brand-blue" /> Organization Name
-              </label>
-              <input
-                type="text"
-                autoComplete="organization"
-                className="w-full h-12 px-4 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all bg-page-bg/50"
-                placeholder="Apex Legal Group"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-brand-dark ml-1 flex items-center gap-2">
-                <Mail size={14} className="text-brand-blue" /> Corporate Email
+                <Mail size={14} className="text-brand-blue" /> Email Address *
               </label>
               <div className="relative">
                 <input
@@ -193,8 +292,11 @@ const RegisterPage = () => {
                   onBlur={() => setEmailTouched(true)}
                   autoComplete="email"
                   required
-                  className={`w-full h-12 pl-4 pr-12 rounded-xl border outline-none transition-all bg-page-bg/50 ${
-                    emailTouched
+                  disabled={emailVerified}
+                  className={`w-full h-12 pl-4 pr-24 rounded-xl border outline-none transition-all bg-page-bg/50 ${
+                    emailVerified
+                      ? 'border-emerald-500 bg-emerald-50'
+                      : emailTouched
                       ? isEmailValid
                         ? 'border-emerald-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20'
                         : 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
@@ -202,26 +304,140 @@ const RegisterPage = () => {
                   }`}
                   placeholder="name@company.com"
                 />
-                {emailTouched && email && (
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                    {isEmailValid ? (
-                      <CheckCircle2 size={18} className="text-emerald-500" />
-                    ) : (
-                      <XCircle size={18} className="text-red-500" />
-                    )}
-                  </div>
-                )}
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                  {emailVerified ? (
+                    <div className="flex items-center gap-1 text-emerald-600 text-xs font-bold">
+                      <CheckCheck size={18} />
+                      Verified
+                    </div>
+                  ) : isEmailValid && !otpSent ? (
+                    <button
+                      type="button"
+                      onClick={handleSendOtp}
+                      disabled={isSendingOtp}
+                      className="px-3 py-1.5 bg-brand-blue text-white rounded-lg text-xs font-bold hover:bg-brand-blue/90 transition-colors flex items-center gap-1"
+                    >
+                      {isSendingOtp ? 'Sending...' : (
+                        <>
+                          <Send size={12} /> Verify
+                        </>
+                      )}
+                    </button>
+                  ) : emailTouched && email && (
+                    <>
+                      {isEmailValid ? (
+                        <CheckCircle2 size={18} className="text-emerald-500" />
+                      ) : (
+                        <XCircle size={18} className="text-red-500" />
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
               {emailTouched && email && !isEmailValid && (
                 <p className="text-xs text-red-500 ml-1 flex items-center gap-1">
                   <AlertCircle size={12} /> Please enter a valid email address
                 </p>
               )}
+              {emailVerified && (
+                <p className="text-xs text-emerald-600 ml-1 flex items-center gap-1">
+                  <CheckCircle2 size={12} /> Email verified successfully
+                </p>
+              )}
+            </div>
+
+            {/* OTP Verification Modal */}
+            {showOtpVerification && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl">
+                  <h3 className="text-2xl font-bold text-brand-dark mb-2">Verify Your Email</h3>
+                  <p className="text-sm text-text-secondary mb-6">
+                    We've sent a 6-digit verification code to <span className="font-bold text-brand-blue">{email}</span>
+                  </p>
+
+                  {/* Development Mode - Show OTP Code */}
+                  {devOtpCode && (
+                    <div className="mb-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6 rounded-2xl text-center">
+                      <p className="text-sm font-bold uppercase tracking-wider mb-2">🔓 Development Mode</p>
+                      <p className="text-xs opacity-90 mb-3">Your verification code:</p>
+                      <p className="text-4xl font-bold tracking-[0.3em] font-mono">{devOtpCode}</p>
+                      <p className="text-xs opacity-75 mt-2">Just enter this code below ↓</p>
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
+                    <input
+                      type="text"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      maxLength={6}
+                      placeholder="000000"
+                      className="w-full h-14 px-4 text-center text-2xl tracking-widest rounded-xl border-2 border-border-base focus:border-brand-blue outline-none transition-all"
+                    />
+
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowOtpVerification(false)}
+                        className="flex-1 py-3 rounded-xl border-2 border-border-base text-brand-dark font-bold hover:bg-page-bg transition-all"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleVerifyOtp}
+                        disabled={otp.length !== 6 || isVerifyingOtp}
+                        className="flex-1 py-3 rounded-xl bg-brand-blue text-white font-bold hover:bg-brand-blue/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      >
+                        {isVerifyingOtp ? 'Verifying...' : 'Verify'}
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleSendOtp}
+                      disabled={isSendingOtp}
+                      className="w-full text-sm text-brand-blue hover:underline font-medium"
+                    >
+                      {isSendingOtp ? 'Resending...' : 'Resend code'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-brand-dark ml-1 flex items-center gap-2">
+                <Phone size={14} className="text-brand-blue" /> Phone Number *
+              </label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                autoComplete="tel"
+                required
+                className="w-full h-12 px-4 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all bg-page-bg/50"
+                placeholder="+250 788 000 000"
+              />
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-bold text-brand-dark ml-1 flex items-center gap-2">
-                <Lock size={14} className="text-brand-blue" /> Password
+                <Building size={14} className="text-brand-blue" /> Organization Name (Optional)
+              </label>
+              <input
+                type="text"
+                value={organization}
+                onChange={(e) => setOrganization(e.target.value)}
+                autoComplete="organization"
+                className="w-full h-12 px-4 rounded-xl border border-border-base focus:border-brand-blue outline-none transition-all bg-page-bg/50"
+                placeholder="Apex Legal Group"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-brand-dark ml-1 flex items-center gap-2">
+                <Lock size={14} className="text-brand-blue" /> Password *
               </label>
               <div className="relative">
                 <input
@@ -291,10 +507,61 @@ const RegisterPage = () => {
               )}
             </div>
 
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-brand-dark ml-1 flex items-center gap-2">
+                <Lock size={14} className="text-brand-blue" /> Confirm Password *
+              </label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onBlur={() => setConfirmPasswordTouched(true)}
+                  autoComplete="new-password"
+                  required
+                  className={`w-full h-12 pl-4 pr-12 rounded-xl border outline-none transition-all bg-page-bg/50 ${
+                    confirmPasswordTouched && confirmPassword
+                      ? doPasswordsMatch
+                        ? 'border-emerald-500 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20'
+                        : 'border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+                      : 'border-border-base focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20'
+                  }`}
+                  placeholder="Re-enter your password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-brand-blue transition-colors"
+                >
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {confirmPasswordTouched && confirmPassword && (
+                <p className={`text-xs ml-1 flex items-center gap-1 ${doPasswordsMatch ? 'text-emerald-600' : 'text-red-500'}`}>
+                  {doPasswordsMatch ? (
+                    <>
+                      <CheckCircle2 size={12} /> Passwords match
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle size={12} /> Passwords do not match
+                    </>
+                  )}
+                </p>
+              )}
+            </div>
+
             <div className="flex items-start gap-2 ml-1 pt-2">
-              <input type="checkbox" id="terms" className="mt-1 rounded border-border-base text-brand-blue focus:ring-brand-blue" />
-              <label htmlFor="terms" className="text-sm text-text-secondary leading-tight">
-                I agree to the <Link to="/legal/terms" className="font-bold text-brand-blue hover:underline" target="_blank" rel="noopener noreferrer">Terms of Service</Link> and <Link to="/legal/privacy" className="font-bold text-brand-blue hover:underline" target="_blank" rel="noopener noreferrer">Privacy Policy</Link>.
+              <input
+                type="checkbox"
+                id="terms"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                required
+                className="mt-1 rounded border-border-base text-brand-blue focus:ring-brand-blue cursor-pointer"
+              />
+              <label htmlFor="terms" className="text-sm text-text-secondary leading-tight cursor-pointer">
+                I agree to the <Link to="/legal/terms" className="font-bold text-brand-blue hover:underline" target="_blank" rel="noopener noreferrer">Terms of Service</Link> and <Link to="/legal/privacy" className="font-bold text-brand-blue hover:underline" target="_blank" rel="noopener noreferrer">Privacy Policy</Link>. *
               </label>
             </div>
 

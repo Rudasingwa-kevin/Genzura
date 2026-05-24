@@ -15,6 +15,8 @@ export class UserService {
     password?: string;
     role: UserRole;
     initials: string;
+    phone?: string;
+    organization?: string;
   }) {
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -34,6 +36,8 @@ export class UserService {
         role: data.role,
         initials: data.initials,
         passwordHash,
+        phone: data.phone,
+        company: data.organization,
       },
     });
   }

@@ -17,6 +17,16 @@ export const authService = {
     return response.data;
   },
 
+  sendOtp: async (email: string) => {
+    const response = await apiClient.post('/auth/send-otp', { email });
+    return response.data;
+  },
+
+  verifyOtp: async (email: string, otp: string) => {
+    const response = await apiClient.post('/auth/verify-otp', { email, otp });
+    return response.data;
+  },
+
   getMe: async () => {
     const response = await apiClient.get('/auth/me');
     return response.data;

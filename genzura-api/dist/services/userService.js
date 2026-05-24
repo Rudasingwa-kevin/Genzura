@@ -22,6 +22,8 @@ export class UserService {
                 role: data.role,
                 initials: data.initials,
                 passwordHash,
+                phone: data.phone,
+                company: data.organization,
             },
         });
     }

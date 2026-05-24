@@ -517,6 +517,54 @@ export class EmailService {
         }
     }
     /**
+     * Send OTP verification email
+     */
+    static async sendOtpEmail(email, otp) {
+        const transporter = createTransporter();
+        try {
+            await transporter.sendMail({
+                from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
+                to: email,
+                subject: 'Email Verification Code - Genzura',
+                html: `
+          <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            ${getEmailHeader('Verify Your Email')}
+
+            <div style="padding: 35px 30px;">
+              <h2 style="color: ${BRAND_COLORS.dark}; margin: 0 0 20px 0; font-size: 22px; font-weight: 700;">Email Verification</h2>
+
+              <p style="color: #475569; line-height: 1.7; margin-bottom: 25px; font-size: 15px;">
+                Thank you for registering with Genzura. To verify your email address, please use the verification code below:
+              </p>
+
+              <div style="background: ${BRAND_COLORS.light}; padding: 30px; border-radius: 10px; margin-bottom: 30px; text-align: center; border: 2px dashed ${BRAND_COLORS.blue};">
+                <p style="color: ${BRAND_COLORS.dark}; margin: 0 0 10px 0; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Your Verification Code</p>
+                <p style="color: ${BRAND_COLORS.blue}; margin: 0; font-size: 36px; font-weight: 700; letter-spacing: 8px; font-family: 'Courier New', monospace;">${otp}</p>
+              </div>
+
+              <div style="background: #FFF7ED; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 3px solid #F97316;">
+                <p style="color: #9A3412; margin: 0; font-size: 13px; line-height: 1.6;">
+                  <strong>⚠️ Security Notice:</strong> This code will expire in 10 minutes. If you didn't request this verification, please ignore this email.
+                </p>
+              </div>
+
+              <p style="color: #475569; line-height: 1.7; margin-bottom: 20px; font-size: 14px;">
+                If you have any questions, feel free to contact our support team.
+              </p>
+            </div>
+
+            ${getEmailFooter()}
+          </div>
+        `
+            });
+            console.log(`✅ OTP email sent to ${email}`);
+        }
+        catch (error) {
+            console.error('❌ Failed to send OTP email:', error);
+            throw new Error('Failed to send OTP email');
+        }
+    }
+    /**
      * Test email configuration
      */
     static async testConnection() {

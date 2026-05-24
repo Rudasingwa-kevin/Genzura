@@ -59,7 +59,8 @@ export class CaseController {
         try {
             const { id } = req.params;
             const { status } = req.body;
-            const updatedCase = await CaseService.updateCaseStatus(id, status);
+            const userId = req.user?.id;
+            const updatedCase = await CaseService.updateCaseStatus(id, status, userId);
             res.json(updatedCase);
         }
         catch (error) {
@@ -108,7 +109,8 @@ export class CaseController {
     static async update(req, res) {
         try {
             const { id } = req.params;
-            const updatedCase = await CaseService.updateCase(id, req.body);
+            const userId = req.user?.id; // Get user from auth middleware
+            const updatedCase = await CaseService.updateCase(id, req.body, userId);
             res.json(updatedCase);
         }
         catch (error) {
@@ -142,7 +144,7 @@ export class CaseController {
             if (userId === caseData.attorneyId) {
                 return res.status(400).json({ error: 'Cannot remove the lead attorney from the case' });
             }
-            await CaseService.removeTeamMember(id, userId);
+            await CaseService.removeTeamMember(id, userId, currentUserId);
             res.json({ message: 'Team member removed successfully' });
         }
         catch (error) {
