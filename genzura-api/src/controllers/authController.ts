@@ -7,6 +7,21 @@ import { UserService } from '../services/userService.js';
 import { EmailService } from '../services/emailService.js';
 import { EmailValidator, PasswordValidator, Sanitizer, RateLimiter } from '../utils/validation.js';
 
+// In-memory OTP storage (replace with Redis in production)
+// Format: { email: { otp: string, expiresAt: number } }
+const otpStore = new Map<string, { otp: string; expiresAt: number }>();
+
+// Clean up expired OTPs every minute
+setInterval(() => {
+  const now = Date.now();
+  for (const [email, data] of otpStore.entries()) {
+    if (data.expiresAt < now) {
+      otpStore.delete(email);
+      console.log(`🗑️ Expired OTP removed for ${email}`);
+    }
+  }
+}, 60000);
+
 export class AuthController {
   static async login(req: Request, res: Response) {
     try {
@@ -113,42 +128,23 @@ export class AuthController {
       // Generate 6-digit OTP
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-      // Development mode: Log OTP to console instead of sending email
-      const isDevelopment = process.env.NODE_ENV !== 'production';
+      try {
+        // Send OTP via email service
+        await EmailService.sendOtpEmail(sanitizedEmail, otp);
 
-      if (isDevelopment) {
-        console.log('=================================================');
-        console.log('📧 DEVELOPMENT MODE - OTP for', sanitizedEmail);
-        console.log('🔑 OTP CODE:', otp);
-        console.log('=================================================');
+        // Store OTP in memory with 10-minute expiry
+        const expiresAt = Date.now() + (10 * 60 * 1000); // 10 minutes
+        otpStore.set(sanitizedEmail, { otp, expiresAt });
 
-        // In dev, any 6-digit code works (for easy testing)
-        res.json({
-          message: 'Verification code sent to your email',
-          devMode: true,
-          devOtp: otp // Only in development!
-        });
-      } else {
-        // Production: Send via email service
-        try {
-          await EmailService.sendOtpEmail(sanitizedEmail, otp);
-          // Store OTP in Redis for production
-          // await redis.setex(`otp:${sanitizedEmail}`, 600, otp);
-
-          res.json({ message: 'Verification code sent to your email' });
-        } catch (emailError) {
-          console.error('Email service error:', emailError);
-          // Fallback: Still log to console for debugging
-          console.log('📧 OTP for', sanitizedEmail, ':', otp);
-          res.json({
-            message: 'Verification code sent (email service temporarily unavailable, check server logs)',
-            warning: 'Email delivery may be delayed'
-          });
-        }
+        console.log(`✅ OTP sent to ${sanitizedEmail} (expires in 10 minutes)`);
+        res.json({ message: 'Verification code sent to your email' });
+      } catch (emailError) {
+        console.error('❌ Email service error:', emailError);
+        throw new Error('Failed to send verification email. Please check your email configuration.');
       }
     } catch (error: any) {
       console.error('OTP send error:', error);
-      res.status(500).json({ error: 'Failed to send verification code' });
+      res.status(500).json({ error: error.message || 'Failed to send verification code' });
     }
   }
 
@@ -160,32 +156,37 @@ export class AuthController {
         return res.status(400).json({ error: 'Email and verification code are required' });
       }
 
+      // Sanitize email
+      const sanitizedEmail = Sanitizer.sanitizeEmail(email);
+
       // Basic format validation
       if (otp.length !== 6 || !/^\d{6}$/.test(otp)) {
         return res.status(400).json({ error: 'Invalid verification code format' });
       }
 
-      const isDevelopment = process.env.NODE_ENV !== 'production';
+      // Get stored OTP
+      const storedData = otpStore.get(sanitizedEmail);
 
-      if (isDevelopment) {
-        // Development mode: Accept any 6-digit code
-        console.log('✅ Development mode: OTP verified for', email);
-        res.json({
-          message: 'Email verified successfully',
-          verified: true,
-          devMode: true
-        });
-      } else {
-        // Production: Verify against stored OTP in Redis
-        // const storedOtp = await redis.get(`otp:${email}`);
-        // if (!storedOtp || storedOtp !== otp) {
-        //   return res.status(400).json({ error: 'Invalid or expired verification code' });
-        // }
-        // await redis.del(`otp:${email}`);
-
-        // For now (without Redis), accept any valid format
-        res.json({ message: 'Email verified successfully', verified: true });
+      if (!storedData) {
+        return res.status(400).json({ error: 'No verification code found. Please request a new code.' });
       }
+
+      // Check if expired
+      if (Date.now() > storedData.expiresAt) {
+        otpStore.delete(sanitizedEmail);
+        return res.status(400).json({ error: 'Verification code has expired. Please request a new code.' });
+      }
+
+      // Verify OTP matches
+      if (storedData.otp !== otp) {
+        return res.status(400).json({ error: 'Invalid verification code. Please check and try again.' });
+      }
+
+      // OTP is valid - remove it from store
+      otpStore.delete(sanitizedEmail);
+      console.log(`✅ OTP verified for ${sanitizedEmail}`);
+
+      res.json({ message: 'Email verified successfully', verified: true });
     } catch (error: any) {
       console.error('OTP verification error:', error);
       res.status(500).json({ error: 'Failed to verify code' });

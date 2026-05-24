@@ -69,7 +69,6 @@ const RegisterPage = () => {
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
-  const [devOtpCode, setDevOtpCode] = useState<string>('');
 
   useEffect(() => {
     setPasswordStrength(calculatePasswordStrength(password));
@@ -92,34 +91,16 @@ const RegisterPage = () => {
       setOtpSent(true);
       setShowOtpVerification(true);
 
-      // Show OTP code in development mode
-      if (response.devMode && response.devOtp) {
-        // Store the OTP code to display in modal
-        setDevOtpCode(response.devOtp);
+      // Show success message
+      toast.success('Verification code sent to your email! Please check your inbox.');
 
-        // Show a prominent toast with the OTP code
-        toast.success(`🔑 Your verification code is: ${response.devOtp}`, {
-          duration: 15000,
-          style: {
-            background: '#185FA5',
-            color: 'white',
-            fontSize: '18px',
-            fontWeight: 'bold',
-            padding: '20px',
-            borderRadius: '16px'
-          }
+      // Additional message about checking spam
+      setTimeout(() => {
+        toast('Check your spam folder if you don\'t see the email', {
+          icon: '📧',
+          duration: 5000
         });
-
-        // Also show a second toast as backup
-        setTimeout(() => {
-          toast(`Development Mode: Code = ${response.devOtp}`, {
-            icon: '💻',
-            duration: 10000
-          });
-        }, 500);
-      } else {
-        toast.success('Verification code sent to your email!');
-      }
+      }, 2000);
     } catch (error: any) {
       const errorMessage = error.response?.data?.error || 'Failed to send verification code';
       toast.error(errorMessage);
@@ -352,18 +333,9 @@ const RegisterPage = () => {
                 <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl">
                   <h3 className="text-2xl font-bold text-brand-dark mb-2">Verify Your Email</h3>
                   <p className="text-sm text-text-secondary mb-6">
-                    We've sent a 6-digit verification code to <span className="font-bold text-brand-blue">{email}</span>
+                    We've sent a 6-digit verification code to <span className="font-bold text-brand-blue">{email}</span>.
+                    Please check your email inbox (and spam folder).
                   </p>
-
-                  {/* Development Mode - Show OTP Code */}
-                  {devOtpCode && (
-                    <div className="mb-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6 rounded-2xl text-center">
-                      <p className="text-sm font-bold uppercase tracking-wider mb-2">🔓 Development Mode</p>
-                      <p className="text-xs opacity-90 mb-3">Your verification code:</p>
-                      <p className="text-4xl font-bold tracking-[0.3em] font-mono">{devOtpCode}</p>
-                      <p className="text-xs opacity-75 mt-2">Just enter this code below ↓</p>
-                    </div>
-                  )}
 
                   <div className="space-y-4">
                     <input
