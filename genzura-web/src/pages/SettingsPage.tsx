@@ -10,7 +10,8 @@ import {
   ChevronRight,
   ShieldCheck,
   Zap,
-  CreditCard
+  CreditCard,
+  AlertTriangle
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import AppLayout from '../components/AppLayout';
@@ -237,6 +238,12 @@ const SecurityTab = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  // Account deletion states
+  const [showDeleteSection, setShowDeleteSection] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const handlePasswordChange = async (e: FormEvent) => {
     e.preventDefault();
 
@@ -269,6 +276,48 @@ const SecurityTab = () => {
     }
   };
 
+  const handleDeleteAccount = async (e: FormEvent) => {
+    e.preventDefault();
+
+    if (!deletePassword) {
+      toast.error('Please enter your password to confirm');
+      return;
+    }
+
+    if (deleteConfirmText !== 'DELETE MY ACCOUNT') {
+      toast.error('Please type "DELETE MY ACCOUNT" exactly as shown');
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      // First validate password and send deletion request
+      await authService.deleteAccount(deletePassword, deleteConfirmText);
+
+      // Only after successful backend validation, show success and redirect
+      toast.success('Your account has been deleted', { icon: '👋' });
+
+      // Small delay to show the toast before redirect
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 1000);
+    } catch (error: any) {
+      // This will catch password errors from backend
+      const errorMessage = error.response?.data?.error || 'Failed to delete account';
+      toast.error(errorMessage, {
+        duration: 4000,
+        style: {
+          background: '#fee',
+          color: '#c00',
+          fontWeight: 'bold',
+        },
+      });
+      console.error('Delete account error:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-12 animate-in-fade">
       <SectionHeader title="Security Controls" sub="Protect your legal data and access" />
@@ -297,12 +346,116 @@ const SecurityTab = () => {
             <h4 className="text-xl font-bold tracking-tight mb-2">Multi-Factor Authentication</h4>
             <p className="text-sm text-white/60 font-medium max-w-md">Add an extra layer of protection using an authenticator app or biometric key.</p>
           </div>
-          <button 
+          <button
             onClick={() => { setIs2FAEnabled(!is2FAEnabled); toast.success(is2FAEnabled ? '2FA Disabled' : '2FA Enabled'); }}
             className={`px-8 py-3.5 rounded-2xl font-bold text-[10px] uppercase tracking-[0.1em] transition-all ${is2FAEnabled ? 'bg-white/10 text-white border border-white/20' : 'bg-white text-brand-dark shadow-xl hover:-translate-y-1'}`}
           >
             {is2FAEnabled ? 'Manage 2FA' : 'Activate Now'}
           </button>
+        </div>
+      </div>
+
+      {/* Danger Zone - Account Deletion */}
+      <div className="bg-red-50/50 border-2 border-red-200 rounded-[2.5rem] p-8 relative overflow-hidden">
+        <div className="absolute right-0 top-0 p-8 opacity-5">
+          <AlertTriangle size={160} />
+        </div>
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-red-500/10 text-red-600 flex items-center justify-center">
+              <AlertTriangle size={20} />
+            </div>
+            <div>
+              <h4 className="text-lg font-bold text-red-900 tracking-tight">Danger Zone</h4>
+              <p className="text-xs text-red-600 font-medium">Irreversible account actions</p>
+            </div>
+          </div>
+
+          {!showDeleteSection ? (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pt-4">
+              <div>
+                <p className="font-bold text-red-900 text-sm">Delete Your Account</p>
+                <p className="text-xs text-red-600/70 font-medium max-w-md mt-1">
+                  Permanently remove your account and all associated data. This action cannot be undone.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDeleteSection(true)}
+                className="px-8 py-3.5 rounded-2xl font-bold text-[10px] uppercase tracking-[0.1em] bg-white text-red-600 border-2 border-red-200 hover:bg-red-50 transition-all whitespace-nowrap"
+              >
+                Delete Account
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleDeleteAccount} className="space-y-6 pt-4">
+              <div className="bg-red-100 border border-red-300 rounded-2xl p-6 space-y-3">
+                <p className="font-bold text-red-900 text-sm flex items-center gap-2">
+                  <AlertTriangle size={16} />
+                  Warning: This action is permanent and cannot be reversed
+                </p>
+                <ul className="text-xs text-red-700 space-y-1 ml-6 list-disc">
+                  <li>Your account will be permanently deleted</li>
+                  <li>All your data will be anonymized in the system</li>
+                  <li>You will lose access to all cases and documents</li>
+                  <li>This action cannot be undone</li>
+                </ul>
+              </div>
+
+              <Field label="Enter Your Password">
+                <Input
+                  type="password"
+                  placeholder="Confirm your password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  required
+                />
+              </Field>
+
+              <Field label='Type "DELETE MY ACCOUNT" to confirm'>
+                <Input
+                  type="text"
+                  placeholder="DELETE MY ACCOUNT"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  required
+                  className={deleteConfirmText === 'DELETE MY ACCOUNT' ? 'border-red-500' : ''}
+                />
+              </Field>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleteSection(false);
+                    setDeletePassword('');
+                    setDeleteConfirmText('');
+                  }}
+                  disabled={isDeleting}
+                  className="px-8 py-3.5 rounded-2xl font-bold text-xs uppercase tracking-[0.15em] bg-white text-brand-dark border-2 border-border-base hover:bg-page-bg transition-all disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isDeleting || deleteConfirmText !== 'DELETE MY ACCOUNT'}
+                  className="flex-1 bg-red-600 text-white px-8 py-3.5 rounded-2xl font-bold text-xs uppercase tracking-[0.15em] hover:bg-red-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle size={16} />
+                      Permanently Delete Account
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     </div>

@@ -131,6 +131,25 @@ export class UserService {
     });
   }
 
+  /**
+   * Delete user account (soft delete - marks as inactive)
+   */
+  static async deleteAccount(id: string) {
+    // Soft delete: mark user as inactive instead of hard delete
+    // This preserves data integrity and allows for potential account recovery
+    return prisma.user.update({
+      where: { id },
+      data: {
+        status: UserStatus.Inactive,
+        email: `deleted_${id}@deleted.genzura.law`, // Anonymize email
+        name: 'Deleted User',
+        phone: null,
+        avatarUrl: null,
+        // Keep other data for audit trail
+      },
+    });
+  }
+
   static async updateProfile(id: string, data: {
     name?: string;
     phone?: string;

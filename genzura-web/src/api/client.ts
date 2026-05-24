@@ -23,10 +23,18 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('genzura_token');
-      const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/register';
-      if (!isAuthPage) {
-        window.location.href = '/login';
+      // Don't auto-redirect on password verification failures
+      // These should show error messages to the user instead
+      const isPasswordError = error.response?.data?.error?.toLowerCase().includes('password');
+      const isDeleteAccount = error.config?.url?.includes('/delete-account');
+      const isChangePassword = error.config?.url?.includes('/change-password');
+
+      if (!isPasswordError && !isDeleteAccount && !isChangePassword) {
+        localStorage.removeItem('genzura_token');
+        const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/register';
+        if (!isAuthPage) {
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);

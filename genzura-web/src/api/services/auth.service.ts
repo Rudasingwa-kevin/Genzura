@@ -62,6 +62,16 @@ export const authService = {
     return response.data;
   },
 
+  deleteAccount: async (password: string, confirmText: string) => {
+    const response = await apiClient.post('/auth/delete-account', {
+      password,
+      confirmText,
+    });
+    // Clear token after successful deletion
+    localStorage.removeItem('genzura_token');
+    return response.data;
+  },
+
   logout: () => {
     localStorage.removeItem('genzura_token');
   },

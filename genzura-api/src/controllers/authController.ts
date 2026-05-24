@@ -110,6 +110,53 @@ export class AuthController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  /**
+   * Delete user account (requires password confirmation)
+   */
+  static async deleteAccount(req: any, res: Response) {
+    try {
+      const userId = req.user.id;
+      const { password, confirmText } = req.body;
+
+      // Validate required fields
+      if (!password) {
+        return res.status(400).json({ error: 'Password is required to delete your account' });
+      }
+
+      if (confirmText !== 'DELETE MY ACCOUNT') {
+        return res.status(400).json({ error: 'Please type "DELETE MY ACCOUNT" to confirm' });
+      }
+
+      // Get user and verify password
+      const user = await UserService.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      // Verify password
+      const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+      if (!isPasswordValid) {
+        console.warn(`❌ Account deletion failed: Incorrect password for user ${user.email}`);
+        return res.status(401).json({ error: 'Incorrect password' });
+      }
+
+      console.log(`✅ Password verified for account deletion: ${user.email}`);
+
+      // Delete the account (soft delete - marks as inactive)
+      await UserService.deleteAccount(userId);
+
+      console.log(`🗑️ Account deleted for user: ${user.email}`);
+
+      res.json({
+        message: 'Your account has been permanently deleted',
+        success: true
+      });
+    } catch (error: any) {
+      console.error('Account deletion error:', error);
+      res.status(500).json({ error: 'Failed to delete account' });
+    }
+  }
   static async sendOtp(req: Request, res: Response) {
     try {
       const { email } = req.body;
