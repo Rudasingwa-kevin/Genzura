@@ -67,6 +67,8 @@ export class UserService {
     return prisma.user.findMany({
       where: {
         status: UserStatus.Active,
+        // Exclude soft-deleted / anonymized accounts
+        NOT: { email: { startsWith: 'deleted_' } },
       },
       select: {
         id: true,
@@ -135,17 +137,16 @@ export class UserService {
    * Delete user account (soft delete - marks as inactive)
    */
   static async deleteAccount(id: string) {
-    // Soft delete: mark user as inactive instead of hard delete
-    // This preserves data integrity and allows for potential account recovery
+    // Soft delete: Suspend and anonymize the user instead of hard-deleting
+    // This preserves data integrity (case history, timeline events, etc.)
     return prisma.user.update({
       where: { id },
       data: {
-        status: UserStatus.Inactive,
-        email: `deleted_${id}@deleted.genzura.law`, // Anonymize email
+        status: UserStatus.Suspended,              // Use a valid enum value
+        email: `deleted_${id}@deleted.genzura.law`, // Anonymize email (also used as exclusion marker)
         name: 'Deleted User',
         phone: null,
         avatarUrl: null,
-        // Keep other data for audit trail
       },
     });
   }
