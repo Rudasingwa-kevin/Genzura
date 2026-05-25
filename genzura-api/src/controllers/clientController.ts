@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { Prisma } from '@prisma/client';
 import { ClientService } from '../services/clientService.js';
 
 export class ClientController {
@@ -35,6 +36,16 @@ export class ClientController {
       const client = await ClientService.createClient(req.body);
       res.status(201).json(client);
     } catch (error: any) {
+      // Handle duplicate email gracefully
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        return res.status(409).json({
+          error:
+            'A client with this email address already exists. Please use a different email or select the existing client from the list.',
+        });
+      }
       res.status(500).json({ error: error.message });
     }
   }
