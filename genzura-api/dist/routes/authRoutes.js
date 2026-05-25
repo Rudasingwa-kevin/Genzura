@@ -12,5 +12,6 @@ router.get('/verify-invitation/:token', AuthController.verifyInvitation);
 router.post('/accept-invitation', AuthController.acceptInvitation);
 router.get('/me', authenticate, AuthController.me);
 router.post('/change-password', authenticate, AuthController.changePassword);
+router.post('/delete-account', authenticate, AuthController.deleteAccount);
 export default router;
 //# sourceMappingURL=authRoutes.js.map

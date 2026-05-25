@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs';
 import { PrismaClient } from '@prisma/client';
 import authRoutes from './routes/authRoutes.js';
 import caseRoutes from './routes/caseRoutes.js';
@@ -24,6 +26,7 @@ import { initSocket } from './socket.js';
 import { DateService } from './utils/dateUtils.js';
 import { CronScheduler } from './utils/cronScheduler.js';
 import adminJobsRoutes from './routes/adminJobsRoutes.js';
+import { S3Service } from './services/s3Service.js';
 dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
@@ -31,7 +34,45 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
-app.use('/uploads', express.static('uploads'));
+// Dynamic S3 or Local disk serving for uploads
+app.get('/uploads/avatars/:filename', async (req, res) => {
+    const { filename } = req.params;
+    const s3Key = `uploads/avatars/${filename}`;
+    if (S3Service.isConfigured()) {
+        try {
+            const presignedUrl = await S3Service.getPresignedUrl(s3Key);
+            return res.redirect(302, presignedUrl);
+        }
+        catch (err) {
+            console.error('[Express Uploads] S3 avatar fetch failed, falling back to local:', err);
+        }
+    }
+    // Fallback to local disk
+    const localPath = path.join(process.cwd(), 'uploads/avatars', filename);
+    if (fs.existsSync(localPath)) {
+        return res.sendFile(localPath);
+    }
+    return res.status(404).json({ error: 'Avatar file not found' });
+});
+app.get('/uploads/:filename', async (req, res) => {
+    const { filename } = req.params;
+    const s3Key = `uploads/${filename}`;
+    if (S3Service.isConfigured()) {
+        try {
+            const presignedUrl = await S3Service.getPresignedUrl(s3Key);
+            return res.redirect(302, presignedUrl);
+        }
+        catch (err) {
+            console.error('[Express Uploads] S3 file fetch failed, falling back to local:', err);
+        }
+    }
+    // Fallback to local disk
+    const localPath = path.join(process.cwd(), 'uploads', filename);
+    if (fs.existsSync(localPath)) {
+        return res.sendFile(localPath);
+    }
+    return res.status(404).json({ error: 'File not found' });
+});
 app.use('/public', express.static('public'));
 // Routes
 app.use('/api/auth', authRoutes);

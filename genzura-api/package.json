@@ -24,6 +24,8 @@
     "test:invitation": "node test-invitation.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1053.0",
+    "@aws-sdk/s3-request-presigner": "^3.1053.0",
     "@prisma/client": "^5.x.x",
     "@sendinblue/client": "^3.3.1",
     "@types/multer": "^2.1.0",

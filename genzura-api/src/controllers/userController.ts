@@ -3,6 +3,7 @@ import { UserService } from '../services/userService.js';
 import fs from 'fs';
 import path from 'path';
 import { SubscriptionService } from '../services/subscriptionService.js';
+import { S3Service } from '../services/s3Service.js';
 
 export class UserController {
   static async getAll(req: Request, res: Response) {
@@ -101,19 +102,41 @@ export class UserController {
 
       // Delete old avatar if exists
       if (user?.avatarUrl) {
-        const oldPath = path.join(process.cwd(), user.avatarUrl);
-        if (fs.existsSync(oldPath)) {
-          fs.unlinkSync(oldPath);
+        if (S3Service.isConfigured()) {
+          await S3Service.deleteFile(user.avatarUrl);
+        } else {
+          const oldPath = path.join(process.cwd(), user.avatarUrl);
+          if (fs.existsSync(oldPath)) {
+            fs.unlinkSync(oldPath);
+          }
         }
       }
 
       // Save new avatar URL
       const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+      if (S3Service.isConfigured()) {
+        try {
+          await S3Service.uploadFile(req.file.path, avatarUrl, req.file.mimetype);
+        } catch (s3Error) {
+          console.error('[UserController] S3 avatar upload error, keeping local file as backup:', s3Error);
+          // Fallback: keep local file if upload to S3 fails
+        }
+      }
+
       const updated = await UserService.updateProfile(userId, { avatarUrl });
 
       const { passwordHash, ...userWithoutPassword } = updated;
       res.json(userWithoutPassword);
     } catch (error: any) {
+      console.error('[UserController] Avatar upload error:', error);
+      // Cleanup local file on error if it still exists
+      if (req.file && fs.existsSync(req.file.path)) {
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch (cleanupErr) {
+          console.error('[UserController] Failed to clean up temp avatar on error:', cleanupErr);
+        }
+      }
       res.status(500).json({ error: error.message });
     }
   }
@@ -125,9 +148,13 @@ export class UserController {
 
       // Delete avatar file if exists
       if (user?.avatarUrl) {
-        const avatarPath = path.join(process.cwd(), user.avatarUrl);
-        if (fs.existsSync(avatarPath)) {
-          fs.unlinkSync(avatarPath);
+        if (S3Service.isConfigured()) {
+          await S3Service.deleteFile(user.avatarUrl);
+        } else {
+          const avatarPath = path.join(process.cwd(), user.avatarUrl);
+          if (fs.existsSync(avatarPath)) {
+            fs.unlinkSync(avatarPath);
+          }
         }
       }
 

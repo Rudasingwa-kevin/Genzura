@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { ClientService } from '../services/clientService.js';
 export class ClientController {
     static async getAll(req, res) {
@@ -34,6 +35,13 @@ export class ClientController {
             res.status(201).json(client);
         }
         catch (error) {
+            // Handle duplicate email gracefully
+            if (error instanceof Prisma.PrismaClientKnownRequestError &&
+                error.code === 'P2002') {
+                return res.status(409).json({
+                    error: 'A client with this email address already exists. Please use a different email or select the existing client from the list.',
+                });
+            }
             res.status(500).json({ error: error.message });
         }
     }
