@@ -97,9 +97,9 @@ export default function AdminSubscriptionModal({ isOpen, onClose, user, onSucces
       />
 
       {/* Modal */}
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white z-[110] rounded-[2.5rem] shadow-2xl overflow-hidden">
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl max-h-[90vh] bg-white z-[110] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-brand-dark text-white p-8 relative overflow-hidden">
+        <div className="bg-brand-dark text-white p-8 relative overflow-hidden shrink-0">
           <div className="absolute top-0 right-0 w-64 h-64 bg-brand-blue/20 blur-[100px] rounded-full" />
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-4">
@@ -124,7 +124,7 @@ export default function AdminSubscriptionModal({ isOpen, onClose, user, onSucces
         </div>
 
         {/* Content */}
-        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+        <form onSubmit={handleSubmit} className="p-8 space-y-6 overflow-y-auto flex-1">
           {/* Current Status */}
           <div className="bg-page-bg rounded-2xl p-6 border border-border-base">
             <div className="flex items-center gap-2 mb-4">
@@ -211,7 +211,7 @@ export default function AdminSubscriptionModal({ isOpen, onClose, user, onSucces
                   }`}
                 >
                   <p className="font-bold text-brand-dark">Inkingi</p>
-                  <p className="text-xs text-text-muted mt-1">200,000 RWF value</p>
+                  <p className="text-xs text-text-muted mt-1">250,000 RWF value</p>
                 </button>
               </div>
             </div>

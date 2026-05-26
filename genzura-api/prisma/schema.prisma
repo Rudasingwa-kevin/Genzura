@@ -357,3 +357,74 @@ model NotificationPreference {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 }
+
+enum AuditAction {
+  USER_CREATED
+  USER_UPDATED
+  USER_DELETED
+  USER_INVITED
+  USER_LOGIN
+  USER_LOGOUT
+  USER_PASSWORD_RESET
+  CASE_CREATED
+  CASE_UPDATED
+  CASE_DELETED
+  CASE_STATUS_CHANGED
+  DOCUMENT_UPLOADED
+  DOCUMENT_DOWNLOADED
+  DOCUMENT_DELETED
+  CLIENT_CREATED
+  CLIENT_UPDATED
+  CLIENT_DELETED
+  SETTINGS_UPDATED
+  PLAN_UPDATED
+  SUBSCRIPTION_ACTIVATED
+  SUBSCRIPTION_PAUSED
+  SUBSCRIPTION_CHANGED
+  SYSTEM_BACKUP
+  SECURITY_ALERT
+  UNAUTHORIZED_ACCESS
+  EXPORT_DATA
+  BULK_OPERATION
+}
+
+enum AuditStatus {
+  SUCCESS
+  FAILED
+  PENDING
+}
+
+model AuditLog {
+  id          String      @id @default(cuid())
+  action      AuditAction
+  description String
+
+  // User who performed the action
+  userId      String?
+  userName    String?
+  userRole    String?
+
+  // Request details
+  ipAddress   String?
+  userAgent   String?
+  method      String?     // HTTP method (GET, POST, etc.)
+  endpoint    String?     // API endpoint
+
+  // Result
+  status      AuditStatus @default(SUCCESS)
+  errorMessage String?    @db.Text
+
+  // Additional context
+  resourceType String?    // e.g., "User", "Case", "Document"
+  resourceId   String?    // ID of affected resource
+  metadata     Json?      // Additional flexible data
+
+  // Timestamps
+  timestamp   DateTime    @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([status])
+  @@index([timestamp])
+  @@index([resourceType, resourceId])
+}

@@ -203,9 +203,7 @@ If you need to rollback to Cloudinary:
 
 2. **Restore .env variables**:
    ```env
-   CLOUDINARY_CLOUD_NAME=db3w1wtfp
-   CLOUDINARY_API_KEY=528383932426871
-   CLOUDINARY_API_SECRET=9ExtAxshPzNdKFMt9uivfOvaXgs
+
    LOGO_URL=https://res.cloudinary.com/db3w1wtfp/image/upload/v1779174917/genzura/genzura-logo.png
    ```
 

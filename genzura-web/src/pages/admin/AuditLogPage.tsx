@@ -11,68 +11,67 @@ import AdminLayout from '../../components/AdminLayout';
 import { TableSkeleton } from '../../components/Skeleton';
 import { useState, useEffect } from 'react';
 
-// ─── Mock Data ───────────────────────────────────────────────────────────────
-
-const AUDIT_LOGS = [
-  { id: 'LOG-882', action: 'Update System Branding', user: 'Sarah Miller', role: 'Admin', time: '10 mins ago', ip: '192.168.1.1', status: 'Success' },
-  { id: 'LOG-881', action: 'Bulk User Invitation', user: 'James Wilson', role: 'Senior Attorney', time: '2 hours ago', ip: '192.168.1.42', status: 'Success' },
-  { id: 'LOG-880', action: 'Unauthorized Login Attempt', user: 'Unknown', role: 'External', time: '5 hours ago', ip: '45.12.99.12', status: 'Failed' },
-  { id: 'LOG-879', action: 'Exported Financial Records', user: 'David Chen', role: 'Attorney', time: 'Yesterday', ip: '192.168.1.15', status: 'Success' },
-  { id: 'LOG-878', action: 'Modified Practice Areas', user: 'Sarah Miller', role: 'Admin', time: '2 days ago', ip: '192.168.1.1', status: 'Success' },
-  { id: 'LOG-877', action: 'Delete Document: CZ-102-Final', user: 'Elena Rodriguez', role: 'Paralegal', time: '3 days ago', ip: '192.168.1.8', status: 'Success' },
-  { id: 'LOG-876', action: 'System Backup Initiated', user: 'System', role: 'Core', time: '3 days ago', ip: 'Local', status: 'Success' },
-];
-
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 import { toast } from 'react-hot-toast';
+import { adminService } from '../../api/services/admin.service';
 
 export default function AuditLogPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [logs, setLogs] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1000);
-    return () => clearTimeout(timer);
-  }, []);
+    const fetchLogs = async () => {
+      try {
+        const result = await adminService.getAuditLogs({ search, limit: 50 });
+        setLogs(result.logs || []);
+        setTotal(result.total || 0);
+      } catch (error) {
+        console.error('Failed to fetch audit logs:', error);
+        toast.error('Failed to load audit logs');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchLogs();
+  }, [search]);
 
-  const filtered = AUDIT_LOGS.filter(l => 
-    l.action.toLowerCase().includes(search.toLowerCase()) ||
-    l.user.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = logs;
 
   const handleExportCSV = () => {
     try {
       // 1. Define CSV headers
       const headers = ['Event ID', 'Action', 'Initiator', 'Role', 'IP Address', 'Timestamp', 'Status'];
-      
+
       // 2. Map data to CSV rows
-      const csvRows = filtered.map(log => 
+      const csvRows = filtered.map(log =>
         [
           log.id,
-          `"${log.action.replace(/"/g, '""')}"`, // Escape quotes
-          `"${log.user}"`,
-          log.role,
-          log.ip,
-          `"${log.time}"`,
+          `"${log.description?.replace(/"/g, '""') || 'N/A'}"`, // Escape quotes
+          `"${log.userName || 'System'}"`,
+          log.userRole || 'System',
+          log.ipAddress || 'N/A',
+          `"${new Date(log.timestamp).toLocaleString()}"`,
           log.status
         ].join(',')
       );
-      
+
       // 3. Combine headers and rows
-      const csvContent = [headers.join(','), ...csvRows].join('\\n');
-      
+      const csvContent = [headers.join(','), ...csvRows].join('\n');
+
       // 4. Create Blob and download link
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
       link.download = `audit-log-export-${new Date().toISOString().split('T')[0]}.csv`;
-      
+
       // 5. Trigger download
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       toast.success('Audit log exported successfully');
     } catch (error) {
       console.error('Export failed', error);
@@ -133,45 +132,55 @@ export default function AuditLogPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((log) => (
-                  <tr key={log.id} className="group border-b border-border-base last:border-0 hover:bg-page-bg/40 transition-all cursor-pointer">
-                    <td className="px-8 py-6">
-                      <span className="text-xs font-mono font-bold text-brand-blue">{log.id}</span>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${log.status === 'Success' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                          <Activity size={16} />
+                {filtered.length > 0 ? (
+                  filtered.map((log) => (
+                    <tr key={log.id} className="group border-b border-border-base last:border-0 hover:bg-page-bg/40 transition-all cursor-pointer">
+                      <td className="px-8 py-6">
+                        <span className="text-xs font-mono font-bold text-brand-blue">{log.id}</span>
+                      </td>
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg ${log.status === 'SUCCESS' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                            <Activity size={16} />
+                          </div>
+                          <span className="font-bold text-brand-dark group-hover:text-brand-blue transition-colors">{log.description}</span>
                         </div>
-                        <span className="font-bold text-brand-dark group-hover:text-brand-blue transition-colors">{log.action}</span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div>
-                        <p className="text-sm font-bold text-brand-dark">{log.user}</p>
-                        <p className="text-[10px] font-bold text-text-muted uppercase tracking-tighter mt-0.5">{log.role} • {log.ip}</p>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-2 text-sm text-text-secondary font-bold">
-                        <Clock size={14} className="text-text-muted" />
-                        {log.time}
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex justify-center">
-                        <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-lg border ${
-                          log.status === 'Success' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-rose-50 text-rose-600 border-rose-200'
-                        }`}>
-                          {log.status}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6 text-right">
-                      <ChevronRight size={16} className="text-slate-300 group-hover:text-brand-blue group-hover:translate-x-1 transition-all" />
+                      </td>
+                      <td className="px-8 py-6">
+                        <div>
+                          <p className="text-sm font-bold text-brand-dark">{log.userName || 'System'}</p>
+                          <p className="text-[10px] font-bold text-text-muted uppercase tracking-tighter mt-0.5">
+                            {log.userRole || 'System'} • {log.ipAddress || 'N/A'}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-2 text-sm text-text-secondary font-bold">
+                          <Clock size={14} className="text-text-muted" />
+                          {new Date(log.timestamp).toLocaleString()}
+                        </div>
+                      </td>
+                      <td className="px-8 py-6">
+                        <div className="flex justify-center">
+                          <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-lg border ${
+                            log.status === 'SUCCESS' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-rose-50 text-rose-600 border-rose-200'
+                          }`}>
+                            {log.status}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-8 py-6 text-right">
+                        <ChevronRight size={16} className="text-slate-300 group-hover:text-brand-blue group-hover:translate-x-1 transition-all" />
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="px-8 py-12 text-center text-text-muted">
+                      No audit logs found
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>

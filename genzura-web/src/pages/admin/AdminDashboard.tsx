@@ -77,7 +77,7 @@ const SubscriptionDistribution = ({ subscriptions }: any) => (
   </div>
 );
 
-const LicenseUsage = () => (
+const LicenseUsage = ({ licenses }: any) => (
   <div className="bg-white rounded-[2.5rem] border border-border-base p-8 shadow-sm h-full">
     <div className="flex items-center justify-between mb-8">
       <div>
@@ -93,18 +93,19 @@ const LicenseUsage = () => (
       <div>
         <div className="flex justify-between items-end mb-2">
           <span className="text-sm font-bold text-brand-dark">Enterprise Seats</span>
-          <span className="text-sm font-bold text-brand-blue">42 / 50</span>
+          <span className="text-sm font-bold text-brand-blue">{licenses?.used || 0} / {licenses?.total || 50}</span>
         </div>
         <div className="h-3 bg-page-bg rounded-full overflow-hidden border border-border-base">
-          <div className="h-full bg-brand-blue w-[84%] rounded-full shadow-[0_0_12px_rgba(24,95,165,0.3)]" />
+          <div className="h-full bg-brand-blue rounded-full shadow-[0_0_12px_rgba(24,95,165,0.3)]"
+               style={{ width: `${licenses?.percentUsed || 0}%` }} />
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4 pt-4">
         {[
-          { label: 'Attorneys', count: 28, color: 'bg-brand-blue' },
-          { label: 'Paralegals', count: 10, color: 'bg-emerald-500' },
-          { label: 'Support', count: 4, color: 'bg-amber-500' },
+          { label: 'Attorneys', count: licenses?.breakdown?.attorneys || 0, color: 'bg-brand-blue' },
+          { label: 'Paralegals', count: licenses?.breakdown?.paralegals || 0, color: 'bg-emerald-500' },
+          { label: 'Support', count: licenses?.breakdown?.support || 0, color: 'bg-amber-500' },
         ].map(item => (
           <div key={item.label} className="p-4 rounded-2xl bg-page-bg border border-border-base text-center">
             <p className="text-lg font-bold text-brand-dark">{item.count}</p>
@@ -134,6 +135,7 @@ const AuditLogItem = ({ action, user, time, status }: any) => (
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 import { userService } from '../../api/services/user.service';
+import { adminService } from '../../api/services/admin.service';
 
 export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
@@ -145,12 +147,30 @@ export default function AdminDashboard() {
     mrr: '0',
     arr: '0'
   });
+  const [storageMetrics, setStorageMetrics] = useState<any>(null);
+  const [systemHealth, setSystemHealth] = useState<any>(null);
+  const [licenses, setLicenses] = useState<any>(null);
+  const [recentAudit, setRecentAudit] = useState<any[]>([]);
+  const [infrastructure, setInfrastructure] = useState<any>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const users = await userService.getAll();
+        const [users, storage, health, licenseData, audit, infra] = await Promise.all([
+          userService.getAll(),
+          adminService.getStorageMetrics(),
+          adminService.getSystemHealth(),
+          adminService.getLicenses(),
+          adminService.getAuditLogs({ limit: 5 }),
+          adminService.getInfrastructure(),
+        ]);
+
         setUserCount(users.length);
+        setStorageMetrics(storage);
+        setSystemHealth(health);
+        setLicenses(licenseData);
+        setRecentAudit(audit.logs || []);
+        setInfrastructure(infra);
 
         // Calculate subscription distribution
         const planCounts = users.reduce((acc: any, user: any) => {
@@ -212,21 +232,21 @@ export default function AdminDashboard() {
               bg="bg-brand-light" 
               trend="+2"
             />
-            <AdminKpiCard 
-              label="Global Storage" 
-              value="1.2 TB" 
-              sub="82% capacity used" 
-              icon={Database} 
-              color="text-emerald-600" 
-              bg="bg-emerald-50" 
+            <AdminKpiCard
+              label="Global Storage"
+              value={storageMetrics?.configured ? `${storageMetrics.usedGB} GB` : 'N/A'}
+              sub={storageMetrics?.configured ? `${storageMetrics.percentUsed}% capacity used` : 'S3 not configured'}
+              icon={Database}
+              color="text-emerald-600"
+              bg="bg-emerald-50"
             />
-            <AdminKpiCard 
-              label="System Health" 
-              value="99.9%" 
-              sub="All systems operational" 
-              icon={Activity} 
-              color="text-violet-600" 
-              bg="bg-violet-50" 
+            <AdminKpiCard
+              label="System Health"
+              value={systemHealth?.uptime ? `${systemHealth.uptime}%` : 'N/A'}
+              sub={systemHealth?.status === 'operational' ? 'All systems operational' : 'Checking...'}
+              icon={Activity}
+              color="text-violet-600"
+              bg="bg-violet-50"
             />
             <AdminKpiCard
               label="Revenue (MRR)"
@@ -276,7 +296,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="lg:col-span-3">
-          <LicenseUsage />
+          <LicenseUsage licenses={licenses} />
         </div>
       </div>
 
@@ -285,13 +305,21 @@ export default function AdminDashboard() {
             <h3 className="text-xl font-bold text-brand-dark tracking-tight">Audit Trail</h3>
             <button className="p-2.5 rounded-xl hover:bg-page-bg text-text-muted transition-all"><Activity size={18} /></button>
           </div>
-          
+
           <div className="divide-y divide-border-base">
-            <AuditLogItem action="Updated Practice Area Policies" user="Admin (Self)" time="24 mins ago" status="success" />
-            <AuditLogItem action="New User Access: David Chen" user="James Wilson" time="2 hours ago" status="success" />
-            <AuditLogItem action="Failed Login Attempt (IP: 192.x)" user="System" time="5 hours ago" status="warning" />
-            <AuditLogItem action="Bulk Case Export Initiated" user="Sarah Miller" time="Yesterday" status="success" />
-            <AuditLogItem action="Storage Expansion Approved" user="Admin (Self)" time="2 days ago" status="success" />
+            {recentAudit.length > 0 ? (
+              recentAudit.map((log: any) => (
+                <AuditLogItem
+                  key={log.id}
+                  action={log.description}
+                  user={log.userName || 'System'}
+                  time={new Date(log.timestamp).toLocaleString()}
+                  status={log.status === 'SUCCESS' ? 'success' : 'warning'}
+                />
+              ))
+            ) : (
+              <p className="text-sm text-text-muted py-4">No recent audit logs available</p>
+            )}
           </div>
 
           <button className="w-full mt-8 py-4 rounded-2xl bg-page-bg text-sm font-bold text-text-secondary hover:text-brand-blue transition-all border border-transparent hover:border-border-base">
@@ -302,17 +330,19 @@ export default function AdminDashboard() {
       {/* System Infrastructure */}
       <div className="mt-8 grid md:grid-cols-3 gap-6">
         {[
-          { label: 'Compute Engine', status: 'Stable', icon: Server, color: 'text-brand-blue' },
-          { label: 'Database Sync', status: 'In Sync', icon: Database, color: 'text-emerald-500' },
-          { label: 'Auth Gateway', status: 'Protected', icon: ShieldAlert, color: 'text-violet-500' },
+          { label: 'Compute Engine', status: infrastructure?.compute?.status || 'Unknown', icon: Server, color: 'text-brand-blue' },
+          { label: 'Database Sync', status: infrastructure?.database?.status || 'Unknown', icon: Database, color: 'text-emerald-500' },
+          { label: 'Auth Gateway', status: infrastructure?.auth?.status || 'Unknown', icon: ShieldAlert, color: 'text-violet-500' },
         ].map((sys) => (
           <div key={sys.label} className="bg-white rounded-2xl border border-border-base p-5 flex items-center gap-4">
             <div className={`p-3 rounded-xl bg-page-bg ${sys.color}`}><sys.icon size={20} /></div>
             <div>
               <p className="text-sm font-bold text-brand-dark">{sys.label}</p>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">{sys.status}</span>
+                <div className={`w-1.5 h-1.5 rounded-full ${sys.status === 'operational' ? 'bg-emerald-500' : 'bg-amber-500'} shadow-[0_0_8px_rgba(16,185,129,0.5)]`} />
+                <span className={`text-[10px] font-bold ${sys.status === 'operational' ? 'text-emerald-600' : 'text-amber-600'} uppercase tracking-widest`}>
+                  {sys.status}
+                </span>
               </div>
             </div>
           </div>
