@@ -17,6 +17,9 @@ router.post('/extend', AdminSubscriptionController.extendSubscription);
 // Revoke subscription (downgrade to free)
 router.post('/revoke', AdminSubscriptionController.revokeAccess);
 
+// Cancel subscription (alias for revoke, used by frontend modal)
+router.post('/cancel', AdminSubscriptionController.revokeAccess);
+
 // Get subscription statistics
 router.get('/stats', AdminSubscriptionController.getStats);
 
