@@ -10,7 +10,7 @@ interface AdminSubscriptionModalProps {
 }
 
 export default function AdminSubscriptionModal({ isOpen, onClose, user, onSuccess }: AdminSubscriptionModalProps) {
-  const [action, setAction] = useState<'grant' | 'extend'>('grant');
+  const [action, setAction] = useState<'grant' | 'extend' | 'cancel'>('grant');
   const [selectedPlan, setSelectedPlan] = useState<'Intango' | 'Inkingi'>('Intango');
   const [duration, setDuration] = useState<number>(30);
   const [customDuration, setCustomDuration] = useState<string>('');
@@ -48,7 +48,7 @@ export default function AdminSubscriptionModal({ isOpen, onClose, user, onSucces
           icon: '🎁',
           duration: 4000
         });
-      } else {
+      } else if (action === 'extend') {
         // Extend existing subscription
         const response = await fetch('/api/admin/subscriptions/extend', {
           method: 'POST',
@@ -67,6 +67,26 @@ export default function AdminSubscriptionModal({ isOpen, onClose, user, onSucces
 
         toast.success(`Subscription extended by ${days} days for ${user.name}!`, {
           icon: '📅',
+          duration: 4000
+        });
+      } else {
+        // Cancel subscription
+        const response = await fetch('/api/admin/subscriptions/cancel', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('genzura_token')}`
+          },
+          body: JSON.stringify({
+            userId: user.id,
+            reason: reason || 'Admin cancelled subscription'
+          })
+        });
+
+        if (!response.ok) throw new Error('Failed to cancel subscription');
+
+        toast.success(`Subscription cancelled for ${user.name}`, {
+          icon: '🚫',
           duration: 4000
         });
       }
@@ -148,7 +168,7 @@ export default function AdminSubscriptionModal({ isOpen, onClose, user, onSucces
             <label className="text-xs font-bold text-brand-dark uppercase tracking-wider ml-1">
               Action Type
             </label>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-3">
               <button
                 type="button"
                 onClick={() => setAction('grant')}
@@ -158,10 +178,10 @@ export default function AdminSubscriptionModal({ isOpen, onClose, user, onSucces
                     : 'border-border-base hover:border-brand-blue/30'
                 }`}
               >
-                <Gift size={24} />
+                <Gift size={20} />
                 <div className="text-center">
-                  <p className="font-bold text-sm">Grant Access</p>
-                  <p className="text-xs text-text-muted mt-1">Give free trial or access</p>
+                  <p className="font-bold text-xs">Grant Access</p>
+                  <p className="text-[10px] text-text-muted mt-1">Give free trial</p>
                 </div>
               </button>
               <button
@@ -173,10 +193,25 @@ export default function AdminSubscriptionModal({ isOpen, onClose, user, onSucces
                     : 'border-border-base hover:border-emerald-500/30'
                 }`}
               >
-                <Calendar size={24} />
+                <Calendar size={20} />
                 <div className="text-center">
-                  <p className="font-bold text-sm">Extend Subscription</p>
-                  <p className="text-xs text-text-muted mt-1">Add days to existing plan</p>
+                  <p className="font-bold text-xs">Extend</p>
+                  <p className="text-[10px] text-text-muted mt-1">Add more days</p>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAction('cancel')}
+                className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${
+                  action === 'cancel'
+                    ? 'border-rose-500 bg-rose-50 text-rose-600'
+                    : 'border-border-base hover:border-rose-500/30'
+                }`}
+              >
+                <X size={20} />
+                <div className="text-center">
+                  <p className="font-bold text-xs">Cancel</p>
+                  <p className="text-[10px] text-text-muted mt-1">End subscription</p>
                 </div>
               </button>
             </div>
@@ -217,11 +252,12 @@ export default function AdminSubscriptionModal({ isOpen, onClose, user, onSucces
             </div>
           )}
 
-          {/* Duration */}
-          <div className="space-y-3">
-            <label className="text-xs font-bold text-brand-dark uppercase tracking-wider ml-1">
-              Duration
-            </label>
+          {/* Duration (not for cancel) */}
+          {action !== 'cancel' && (
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-brand-dark uppercase tracking-wider ml-1">
+                Duration
+              </label>
             <div className="grid grid-cols-4 gap-3">
               {[7, 30, 90, -1].map((days) => (
                 <button
@@ -250,7 +286,8 @@ export default function AdminSubscriptionModal({ isOpen, onClose, user, onSucces
                 required
               />
             )}
-          </div>
+            </div>
+          )}
 
           {/* Reason */}
           <div className="space-y-3">
@@ -267,13 +304,25 @@ export default function AdminSubscriptionModal({ isOpen, onClose, user, onSucces
           </div>
 
           {/* Warning */}
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
-            <AlertCircle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+          <div className={`border rounded-2xl p-4 flex items-start gap-3 ${
+            action === 'cancel'
+              ? 'bg-rose-50 border-rose-200'
+              : 'bg-amber-50 border-amber-200'
+          }`}>
+            <AlertCircle size={18} className={`shrink-0 mt-0.5 ${
+              action === 'cancel' ? 'text-rose-600' : 'text-amber-600'
+            }`} />
             <div className="text-sm">
-              <p className="font-bold text-amber-900 mb-1">Admin Action</p>
-              <p className="text-amber-800">
-                This action will be logged in the audit trail. Make sure you have authorization to
-                {action === 'grant' ? ' grant free access' : ' extend subscriptions'}.
+              <p className={`font-bold mb-1 ${
+                action === 'cancel' ? 'text-rose-900' : 'text-amber-900'
+              }`}>
+                {action === 'cancel' ? 'Warning: Permanent Action' : 'Admin Action'}
+              </p>
+              <p className={action === 'cancel' ? 'text-rose-800' : 'text-amber-800'}>
+                {action === 'cancel'
+                  ? 'This will immediately revoke access and return user to free plan. This action cannot be undone.'
+                  : `This action will be logged in the audit trail. Make sure you have authorization to ${action === 'grant' ? 'grant free access' : 'extend subscriptions'}.`
+                }
               </p>
             </div>
           </div>
@@ -289,8 +338,10 @@ export default function AdminSubscriptionModal({ isOpen, onClose, user, onSucces
             </button>
             <button
               type="submit"
-              disabled={isProcessing || (duration === -1 && !customDuration)}
-              className="flex-1 h-12 rounded-xl bg-brand-blue text-white font-bold hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              disabled={isProcessing || (action !== 'cancel' && duration === -1 && !customDuration)}
+              className={`flex-1 h-12 rounded-xl text-white font-bold hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
+                action === 'cancel' ? 'bg-rose-600' : 'bg-brand-blue'
+              }`}
             >
               {isProcessing ? (
                 <>
