@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { S3Service } from './s3Service.js';
 
 // Get verified sender email from env (must be verified in Brevo)
 const SENDER_EMAIL = process.env.SENDER_EMAIL || 'kevincracker02@gmail.com';
@@ -13,11 +14,26 @@ const BRAND_COLORS = {
   greenLight: '#EAF3DE' // Light green
 };
 
-// Logo URL (served from API's public folder or external CDN)
-// For production, upload to CDN and set LOGO_URL env variable
-// For now, serving from API server at /public/Genzura%20full%20logo.png
-const API_URL = process.env.API_URL || 'http://localhost:5000';
-const LOGO_URL = process.env.LOGO_URL || `${API_URL}/public/Genzura%20full%20logo.png`;
+// S3 logo key
+const LOGO_S3_KEY = 'branding/genzura-logo.png';
+
+// Get logo URL (from S3 or fallback to local)
+async function getLogoUrl(): Promise<string> {
+  // If S3 is configured, generate presigned URL (valid for 7 days for emails)
+  if (S3Service.isConfigured()) {
+    try {
+      const sevenDaysInSeconds = 7 * 24 * 60 * 60;
+      return await S3Service.getPresignedUrl(LOGO_S3_KEY, sevenDaysInSeconds);
+    } catch (error) {
+      console.error('[EmailService] Failed to generate S3 presigned URL for logo:', error);
+      // Fallback to local
+    }
+  }
+
+  // Fallback to local API server
+  const API_URL = process.env.API_URL || 'http://localhost:5000';
+  return `${API_URL}/public/Genzura%20full%20logo.png`;
+}
 
 // Create reusable transporter using Brevo SMTP
 const createTransporter = () => {
@@ -33,20 +49,20 @@ const createTransporter = () => {
 };
 
 // Email header with Genzura branding and actual logo
-const getEmailHeader = (title: string) => `
+const getEmailHeader = (title: string, logoUrl: string) => `
   <div style="background: linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.dark} 100%); padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;">
     <div style="background: white; padding: 25px 40px; margin: 0 auto 25px; border-radius: 14px; display: inline-block; box-shadow: 0 6px 16px rgba(0,0,0,0.2);">
-      <img src="${LOGO_URL}" alt="Genzura Legal" style="height: 150px; width: auto; display: block; margin: 0 auto;" />
+      <img src="${logoUrl}" alt="Genzura Legal" style="height: 150px; width: auto; display: block; margin: 0 auto;" />
     </div>
     <h2 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">${title}</h2>
   </div>
 `;
 
 // Email footer with Genzura branding and logo
-const getEmailFooter = () => `
+const getEmailFooter = (logoUrl: string) => `
   <div style="border-top: 2px solid ${BRAND_COLORS.light}; padding-top: 35px; margin-top: 40px; text-align: center;">
     <div style="margin-bottom: 25px;">
-      <img src="${LOGO_URL}" alt="Genzura Legal" style="height: 120px; width: auto; display: inline-block; margin-bottom: 15px;" />
+      <img src="${logoUrl}" alt="Genzura Legal" style="height: 120px; width: auto; display: inline-block; margin-bottom: 15px;" />
       <p style="color: ${BRAND_COLORS.dark}; margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">Stay in Control of Every Case</p>
     </div>
     <p style="color: #94a3b8; font-size: 13px; margin: 6px 0; font-weight: 500;">© 2026 Genzura Legal Management. All rights reserved.</p>
@@ -60,6 +76,7 @@ export class EmailService {
    */
   static async sendWelcomeEmail(email: string, name: string) {
     const transporter = createTransporter();
+    const logoUrl = await getLogoUrl(); // Get logo URL from S3 or fallback
 
     try {
       await transporter.sendMail({
@@ -68,7 +85,7 @@ export class EmailService {
         subject: 'Welcome to Genzura - Your Legal Management System',
         html: `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            ${getEmailHeader('Welcome to Genzura! 🎉')}
+            ${getEmailHeader('Welcome to Genzura! 🎉', logoUrl)}
 
             <div style="padding: 35px 30px;">
               <h2 style="color: ${BRAND_COLORS.dark}; margin: 0 0 20px 0; font-size: 22px; font-weight: 700;">Hi ${name},</h2>
@@ -97,7 +114,7 @@ export class EmailService {
                 Need help? Contact our support team at <a href="mailto:support@genzura.rw" style="color: ${BRAND_COLORS.blue}; text-decoration: none; font-weight: 600;">support@genzura.rw</a>
               </p>
 
-              ${getEmailFooter()}
+              ${getEmailFooter(logoUrl)}
             </div>
           </div>
         `
@@ -116,6 +133,7 @@ export class EmailService {
   static async sendPasswordResetEmail(email: string, token: string) {
     const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
     const transporter = createTransporter();
+    const logoUrl = await getLogoUrl();
 
     try {
       await transporter.sendMail({
@@ -171,6 +189,7 @@ export class EmailService {
     caseNumber?: string
   ) {
     const transporter = createTransporter();
+    const logoUrl = await getLogoUrl();
 
     const formattedDate = eventDate.toLocaleDateString('en-US', {
       weekday: 'long',
@@ -234,6 +253,7 @@ export class EmailService {
     daysUntil: number
   ) {
     const transporter = createTransporter();
+    const logoUrl = await getLogoUrl();
 
     const urgencyColor = daysUntil <= 1 ? '#dc2626' : daysUntil <= 3 ? '#f59e0b' : '#3b82f6';
     const urgencyText = daysUntil === 0 ? 'TODAY' : daysUntil === 1 ? 'TOMORROW' : `in ${daysUntil} days`;
@@ -287,6 +307,7 @@ export class EmailService {
     daysUntil: number
   ) {
     const transporter = createTransporter();
+    const logoUrl = await getLogoUrl();
 
     const urgencyColor = daysUntil === 1 ? '#dc2626' : daysUntil === 3 ? '#f59e0b' : BRAND_COLORS.blue;
     const urgencyEmoji = daysUntil === 1 ? '🚨' : daysUntil === 3 ? '⚠️' : '📅';
@@ -304,7 +325,7 @@ export class EmailService {
         subject: `${urgencyEmoji} Your ${plan} subscription expires in ${daysUntil} day${daysUntil > 1 ? 's' : ''}`,
         html: `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 3px solid ${urgencyColor};">
-            ${getEmailHeader(`Subscription Expiring ${urgencyEmoji}`)}
+            ${getEmailHeader(`Subscription Expiring ${urgencyEmoji}`, logoUrl)}
 
             <div style="padding: 35px 30px;">
               <h2 style="color: ${BRAND_COLORS.dark}; margin: 0 0 20px 0; font-size: 22px; font-weight: 700;">Hi ${name},</h2>
@@ -339,7 +360,7 @@ export class EmailService {
                 Questions? Contact us at <a href="mailto:support@genzura.rw" style="color: ${BRAND_COLORS.blue}; text-decoration: none; font-weight: 600;">support@genzura.rw</a>
               </p>
 
-              ${getEmailFooter()}
+              ${getEmailFooter(logoUrl)}
             </div>
           </div>
         `
@@ -361,6 +382,7 @@ export class EmailService {
     daysExpired: number
   ) {
     const transporter = createTransporter();
+    const logoUrl = await getLogoUrl();
     const daysRemaining = 3 - daysExpired;
 
     try {
@@ -402,7 +424,7 @@ export class EmailService {
                 </a>
               </div>
 
-              ${getEmailFooter()}
+              ${getEmailFooter(logoUrl)}
             </div>
           </div>
         `
@@ -427,6 +449,7 @@ export class EmailService {
     docOverage: number
   ) {
     const transporter = createTransporter();
+    const logoUrl = await getLogoUrl();
 
     try {
       await transporter.sendMail({
@@ -435,7 +458,7 @@ export class EmailService {
         subject: '📋 Your subscription has expired - Now on Free Plan',
         html: `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            ${getEmailHeader('Subscription Expired 📋')}
+            ${getEmailHeader('Subscription Expired 📋', logoUrl)}
 
             <div style="padding: 35px 30px;">
               <h2 style="color: ${BRAND_COLORS.dark}; margin: 0 0 20px 0; font-size: 22px; font-weight: 700;">Hi ${name},</h2>
@@ -498,7 +521,7 @@ export class EmailService {
                 Thank you for using Genzura. We hope you'll upgrade again soon!
               </p>
 
-              ${getEmailFooter()}
+              ${getEmailFooter(logoUrl)}
             </div>
           </div>
         `
@@ -521,6 +544,7 @@ export class EmailService {
     invitedBy: string
   ) {
     const transporter = createTransporter();
+    const logoUrl = await getLogoUrl();
     const inviteLink = `${process.env.FRONTEND_URL}/accept-invitation?token=${invitationToken}`;
 
     try {
@@ -530,7 +554,7 @@ export class EmailService {
         subject: `You're invited to join Genzura Legal Management`,
         html: `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            ${getEmailHeader('Welcome to the Team! 🎉')}
+            ${getEmailHeader('Welcome to the Team! 🎉', logoUrl)}
 
             <div style="padding: 35px 30px;">
               <h2 style="color: ${BRAND_COLORS.dark}; margin: 0 0 20px 0; font-size: 22px; font-weight: 700;">Hi ${name},</h2>
@@ -566,7 +590,7 @@ export class EmailService {
                 Need help? Contact us at <a href="mailto:support@genzura.rw" style="color: ${BRAND_COLORS.blue}; text-decoration: none; font-weight: 600;">support@genzura.rw</a>
               </p>
 
-              ${getEmailFooter()}
+              ${getEmailFooter(logoUrl)}
             </div>
           </div>
         `
@@ -584,6 +608,7 @@ export class EmailService {
    */
   static async sendOtpEmail(email: string, otp: string) {
     const transporter = createTransporter();
+    const logoUrl = await getLogoUrl();
 
     try {
       await transporter.sendMail({
@@ -592,7 +617,7 @@ export class EmailService {
         subject: 'Email Verification Code - Genzura',
         html: `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-            ${getEmailHeader('Verify Your Email')}
+            ${getEmailHeader('Verify Your Email', logoUrl)}
 
             <div style="padding: 35px 30px;">
               <h2 style="color: ${BRAND_COLORS.dark}; margin: 0 0 20px 0; font-size: 22px; font-weight: 700;">Email Verification</h2>
@@ -617,7 +642,7 @@ export class EmailService {
               </p>
             </div>
 
-            ${getEmailFooter()}
+            ${getEmailFooter(logoUrl)}
           </div>
         `
       });
@@ -634,6 +659,7 @@ export class EmailService {
    */
   static async testConnection() {
     const transporter = createTransporter();
+    const logoUrl = await getLogoUrl();
     try {
       await transporter.verify();
       console.log('✅ Email service connected successfully');
