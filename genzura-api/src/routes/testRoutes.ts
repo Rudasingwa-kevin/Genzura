@@ -14,6 +14,10 @@ router.use(authorize(['Admin']));
  */
 router.post('/email/connection', async (req: Request, res: Response) => {
   try {
+    console.log('Testing email connection...');
+    console.log('BREVO_SMTP_USER:', process.env.BREVO_SMTP_USER ? 'Set' : 'NOT SET');
+    console.log('BREVO_SMTP_KEY:', process.env.BREVO_SMTP_KEY ? 'Set' : 'NOT SET');
+
     const isConnected = await EmailService.testConnection();
 
     if (isConnected) {
@@ -28,6 +32,7 @@ router.post('/email/connection', async (req: Request, res: Response) => {
         }
       });
     } else {
+      console.error('Email connection test returned false');
       res.status(500).json({
         success: false,
         message: 'Email service connection failed! ❌',
@@ -35,10 +40,12 @@ router.post('/email/connection', async (req: Request, res: Response) => {
       });
     }
   } catch (error: any) {
+    console.error('Email connection test exception:', error);
     res.status(500).json({
       success: false,
       message: 'Email service test failed',
-      error: error.message
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });
