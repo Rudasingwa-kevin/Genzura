@@ -49,6 +49,8 @@ if (process.env.NODE_ENV === 'production' && process.env.SENTRY_DSN) {
         ],
     });
 }
+// Trust proxy (required for Render and other reverse proxies)
+app.set('trust proxy', 1);
 // Security headers
 app.use(helmet({
     contentSecurityPolicy: false, // Disable for now to allow inline scripts

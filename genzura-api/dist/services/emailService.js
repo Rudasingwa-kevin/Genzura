@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { S3Service } from './s3Service.js';
+import * as SibApiV3Sdk from '@sendinblue/client';
 // Get verified sender email from env (must be verified in Brevo)
 const SENDER_EMAIL = process.env.SENDER_EMAIL || 'kevincracker02@gmail.com';
 const SENDER_NAME = process.env.SENDER_NAME || 'Genzura Legal';
@@ -26,11 +27,21 @@ async function getLogoUrl() {
             // Fallback to local
         }
     }
-    // Fallback to local API server
-    const API_URL = process.env.API_URL || 'http://localhost:5000';
+    // Fallback to production API or local
+    const API_URL = process.env.NODE_ENV === 'production'
+        ? 'https://genzura-api.onrender.com'
+        : (process.env.API_URL || 'http://localhost:5000');
     return `${API_URL}/public/Genzura%20full%20logo.png`;
 }
-// Create reusable transporter using Brevo SMTP
+// Check if Brevo API is configured (preferred for serverless)
+const isBrevoApiConfigured = () => !!process.env.BREVO_API_KEY;
+// Create Brevo API client
+const createBrevoApiClient = () => {
+    const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+    apiInstance.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
+    return apiInstance;
+};
+// Create reusable transporter using Brevo SMTP (fallback)
 const createTransporter = () => {
     return nodemailer.createTransport({
         host: 'smtp-relay.brevo.com',
@@ -39,8 +50,40 @@ const createTransporter = () => {
         auth: {
             user: process.env.BREVO_SMTP_USER || 'your-brevo-email@example.com',
             pass: process.env.BREVO_SMTP_KEY || 'your-brevo-smtp-key'
-        }
+        },
+        connectionTimeout: 30000, // 30 seconds
+        greetingTimeout: 30000,
+        socketTimeout: 60000 // 60 seconds
     });
+};
+// Helper function to send email (tries API first, falls back to SMTP)
+const sendEmail = async (to, subject, htmlContent) => {
+    // Try Brevo API first (works on serverless)
+    if (isBrevoApiConfigured()) {
+        try {
+            const apiInstance = createBrevoApiClient();
+            const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+            sendSmtpEmail.sender = { name: SENDER_NAME, email: SENDER_EMAIL };
+            sendSmtpEmail.to = [{ email: to }];
+            sendSmtpEmail.subject = subject;
+            sendSmtpEmail.htmlContent = htmlContent;
+            await apiInstance.sendTransacEmail(sendSmtpEmail);
+            console.log(`✅ Email sent via Brevo API to ${to}`);
+            return;
+        }
+        catch (error) {
+            console.error('⚠️ Brevo API failed, trying SMTP fallback:', error);
+        }
+    }
+    // Fallback to SMTP (may timeout on serverless)
+    const transporter = createTransporter();
+    await transporter.sendMail({
+        from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
+        to,
+        subject,
+        html: htmlContent
+    });
+    console.log(`✅ Email sent via SMTP to ${to}`);
 };
 // Email header with Genzura branding and actual logo
 const getEmailHeader = (title, logoUrl) => `
@@ -67,14 +110,9 @@ export class EmailService {
      * Send welcome email to new users
      */
     static async sendWelcomeEmail(email, name) {
-        const transporter = createTransporter();
         const logoUrl = await getLogoUrl(); // Get logo URL from S3 or fallback
         try {
-            await transporter.sendMail({
-                from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
-                to: email,
-                subject: 'Welcome to Genzura - Your Legal Management System',
-                html: `
+            await sendEmail(email, 'Welcome to Genzura - Your Legal Management System', `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             ${getEmailHeader('Welcome to Genzura! 🎉', logoUrl)}
 
@@ -108,9 +146,7 @@ export class EmailService {
               ${getEmailFooter(logoUrl)}
             </div>
           </div>
-        `
-            });
-            console.log(`✅ Welcome email sent to ${email}`);
+        `);
         }
         catch (error) {
             console.error('❌ Failed to send welcome email:', error);
@@ -122,14 +158,9 @@ export class EmailService {
      */
     static async sendPasswordResetEmail(email, token) {
         const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
-        const transporter = createTransporter();
         const logoUrl = await getLogoUrl();
         try {
-            await transporter.sendMail({
-                from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
-                to: email,
-                subject: 'Reset Your Genzura Password',
-                html: `
+            await sendEmail(email, 'Reset Your Genzura Password', `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded-lg: 12px;">
             <div style="text-align: center; margin-bottom: 30px;">
               <h1 style="color: #1e3a8a; margin: 0;">Genzura</h1>
@@ -157,9 +188,7 @@ export class EmailService {
               <p>This is an automated message, please do not reply.</p>
             </div>
           </div>
-        `,
-            });
-            console.log(`✅ Password reset email sent to ${email}`);
+        `);
         }
         catch (error) {
             console.error('❌ Failed to send password reset email:', error);
@@ -170,7 +199,6 @@ export class EmailService {
      * Send event reminder notification
      */
     static async sendEventReminder(email, eventTitle, eventDate, eventType, caseNumber) {
-        const transporter = createTransporter();
         const logoUrl = await getLogoUrl();
         const formattedDate = eventDate.toLocaleDateString('en-US', {
             weekday: 'long',
@@ -181,11 +209,7 @@ export class EmailService {
             minute: '2-digit'
         });
         try {
-            await transporter.sendMail({
-                from: '"Genzura Reminders" <reminders@genzura.rw>',
-                to: email,
-                subject: `⏰ Reminder: ${eventTitle}`,
-                html: `
+            await sendEmail(email, `⏰ Reminder: ${eventTitle}`, `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
             <div style="text-align: center; margin-bottom: 30px; background-color: #fef3c7; padding: 15px; border-radius: 8px;">
               <h1 style="color: #92400e; margin: 0;">⏰ Event Reminder</h1>
@@ -212,9 +236,7 @@ export class EmailService {
               <p>&copy; 2026 Genzura Legal Management</p>
             </div>
           </div>
-        `
-            });
-            console.log(`✅ Reminder email sent to ${email} for event: ${eventTitle}`);
+        `);
         }
         catch (error) {
             console.error('❌ Failed to send reminder email:', error);
@@ -225,16 +247,11 @@ export class EmailService {
      * Send deadline alert
      */
     static async sendDeadlineAlert(email, caseNumber, caseTitle, deadline, daysUntil) {
-        const transporter = createTransporter();
         const logoUrl = await getLogoUrl();
         const urgencyColor = daysUntil <= 1 ? '#dc2626' : daysUntil <= 3 ? '#f59e0b' : '#3b82f6';
         const urgencyText = daysUntil === 0 ? 'TODAY' : daysUntil === 1 ? 'TOMORROW' : `in ${daysUntil} days`;
         try {
-            await transporter.sendMail({
-                from: '"Genzura Alerts" <alerts@genzura.rw>',
-                to: email,
-                subject: `🚨 Deadline Alert: ${caseNumber} - ${urgencyText.toUpperCase()}`,
-                html: `
+            await sendEmail(email, `🚨 Deadline Alert: ${caseNumber} - ${urgencyText.toUpperCase()}`, `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid ${urgencyColor}; border-radius: 12px;">
             <div style="text-align: center; margin-bottom: 30px; background-color: ${urgencyColor}; padding: 15px; border-radius: 8px;">
               <h1 style="color: white; margin: 0;">🚨 DEADLINE ALERT</h1>
@@ -258,9 +275,7 @@ export class EmailService {
               <p>&copy; 2026 Genzura Legal Management</p>
             </div>
           </div>
-        `
-            });
-            console.log(`✅ Deadline alert sent to ${email} for ${caseNumber}`);
+        `);
         }
         catch (error) {
             console.error('❌ Failed to send deadline alert:', error);
@@ -270,7 +285,6 @@ export class EmailService {
      * Send subscription expiry warning
      */
     static async sendSubscriptionExpiryWarning(email, name, plan, expiryDate, daysUntil) {
-        const transporter = createTransporter();
         const logoUrl = await getLogoUrl();
         const urgencyColor = daysUntil === 1 ? '#dc2626' : daysUntil === 3 ? '#f59e0b' : BRAND_COLORS.blue;
         const urgencyEmoji = daysUntil === 1 ? '🚨' : daysUntil === 3 ? '⚠️' : '📅';
@@ -281,11 +295,7 @@ export class EmailService {
             day: 'numeric'
         });
         try {
-            await transporter.sendMail({
-                from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
-                to: email,
-                subject: `${urgencyEmoji} Your ${plan} subscription expires in ${daysUntil} day${daysUntil > 1 ? 's' : ''}`,
-                html: `
+            await sendEmail(email, `${urgencyEmoji} Your ${plan} subscription expires in ${daysUntil} day${daysUntil > 1 ? 's' : ''}`, `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 3px solid ${urgencyColor};">
             ${getEmailHeader(`Subscription Expiring ${urgencyEmoji}`, logoUrl)}
 
@@ -325,9 +335,7 @@ export class EmailService {
               ${getEmailFooter(logoUrl)}
             </div>
           </div>
-        `
-            });
-            console.log(`✅ Expiry warning sent to ${email} (${daysUntil} days)`);
+        `);
         }
         catch (error) {
             console.error('❌ Failed to send expiry warning:', error);
@@ -337,15 +345,10 @@ export class EmailService {
      * Send grace period warning
      */
     static async sendGracePeriodWarning(email, name, plan, daysExpired) {
-        const transporter = createTransporter();
         const logoUrl = await getLogoUrl();
         const daysRemaining = 3 - daysExpired;
         try {
-            await transporter.sendMail({
-                from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
-                to: email,
-                subject: `⚠️ Grace Period: ${daysRemaining} day${daysRemaining > 1 ? 's' : ''} until downgrade`,
-                html: `
+            await sendEmail(email, `⚠️ Grace Period: ${daysRemaining} day${daysRemaining > 1 ? 's' : ''} until downgrade`, `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 3px solid #dc2626;">
             <div style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); padding: 30px 20px; text-align: center;">
               <div style="background: white; width: 160px; height: 50px; margin: 0 auto 15px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
@@ -382,9 +385,7 @@ export class EmailService {
               ${getEmailFooter(logoUrl)}
             </div>
           </div>
-        `
-            });
-            console.log(`✅ Grace period warning sent to ${email} (${daysRemaining} days left)`);
+        `);
         }
         catch (error) {
             console.error('❌ Failed to send grace period warning:', error);
@@ -394,14 +395,9 @@ export class EmailService {
      * Send subscription expired notification
      */
     static async sendSubscriptionExpiredEmail(email, name, previousPlan, casesCount, docsCount, caseOverage, docOverage) {
-        const transporter = createTransporter();
         const logoUrl = await getLogoUrl();
         try {
-            await transporter.sendMail({
-                from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
-                to: email,
-                subject: '📋 Your subscription has expired - Now on Free Plan',
-                html: `
+            await sendEmail(email, '📋 Your subscription has expired - Now on Free Plan', `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             ${getEmailHeader('Subscription Expired 📋', logoUrl)}
 
@@ -469,9 +465,7 @@ export class EmailService {
               ${getEmailFooter(logoUrl)}
             </div>
           </div>
-        `
-            });
-            console.log(`✅ Subscription expired email sent to ${email}`);
+        `);
         }
         catch (error) {
             console.error('❌ Failed to send subscription expired email:', error);
@@ -481,15 +475,10 @@ export class EmailService {
      * Send invitation email to new team member
      */
     static async sendInvitationEmail(email, name, role, invitationToken, invitedBy) {
-        const transporter = createTransporter();
         const logoUrl = await getLogoUrl();
         const inviteLink = `${process.env.FRONTEND_URL}/accept-invitation?token=${invitationToken}`;
         try {
-            await transporter.sendMail({
-                from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
-                to: email,
-                subject: `You're invited to join Genzura Legal Management`,
-                html: `
+            await sendEmail(email, `You're invited to join Genzura Legal Management`, `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             ${getEmailHeader('Welcome to the Team! 🎉', logoUrl)}
 
@@ -530,9 +519,7 @@ export class EmailService {
               ${getEmailFooter(logoUrl)}
             </div>
           </div>
-        `
-            });
-            console.log(`✅ Invitation email sent to ${email}`);
+        `);
         }
         catch (error) {
             console.error('❌ Failed to send invitation email:', error);
@@ -543,14 +530,9 @@ export class EmailService {
      * Send OTP verification email
      */
     static async sendOtpEmail(email, otp) {
-        const transporter = createTransporter();
         const logoUrl = await getLogoUrl();
         try {
-            await transporter.sendMail({
-                from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
-                to: email,
-                subject: 'Email Verification Code - Genzura',
-                html: `
+            await sendEmail(email, 'Email Verification Code - Genzura', `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             ${getEmailHeader('Verify Your Email', logoUrl)}
 
@@ -579,9 +561,7 @@ export class EmailService {
 
             ${getEmailFooter(logoUrl)}
           </div>
-        `
-            });
-            console.log(`✅ OTP email sent to ${email}`);
+        `);
         }
         catch (error) {
             console.error('❌ Failed to send OTP email:', error);
@@ -592,7 +572,6 @@ export class EmailService {
      * Send subscription activated email
      */
     static async sendSubscriptionActivatedEmail(email, name, plan, endDate) {
-        const transporter = createTransporter();
         const logoUrl = await getLogoUrl();
         const planDetails = {
             Genzura: {
@@ -610,11 +589,7 @@ export class EmailService {
         };
         const details = planDetails[plan] || planDetails.Genzura;
         try {
-            await transporter.sendMail({
-                from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
-                to: email,
-                subject: `🎉 Your ${details.name} Plan is Now Active!`,
-                html: `
+            await sendEmail(email, `🎉 Your ${details.name} Plan is Now Active!`, `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             ${getEmailHeader('Subscription Activated! 🎉', logoUrl)}
 
@@ -651,9 +626,7 @@ export class EmailService {
 
             ${getEmailFooter(logoUrl)}
           </div>
-        `
-            });
-            console.log(`✅ Subscription activated email sent to ${email}`);
+        `);
         }
         catch (error) {
             console.error('❌ Failed to send subscription activated email:', error);
@@ -664,14 +637,9 @@ export class EmailService {
      * Send subscription extended email
      */
     static async sendSubscriptionExtendedEmail(email, name, plan, extensionDays, newEndDate) {
-        const transporter = createTransporter();
         const logoUrl = await getLogoUrl();
         try {
-            await transporter.sendMail({
-                from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
-                to: email,
-                subject: `⏰ Your Subscription Has Been Extended`,
-                html: `
+            await sendEmail(email, `⏰ Your Subscription Has Been Extended`, `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             ${getEmailHeader('Subscription Extended ⏰', logoUrl)}
 
@@ -701,9 +669,7 @@ export class EmailService {
 
             ${getEmailFooter(logoUrl)}
           </div>
-        `
-            });
-            console.log(`✅ Subscription extended email sent to ${email}`);
+        `);
         }
         catch (error) {
             console.error('❌ Failed to send subscription extended email:', error);
@@ -713,14 +679,9 @@ export class EmailService {
      * Send subscription cancelled email
      */
     static async sendSubscriptionCancelledEmail(email, name, previousPlan) {
-        const transporter = createTransporter();
         const logoUrl = await getLogoUrl();
         try {
-            await transporter.sendMail({
-                from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
-                to: email,
-                subject: `Subscription Update - Genzura`,
-                html: `
+            await sendEmail(email, `Subscription Update - Genzura`, `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             ${getEmailHeader('Subscription Update', logoUrl)}
 
@@ -758,9 +719,7 @@ export class EmailService {
 
             ${getEmailFooter(logoUrl)}
           </div>
-        `
-            });
-            console.log(`✅ Subscription cancelled email sent to ${email}`);
+        `);
         }
         catch (error) {
             console.error('❌ Failed to send subscription cancelled email:', error);
@@ -770,10 +729,27 @@ export class EmailService {
      * Test email configuration
      */
     static async testConnection() {
+        // Try Brevo API first (works on serverless)
+        if (isBrevoApiConfigured()) {
+            try {
+                const apiInstance = createBrevoApiClient();
+                // Test by getting account info
+                const accountApi = new SibApiV3Sdk.AccountApi();
+                accountApi.setApiKey(SibApiV3Sdk.AccountApiApiKeys.apiKey, process.env.BREVO_API_KEY);
+                await accountApi.getAccount();
+                console.log('✅ Email service connected successfully (Brevo API)');
+                return true;
+            }
+            catch (error) {
+                console.error('❌ Brevo API connection failed:', error);
+                return false;
+            }
+        }
+        // Fallback to SMTP (may not work on serverless free tiers)
         const transporter = createTransporter();
         try {
             await transporter.verify();
-            console.log('✅ Email service connected successfully');
+            console.log('✅ Email service connected successfully (SMTP)');
             return true;
         }
         catch (error) {

@@ -86,7 +86,7 @@ const sendEmail = async (to: string, subject: string, htmlContent: string) => {
   }
 
   // Fallback to SMTP (may timeout on serverless)
-
+  const transporter = createTransporter();
   await transporter.sendMail({
     from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
     to,
@@ -306,10 +306,7 @@ export class EmailService {
               <p>&copy; 2026 Genzura Legal Management</p>
             </div>
           </div>
-        `
-      });
-
-      console.log(`✅ Deadline alert sent to ${email} for ${caseNumber}`);
+        `);
     } catch (error) {
       console.error('❌ Failed to send deadline alert:', error);
     }
@@ -378,10 +375,7 @@ export class EmailService {
               ${getEmailFooter(logoUrl)}
             </div>
           </div>
-        `
-      });
-
-      console.log(`✅ Expiry warning sent to ${email} (${daysUntil} days)`);
+        `);
     } catch (error) {
       console.error('❌ Failed to send expiry warning:', error);
     }
@@ -438,10 +432,7 @@ export class EmailService {
               ${getEmailFooter(logoUrl)}
             </div>
           </div>
-        `
-      });
-
-      console.log(`✅ Grace period warning sent to ${email} (${daysRemaining} days left)`);
+        `);
     } catch (error) {
       console.error('❌ Failed to send grace period warning:', error);
     }
@@ -531,10 +522,7 @@ export class EmailService {
               ${getEmailFooter(logoUrl)}
             </div>
           </div>
-        `
-      });
-
-      console.log(`✅ Subscription expired email sent to ${email}`);
+        `);
     } catch (error) {
       console.error('❌ Failed to send subscription expired email:', error);
     }
@@ -762,10 +750,7 @@ export class EmailService {
 
             ${getEmailFooter(logoUrl)}
           </div>
-        `
-      });
-
-      console.log(`✅ Subscription extended email sent to ${email}`);
+        `);
     } catch (error) {
       console.error('❌ Failed to send subscription extended email:', error);
     }
@@ -821,10 +806,7 @@ export class EmailService {
 
             ${getEmailFooter(logoUrl)}
           </div>
-        `
-      });
-
-      console.log(`✅ Subscription cancelled email sent to ${email}`);
+        `);
     } catch (error) {
       console.error('❌ Failed to send subscription cancelled email:', error);
     }
@@ -851,7 +833,7 @@ export class EmailService {
     }
 
     // Fallback to SMTP (may not work on serverless free tiers)
-
+    const transporter = createTransporter();
     try {
       await transporter.verify();
       console.log('✅ Email service connected successfully (SMTP)');
