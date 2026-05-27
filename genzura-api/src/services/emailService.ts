@@ -62,17 +62,36 @@ const createTransporter = () => {
   });
 };
 
-// Helper function to send email via Brevo API (preferred for serverless)
-const sendViaBrevoApi = async (to: string, subject: string, htmlContent: string) => {
-  const apiInstance = createBrevoApiClient();
-  const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+// Helper function to send email (tries API first, falls back to SMTP)
+const sendEmail = async (to: string, subject: string, htmlContent: string) => {
+  // Try Brevo API first (works on serverless)
+  if (isBrevoApiConfigured()) {
+    try {
+      const apiInstance = createBrevoApiClient();
+      const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
 
-  sendSmtpEmail.sender = { name: SENDER_NAME, email: SENDER_EMAIL };
-  sendSmtpEmail.to = [{ email: to }];
-  sendSmtpEmail.subject = subject;
-  sendSmtpEmail.htmlContent = htmlContent;
+      sendSmtpEmail.sender = { name: SENDER_NAME, email: SENDER_EMAIL };
+      sendSmtpEmail.to = [{ email: to }];
+      sendSmtpEmail.subject = subject;
+      sendSmtpEmail.htmlContent = htmlContent;
 
-  await apiInstance.sendTransacEmail(sendSmtpEmail);
+      await apiInstance.sendTransacEmail(sendSmtpEmail);
+      console.log(`✅ Email sent via Brevo API to ${to}`);
+      return;
+    } catch (error) {
+      console.error('⚠️ Brevo API failed, trying SMTP fallback:', error);
+    }
+  }
+
+  // Fallback to SMTP (may timeout on serverless)
+  const transporter = createTransporter();
+  await transporter.sendMail({
+    from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
+    to,
+    subject,
+    html: htmlContent
+  });
+  console.log(`✅ Email sent via SMTP to ${to}`);
 };
 
 // Email header with Genzura branding and actual logo
@@ -690,7 +709,6 @@ export class EmailService {
     plan: string,
     endDate: Date
   ) {
-    const transporter = createTransporter();
     const logoUrl = await getLogoUrl();
 
     const planDetails: Record<string, any> = {
@@ -711,11 +729,7 @@ export class EmailService {
     const details = planDetails[plan] || planDetails.Genzura;
 
     try {
-      await transporter.sendMail({
-        from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
-        to: email,
-        subject: `🎉 Your ${details.name} Plan is Now Active!`,
-        html: `
+      await sendEmail(email, `🎉 Your ${details.name} Plan is Now Active!`, `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             ${getEmailHeader('Subscription Activated! 🎉', logoUrl)}
 
@@ -752,10 +766,7 @@ export class EmailService {
 
             ${getEmailFooter(logoUrl)}
           </div>
-        `
-      });
-
-      console.log(`✅ Subscription activated email sent to ${email}`);
+        `);
     } catch (error) {
       console.error('❌ Failed to send subscription activated email:', error);
       // Don't throw - subscription should still work even if email fails
