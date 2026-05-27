@@ -44,7 +44,10 @@ const createTransporter = () => {
     auth: {
       user: process.env.BREVO_SMTP_USER || 'your-brevo-email@example.com',
       pass: process.env.BREVO_SMTP_KEY || 'your-brevo-smtp-key'
-    }
+    },
+    connectionTimeout: 30000, // 30 seconds
+    greetingTimeout: 30000,
+    socketTimeout: 60000 // 60 seconds
   });
 };
 
