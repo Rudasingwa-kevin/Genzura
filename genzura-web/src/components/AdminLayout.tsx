@@ -11,7 +11,8 @@ import {
   BarChart3,
   CreditCard,
   DollarSign,
-  MessageSquare
+  MessageSquare,
+  Mail
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -24,6 +25,7 @@ const adminNavItems = [
   { icon: MessageSquare,   label: 'User Feedback',   to: '/admin/feedback' },
   { icon: Settings,        label: 'System Config',   to: '/admin/settings' },
   { icon: Activity,        label: 'Audit Trail',     to: '/admin/audit' },
+  { icon: Mail,            label: 'Email Testing',   to: '/admin/email-test' },
 ];
 
 const SidebarItem = ({ icon: Icon, label, to }: { icon: React.ElementType; label: string; to: string }) => {

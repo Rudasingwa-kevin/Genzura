@@ -28,6 +28,7 @@ import { DateService } from './utils/dateUtils.js';
 import { CronScheduler } from './utils/cronScheduler.js';
 import adminJobsRoutes from './routes/adminJobsRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import testRoutes from './routes/testRoutes.js';
 import { S3Service } from './services/s3Service.js';
 
 dotenv.config();
@@ -111,6 +112,9 @@ app.use('/api/admin/jobs', adminJobsRoutes);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/notification-preferences', notificationPreferenceRoutes);
 app.use('/api/tracking', trackingRoutes);
+
+// Test routes (admin only - for testing email, etc.)
+app.use('/api/test', testRoutes);
 
 // Error Handling
 app.use(errorHandler);
