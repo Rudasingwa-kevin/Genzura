@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Mail, Send, CheckCircle2, XCircle, Loader2, Settings } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
 import { toast } from 'react-hot-toast';
+import apiClient from '../../api/client';
 
 export default function EmailTestPanel() {
   const [isTestingConnection, setIsTestingConnection] = useState(false);
@@ -15,14 +16,8 @@ export default function EmailTestPanel() {
   const testConnection = async () => {
     setIsTestingConnection(true);
     try {
-      const response = await fetch('/api/test/email/connection', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('genzura_token')}`
-        }
-      });
-
-      const data = await response.json();
+      const response = await apiClient.post('/test/email/connection');
+      const data = response.data;
       setConnectionStatus(data);
 
       if (data.success) {
@@ -51,14 +46,8 @@ export default function EmailTestPanel() {
 
   const getConfig = async () => {
     try {
-      const response = await fetch('/api/test/email/config', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('genzura_token')}`
-        }
-      });
-
-      const data = await response.json();
-      setConfig(data);
+      const response = await apiClient.get('/test/email/config');
+      setConfig(response.data);
     } catch (error) {
       console.error('Failed to get config:', error);
     }
@@ -72,19 +61,12 @@ export default function EmailTestPanel() {
 
     setIsSendingEmail(true);
     try {
-      const response = await fetch('/api/test/email/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('genzura_token')}`
-        },
-        body: JSON.stringify({
-          to: testEmail,
-          type: selectedTemplate
-        })
+      const response = await apiClient.post('/test/email/send', {
+        to: testEmail,
+        type: selectedTemplate
       });
 
-      const data = await response.json();
+      const data = response.data;
 
       if (data.success) {
         toast.success(data.message, {
@@ -113,18 +95,11 @@ export default function EmailTestPanel() {
 
     setIsSendingAll(true);
     try {
-      const response = await fetch('/api/test/email/all-templates', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('genzura_token')}`
-        },
-        body: JSON.stringify({
-          to: testEmail
-        })
+      const response = await apiClient.post('/test/email/all-templates', {
+        to: testEmail
       });
 
-      const data = await response.json();
+      const data = response.data;
 
       if (data.success) {
         toast.success(`Sent ${data.summary.success}/${data.summary.total} templates successfully!`, {
