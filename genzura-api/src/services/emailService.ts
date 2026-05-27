@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { S3Service } from './s3Service.js';
+import * as SibApiV3Sdk from '@sendinblue/client';
 
 // Get verified sender email from env (must be verified in Brevo)
 const SENDER_EMAIL = process.env.SENDER_EMAIL || 'kevincracker02@gmail.com';
@@ -35,7 +36,17 @@ async function getLogoUrl(): Promise<string> {
   return `${API_URL}/public/Genzura%20full%20logo.png`;
 }
 
-// Create reusable transporter using Brevo SMTP
+// Check if Brevo API is configured (preferred for serverless)
+const isBrevoApiConfigured = () => !!process.env.BREVO_API_KEY;
+
+// Create Brevo API client
+const createBrevoApiClient = () => {
+  const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+  apiInstance.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY!);
+  return apiInstance;
+};
+
+// Create reusable transporter using Brevo SMTP (fallback)
 const createTransporter = () => {
   return nodemailer.createTransport({
     host: 'smtp-relay.brevo.com',
@@ -49,6 +60,19 @@ const createTransporter = () => {
     greetingTimeout: 30000,
     socketTimeout: 60000 // 60 seconds
   });
+};
+
+// Helper function to send email via Brevo API (preferred for serverless)
+const sendViaBrevoApi = async (to: string, subject: string, htmlContent: string) => {
+  const apiInstance = createBrevoApiClient();
+  const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+
+  sendSmtpEmail.sender = { name: SENDER_NAME, email: SENDER_EMAIL };
+  sendSmtpEmail.to = [{ email: to }];
+  sendSmtpEmail.subject = subject;
+  sendSmtpEmail.htmlContent = htmlContent;
+
+  await apiInstance.sendTransacEmail(sendSmtpEmail);
 };
 
 // Email header with Genzura branding and actual logo
@@ -862,10 +886,27 @@ export class EmailService {
    * Test email configuration
    */
   static async testConnection() {
+    // Try Brevo API first (works on serverless)
+    if (isBrevoApiConfigured()) {
+      try {
+        const apiInstance = createBrevoApiClient();
+        // Test by getting account info
+        const accountApi = new SibApiV3Sdk.AccountApi();
+        accountApi.setApiKey(SibApiV3Sdk.AccountApiApiKeys.apiKey, process.env.BREVO_API_KEY!);
+        await accountApi.getAccount();
+        console.log('✅ Email service connected successfully (Brevo API)');
+        return true;
+      } catch (error) {
+        console.error('❌ Brevo API connection failed:', error);
+        return false;
+      }
+    }
+
+    // Fallback to SMTP (may not work on serverless free tiers)
     const transporter = createTransporter();
     try {
       await transporter.verify();
-      console.log('✅ Email service connected successfully');
+      console.log('✅ Email service connected successfully (SMTP)');
       return true;
     } catch (error) {
       console.error('❌ Email service connection failed:', error);
