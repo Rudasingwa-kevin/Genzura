@@ -5,14 +5,11 @@ import {
   Search,
   Clock,
   User,
-  Mail,
-  CheckCircle2,
-  AlertCircle,
   Loader2,
   Eye
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import AppLayout from '../../components/AppLayout';
+import AdminLayout from '../../components/AdminLayout';
 import { STATUS_COLORS, type FeedbackStatus } from '../../data/feedback';
 import { feedbackService } from '../../api/services/feedback.service';
 
@@ -71,7 +68,7 @@ export default function FeedbackManagement() {
   ];
 
   return (
-    <AppLayout>
+    <AdminLayout>
       <div className="space-y-8 pb-12">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -269,6 +266,6 @@ export default function FeedbackManagement() {
           </div>
         </div>
       )}
-    </AppLayout>
+    </AdminLayout>
   );
 }
