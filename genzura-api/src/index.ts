@@ -46,19 +46,11 @@ if (process.env.NODE_ENV === 'production' && process.env.SENTRY_DSN) {
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV,
     tracesSampleRate: 0.1, // 10% of transactions for performance monitoring
-    // Performance Monitoring
     integrations: [
-      // HTTP requests
-      new Sentry.Integrations.Http({ tracing: true }),
-      // Express.js
-      new Sentry.Integrations.Express({ app }),
+      Sentry.httpIntegration(),
+      Sentry.expressIntegration(),
     ],
   });
-
-  // RequestHandler creates a separate execution context using domains
-  app.use(Sentry.Handlers.requestHandler());
-  // TracingHandler creates a trace for every incoming request
-  app.use(Sentry.Handlers.tracingHandler());
 }
 
 // Security headers
@@ -151,7 +143,7 @@ app.use('/api/test', testRoutes);
 
 // Sentry error handler must be before other error handlers
 if (process.env.NODE_ENV === 'production' && process.env.SENTRY_DSN) {
-  app.use(Sentry.Handlers.errorHandler());
+  Sentry.setupExpressErrorHandler(app);
 }
 
 // Error Handling
