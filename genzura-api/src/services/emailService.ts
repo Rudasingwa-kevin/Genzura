@@ -639,15 +639,10 @@ export class EmailService {
    * Send OTP verification email
    */
   static async sendOtpEmail(email: string, otp: string) {
-    const transporter = createTransporter();
     const logoUrl = await getLogoUrl();
 
     try {
-      await transporter.sendMail({
-        from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
-        to: email,
-        subject: 'Email Verification Code - Genzura',
-        html: `
+      await sendEmail(email, 'Email Verification Code - Genzura', `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             ${getEmailHeader('Verify Your Email', logoUrl)}
 
@@ -676,10 +671,7 @@ export class EmailService {
 
             ${getEmailFooter(logoUrl)}
           </div>
-        `
-      });
-
-      console.log(`✅ OTP email sent to ${email}`);
+        `);
     } catch (error) {
       console.error('❌ Failed to send OTP email:', error);
       throw new Error('Failed to send OTP email');
