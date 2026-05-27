@@ -1,4 +1,5 @@
-import { PrismaClient, SubscriptionPlan } from '@prisma/client';
+import { PrismaClient, SubscriptionPlan, AuditAction } from '@prisma/client';
+import { AuditService } from '../services/auditService.js';
 const prisma = new PrismaClient();
 export class AdminSubscriptionController {
     /**
@@ -37,10 +38,10 @@ export class AdminSubscriptionController {
                     subscriptionEndDate: endDate
                 }
             });
-            // Log admin action (you can create a separate AdminAction log table)
+            // Log admin action
             console.log(`[ADMIN ACTION] ${adminUser.email} granted ${plan} access to ${user.email} for ${durationDays} days. Reason: ${reason || 'N/A'}`);
-            // TODO: Create audit log entry
-            // await prisma.adminAuditLog.create({...})
+            // Create audit log entry
+            await AuditService.logUserAction(AuditAction.SUBSCRIPTION_ACTIVATED, `Granted ${plan} subscription to ${user.name} for ${durationDays} days. Reason: ${reason || 'Admin action'}`, adminUser.id, adminUser.name, adminUser.role, req);
             res.json({
                 success: true,
                 message: `Successfully granted ${plan} access for ${durationDays} days`,
@@ -102,8 +103,8 @@ export class AdminSubscriptionController {
             });
             // Log admin action
             console.log(`[ADMIN ACTION] ${adminUser.email} extended subscription for ${user.email} by ${extensionDays} days. Reason: ${reason || 'N/A'}`);
-            // TODO: Create audit log entry
-            // await prisma.adminAuditLog.create({...})
+            // Create audit log entry
+            await AuditService.logUserAction(AuditAction.SUBSCRIPTION_CHANGED, `Extended subscription for ${user.name} by ${extensionDays} days. New end date: ${newEndDate.toLocaleDateString()}. Reason: ${reason || 'Admin action'}`, adminUser.id, adminUser.name, adminUser.role, req);
             res.json({
                 success: true,
                 message: `Successfully extended subscription by ${extensionDays} days`,
@@ -151,6 +152,8 @@ export class AdminSubscriptionController {
             });
             // Log admin action
             console.log(`[ADMIN ACTION] ${adminUser.email} revoked subscription for ${user.email}. Reason: ${reason || 'N/A'}`);
+            // Create audit log entry
+            await AuditService.logUserAction(AuditAction.SUBSCRIPTION_PAUSED, `Cancelled subscription for ${user.name} (was: ${user.subscriptionPlan}). Downgraded to free plan. Reason: ${reason || 'Admin action'}`, adminUser.id, adminUser.name, adminUser.role, req);
             res.json({
                 success: true,
                 message: 'Successfully revoked subscription',

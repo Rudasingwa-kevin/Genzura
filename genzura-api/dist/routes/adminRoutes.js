@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/authMiddleware.js';
+import { auditAdminAction } from '../middleware/auditMiddleware.js';
 import { AdminController } from '../controllers/adminController.js';
 const router = Router();
-// All admin routes require authentication
+// All admin routes require authentication and audit logging
 router.use(authenticate);
+router.use(auditAdminAction());
 // Audit logs
 router.get('/audit', AdminController.getAuditLogs);
 router.get('/audit/stats', AdminController.getAuditStats);

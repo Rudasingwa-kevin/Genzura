@@ -1,10 +1,12 @@
 import express from 'express';
 import { authenticate, authorize } from '../middleware/authMiddleware.js';
+import { auditAdminAction } from '../middleware/auditMiddleware.js';
 import { AdminJobsController } from '../controllers/adminJobsController.js';
 const router = express.Router();
-// All routes require authentication and admin role
+// All routes require authentication, admin role, and audit logging
 router.use(authenticate);
 router.use(authorize(['Admin']));
+router.use(auditAdminAction());
 // POST /api/admin/jobs/run-expiry-check - Manually trigger subscription expiry check
 router.post('/run-expiry-check', AdminJobsController.runExpiryCheck);
 // GET /api/admin/jobs/status - Get status of scheduled jobs

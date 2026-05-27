@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import { AdminSubscriptionController } from '../controllers/adminSubscriptionController.js';
 import { authenticate, authorize } from '../middleware/authMiddleware.js';
+import { auditAdminAction } from '../middleware/auditMiddleware.js';
 
 const router = Router();
 
-// All routes require authentication and admin role
+// All routes require authentication, admin role, and audit logging
 router.use(authenticate);
 router.use(authorize(['Admin']));
+router.use(auditAdminAction());
 
 // Grant free access/trial to user
 router.post('/grant', AdminSubscriptionController.grantAccess);
