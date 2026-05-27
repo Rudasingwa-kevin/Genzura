@@ -86,7 +86,7 @@ const sendEmail = async (to: string, subject: string, htmlContent: string) => {
   }
 
   // Fallback to SMTP (may timeout on serverless)
-  const transporter = createTransporter();
+
   await transporter.sendMail({
     from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
     to,
@@ -172,15 +172,10 @@ export class EmailService {
    */
   static async sendPasswordResetEmail(email: string, token: string) {
     const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
-    const transporter = createTransporter();
     const logoUrl = await getLogoUrl();
 
     try {
-      await transporter.sendMail({
-        from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
-        to: email,
-        subject: 'Reset Your Genzura Password',
-        html: `
+      await sendEmail(email, 'Reset Your Genzura Password', `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded-lg: 12px;">
             <div style="text-align: center; margin-bottom: 30px;">
               <h1 style="color: #1e3a8a; margin: 0;">Genzura</h1>
@@ -208,10 +203,7 @@ export class EmailService {
               <p>This is an automated message, please do not reply.</p>
             </div>
           </div>
-        `,
-      });
-
-      console.log(`✅ Password reset email sent to ${email}`);
+        `);
     } catch (error) {
       console.error('❌ Failed to send password reset email:', error);
       throw new Error('Failed to send password reset email');
@@ -228,7 +220,6 @@ export class EmailService {
     eventType: string,
     caseNumber?: string
   ) {
-    const transporter = createTransporter();
     const logoUrl = await getLogoUrl();
 
     const formattedDate = eventDate.toLocaleDateString('en-US', {
@@ -241,11 +232,7 @@ export class EmailService {
     });
 
     try {
-      await transporter.sendMail({
-        from: '"Genzura Reminders" <reminders@genzura.rw>',
-        to: email,
-        subject: `⏰ Reminder: ${eventTitle}`,
-        html: `
+      await sendEmail(email, `⏰ Reminder: ${eventTitle}`, `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
             <div style="text-align: center; margin-bottom: 30px; background-color: #fef3c7; padding: 15px; border-radius: 8px;">
               <h1 style="color: #92400e; margin: 0;">⏰ Event Reminder</h1>
@@ -272,10 +259,7 @@ export class EmailService {
               <p>&copy; 2026 Genzura Legal Management</p>
             </div>
           </div>
-        `
-      });
-
-      console.log(`✅ Reminder email sent to ${email} for event: ${eventTitle}`);
+        `);
     } catch (error) {
       console.error('❌ Failed to send reminder email:', error);
       // Don't throw - notification should still work even if email fails
@@ -292,18 +276,13 @@ export class EmailService {
     deadline: Date,
     daysUntil: number
   ) {
-    const transporter = createTransporter();
     const logoUrl = await getLogoUrl();
 
     const urgencyColor = daysUntil <= 1 ? '#dc2626' : daysUntil <= 3 ? '#f59e0b' : '#3b82f6';
     const urgencyText = daysUntil === 0 ? 'TODAY' : daysUntil === 1 ? 'TOMORROW' : `in ${daysUntil} days`;
 
     try {
-      await transporter.sendMail({
-        from: '"Genzura Alerts" <alerts@genzura.rw>',
-        to: email,
-        subject: `🚨 Deadline Alert: ${caseNumber} - ${urgencyText.toUpperCase()}`,
-        html: `
+      await sendEmail(email, `🚨 Deadline Alert: ${caseNumber} - ${urgencyText.toUpperCase()}`, `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid ${urgencyColor}; border-radius: 12px;">
             <div style="text-align: center; margin-bottom: 30px; background-color: ${urgencyColor}; padding: 15px; border-radius: 8px;">
               <h1 style="color: white; margin: 0;">🚨 DEADLINE ALERT</h1>
@@ -346,7 +325,7 @@ export class EmailService {
     expiryDate: Date,
     daysUntil: number
   ) {
-    const transporter = createTransporter();
+
     const logoUrl = await getLogoUrl();
 
     const urgencyColor = daysUntil === 1 ? '#dc2626' : daysUntil === 3 ? '#f59e0b' : BRAND_COLORS.blue;
@@ -359,11 +338,7 @@ export class EmailService {
     });
 
     try {
-      await transporter.sendMail({
-        from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
-        to: email,
-        subject: `${urgencyEmoji} Your ${plan} subscription expires in ${daysUntil} day${daysUntil > 1 ? 's' : ''}`,
-        html: `
+      await sendEmail(email, `${urgencyEmoji} Your ${plan} subscription expires in ${daysUntil} day${daysUntil > 1 ? 's' : ''}`, `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 3px solid ${urgencyColor};">
             ${getEmailHeader(`Subscription Expiring ${urgencyEmoji}`, logoUrl)}
 
@@ -421,7 +396,7 @@ export class EmailService {
     plan: string,
     daysExpired: number
   ) {
-    const transporter = createTransporter();
+
     const logoUrl = await getLogoUrl();
     const daysRemaining = 3 - daysExpired;
 
@@ -488,7 +463,7 @@ export class EmailService {
     caseOverage: number,
     docOverage: number
   ) {
-    const transporter = createTransporter();
+
     const logoUrl = await getLogoUrl();
 
     try {
@@ -761,7 +736,7 @@ export class EmailService {
     extensionDays: number,
     newEndDate: Date
   ) {
-    const transporter = createTransporter();
+
     const logoUrl = await getLogoUrl();
 
     try {
@@ -816,7 +791,7 @@ export class EmailService {
     name: string,
     previousPlan: string
   ) {
-    const transporter = createTransporter();
+
     const logoUrl = await getLogoUrl();
 
     try {
@@ -892,7 +867,7 @@ export class EmailService {
     }
 
     // Fallback to SMTP (may not work on serverless free tiers)
-    const transporter = createTransporter();
+
     try {
       await transporter.verify();
       console.log('✅ Email service connected successfully (SMTP)');
