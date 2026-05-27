@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
-import { PrismaClient, SubscriptionPlan, AuditAction } from '@prisma/client';
+import { PrismaClient, SubscriptionPlan, AuditAction, NotificationType } from '@prisma/client';
 import { AuditService } from '../services/auditService.js';
+import { EmailService } from '../services/emailService.js';
+import { NotificationService } from '../services/notificationService.js';
 
 const prisma = new PrismaClient();
 
@@ -61,6 +63,23 @@ export class AdminSubscriptionController {
         adminUser.role,
         req
       );
+
+      // Send email notification
+      await EmailService.sendSubscriptionActivatedEmail(
+        user.email,
+        user.name,
+        plan,
+        endDate
+      );
+
+      // Create in-app notification
+      await NotificationService.createNotification({
+        userId: user.id,
+        type: NotificationType.alert,
+        title: '🎉 Subscription Activated!',
+        body: `Your ${plan} subscription has been activated and is valid until ${endDate.toLocaleDateString()}. Enjoy premium features!`,
+        link: '/settings?tab=subscription'
+      });
 
       res.json({
         success: true,
@@ -141,6 +160,24 @@ export class AdminSubscriptionController {
         req
       );
 
+      // Send email notification
+      await EmailService.sendSubscriptionExtendedEmail(
+        user.email,
+        user.name,
+        user.subscriptionPlan,
+        parseInt(extensionDays),
+        newEndDate
+      );
+
+      // Create in-app notification
+      await NotificationService.createNotification({
+        userId: user.id,
+        type: NotificationType.alert,
+        title: '⏰ Subscription Extended',
+        body: `Your subscription has been extended by ${extensionDays} days. New expiration date: ${newEndDate.toLocaleDateString()}`,
+        link: '/settings?tab=subscription'
+      });
+
       res.json({
         success: true,
         message: `Successfully extended subscription by ${extensionDays} days`,
@@ -182,6 +219,9 @@ export class AdminSubscriptionController {
         return res.status(404).json({ error: 'User not found' });
       }
 
+      // Store the old plan before updating
+      const previousPlan = user.subscriptionPlan;
+
       // Downgrade to free plan
       const updatedUser = await prisma.user.update({
         where: { id: userId },
@@ -204,6 +244,22 @@ export class AdminSubscriptionController {
         adminUser.role,
         req
       );
+
+      // Send email notification
+      await EmailService.sendSubscriptionCancelledEmail(
+        user.email,
+        user.name,
+        previousPlan
+      );
+
+      // Create in-app notification
+      await NotificationService.createNotification({
+        userId: user.id,
+        type: NotificationType.alert,
+        title: 'Subscription Update',
+        body: `Your ${previousPlan} subscription has been cancelled. Your account has been downgraded to the free Genzura plan.`,
+        link: '/settings?tab=subscription'
+      });
 
       res.json({
         success: true,

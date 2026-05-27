@@ -655,6 +655,207 @@ export class EmailService {
   }
 
   /**
+   * Send subscription activated email
+   */
+  static async sendSubscriptionActivatedEmail(
+    email: string,
+    name: string,
+    plan: string,
+    endDate: Date
+  ) {
+    const transporter = createTransporter();
+    const logoUrl = await getLogoUrl();
+
+    const planDetails: Record<string, any> = {
+      Genzura: {
+        name: 'Genzura Free',
+        features: ['20 cases maximum', 'Basic document storage', 'Standard support']
+      },
+      Intango: {
+        name: 'Intango Professional',
+        features: ['Unlimited cases', 'Unlimited document storage', 'Priority support', 'Advanced analytics']
+      },
+      Inkingi: {
+        name: 'Inkingi Enterprise',
+        features: ['Unlimited cases', 'Unlimited document storage', '24/7 Premium support', 'Advanced analytics', 'Custom integrations']
+      }
+    };
+
+    const details = planDetails[plan] || planDetails.Genzura;
+
+    try {
+      await transporter.sendMail({
+        from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
+        to: email,
+        subject: `🎉 Your ${details.name} Plan is Now Active!`,
+        html: `
+          <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            ${getEmailHeader('Subscription Activated! 🎉', logoUrl)}
+
+            <div style="padding: 35px 30px;">
+              <h2 style="color: ${BRAND_COLORS.dark}; margin: 0 0 20px 0; font-size: 22px; font-weight: 700;">Hi ${name},</h2>
+
+              <p style="color: #475569; line-height: 1.7; margin-bottom: 25px; font-size: 15px;">
+                Great news! Your <strong>${details.name}</strong> subscription has been activated. You now have access to premium features!
+              </p>
+
+              <div style="background: linear-gradient(135deg, ${BRAND_COLORS.greenLight} 0%, ${BRAND_COLORS.light} 100%); padding: 25px; border-radius: 10px; margin-bottom: 30px; border-left: 4px solid ${BRAND_COLORS.green};">
+                <h3 style="margin: 0 0 15px 0; color: ${BRAND_COLORS.dark}; font-size: 18px; font-weight: 700;">✨ Your Plan Includes:</h3>
+                <ul style="color: #475569; line-height: 2; margin: 0; padding-left: 20px; font-size: 14px;">
+                  ${details.features.map((f: string) => `<li>${f}</li>`).join('')}
+                </ul>
+              </div>
+
+              <div style="background: ${BRAND_COLORS.light}; padding: 20px; border-radius: 10px; margin-bottom: 30px; text-align: center;">
+                <p style="color: ${BRAND_COLORS.dark}; margin: 0 0 10px 0; font-size: 13px; font-weight: 600; text-transform: uppercase;">Valid Until</p>
+                <p style="color: ${BRAND_COLORS.blue}; margin: 0; font-size: 24px; font-weight: 700;">${endDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+              </div>
+
+              <div style="text-align: center; margin-bottom: 30px;">
+                <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard"
+                   style="background: linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.dark} 100%); color: white; padding: 15px 35px; text-decoration: none; border-radius: 10px; font-weight: 700; display: inline-block; box-shadow: 0 4px 12px rgba(24, 95, 165, 0.3);">
+                  Start Using Genzura
+                </a>
+              </div>
+
+              <p style="color: #475569; line-height: 1.7; margin-bottom: 20px; font-size: 14px; text-align: center;">
+                If you have any questions about your subscription, please contact our support team.
+              </p>
+            </div>
+
+            ${getEmailFooter(logoUrl)}
+          </div>
+        `
+      });
+
+      console.log(`✅ Subscription activated email sent to ${email}`);
+    } catch (error) {
+      console.error('❌ Failed to send subscription activated email:', error);
+      // Don't throw - subscription should still work even if email fails
+    }
+  }
+
+  /**
+   * Send subscription extended email
+   */
+  static async sendSubscriptionExtendedEmail(
+    email: string,
+    name: string,
+    plan: string,
+    extensionDays: number,
+    newEndDate: Date
+  ) {
+    const transporter = createTransporter();
+    const logoUrl = await getLogoUrl();
+
+    try {
+      await transporter.sendMail({
+        from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
+        to: email,
+        subject: `⏰ Your Subscription Has Been Extended`,
+        html: `
+          <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            ${getEmailHeader('Subscription Extended ⏰', logoUrl)}
+
+            <div style="padding: 35px 30px;">
+              <h2 style="color: ${BRAND_COLORS.dark}; margin: 0 0 20px 0; font-size: 22px; font-weight: 700;">Hi ${name},</h2>
+
+              <p style="color: #475569; line-height: 1.7; margin-bottom: 25px; font-size: 15px;">
+                Good news! Your <strong>${plan}</strong> subscription has been extended by <strong>${extensionDays} days</strong>.
+              </p>
+
+              <div style="background: ${BRAND_COLORS.light}; padding: 25px; border-radius: 10px; margin-bottom: 30px; text-align: center; border: 2px solid ${BRAND_COLORS.blue};">
+                <p style="color: ${BRAND_COLORS.dark}; margin: 0 0 10px 0; font-size: 13px; font-weight: 600; text-transform: uppercase;">New Expiration Date</p>
+                <p style="color: ${BRAND_COLORS.blue}; margin: 0; font-size: 24px; font-weight: 700;">${newEndDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+              </div>
+
+              <div style="text-align: center; margin-bottom: 30px;">
+                <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/settings?tab=subscription"
+                   style="background: linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.dark} 100%); color: white; padding: 15px 35px; text-decoration: none; border-radius: 10px; font-weight: 700; display: inline-block; box-shadow: 0 4px 12px rgba(24, 95, 165, 0.3);">
+                  View Subscription Details
+                </a>
+              </div>
+
+              <p style="color: #475569; line-height: 1.7; margin-bottom: 20px; font-size: 14px; text-align: center;">
+                Continue enjoying all the premium features of Genzura!
+              </p>
+            </div>
+
+            ${getEmailFooter(logoUrl)}
+          </div>
+        `
+      });
+
+      console.log(`✅ Subscription extended email sent to ${email}`);
+    } catch (error) {
+      console.error('❌ Failed to send subscription extended email:', error);
+    }
+  }
+
+  /**
+   * Send subscription cancelled email
+   */
+  static async sendSubscriptionCancelledEmail(
+    email: string,
+    name: string,
+    previousPlan: string
+  ) {
+    const transporter = createTransporter();
+    const logoUrl = await getLogoUrl();
+
+    try {
+      await transporter.sendMail({
+        from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
+        to: email,
+        subject: `Subscription Update - Genzura`,
+        html: `
+          <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            ${getEmailHeader('Subscription Update', logoUrl)}
+
+            <div style="padding: 35px 30px;">
+              <h2 style="color: ${BRAND_COLORS.dark}; margin: 0 0 20px 0; font-size: 22px; font-weight: 700;">Hi ${name},</h2>
+
+              <p style="color: #475569; line-height: 1.7; margin-bottom: 25px; font-size: 15px;">
+                Your <strong>${previousPlan}</strong> subscription has been cancelled and your account has been downgraded to the free Genzura plan.
+              </p>
+
+              <div style="background: #FFF7ED; padding: 25px; border-radius: 10px; margin-bottom: 30px; border-left: 4px solid #F97316;">
+                <h3 style="margin: 0 0 15px 0; color: ${BRAND_COLORS.dark}; font-size: 16px; font-weight: 700;">What This Means:</h3>
+                <ul style="color: #475569; line-height: 2; margin: 0; padding-left: 20px; font-size: 14px;">
+                  <li>Limited to 20 active cases</li>
+                  <li>Basic document storage</li>
+                  <li>Standard support access</li>
+                </ul>
+              </div>
+
+              <p style="color: #475569; line-height: 1.7; margin-bottom: 25px; font-size: 15px;">
+                You can still access all your existing data and continue using Genzura with the free plan limitations.
+              </p>
+
+              <div style="text-align: center; margin-bottom: 30px;">
+                <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/settings?tab=subscription"
+                   style="background: linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.dark} 100%); color: white; padding: 15px 35px; text-decoration: none; border-radius: 10px; font-weight: 700; display: inline-block; box-shadow: 0 4px 12px rgba(24, 95, 165, 0.3);">
+                  Upgrade Your Plan
+                </a>
+              </div>
+
+              <p style="color: #475569; line-height: 1.7; margin-bottom: 20px; font-size: 14px; text-align: center;">
+                Questions? Contact our support team anytime.
+              </p>
+            </div>
+
+            ${getEmailFooter(logoUrl)}
+          </div>
+        `
+      });
+
+      console.log(`✅ Subscription cancelled email sent to ${email}`);
+    } catch (error) {
+      console.error('❌ Failed to send subscription cancelled email:', error);
+    }
+  }
+
+  /**
    * Test email configuration
    */
   static async testConnection() {

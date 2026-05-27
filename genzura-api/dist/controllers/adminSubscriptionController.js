@@ -1,5 +1,7 @@
-import { PrismaClient, SubscriptionPlan, AuditAction } from '@prisma/client';
+import { PrismaClient, SubscriptionPlan, AuditAction, NotificationType } from '@prisma/client';
 import { AuditService } from '../services/auditService.js';
+import { EmailService } from '../services/emailService.js';
+import { NotificationService } from '../services/notificationService.js';
 const prisma = new PrismaClient();
 export class AdminSubscriptionController {
     /**
@@ -42,6 +44,16 @@ export class AdminSubscriptionController {
             console.log(`[ADMIN ACTION] ${adminUser.email} granted ${plan} access to ${user.email} for ${durationDays} days. Reason: ${reason || 'N/A'}`);
             // Create audit log entry
             await AuditService.logUserAction(AuditAction.SUBSCRIPTION_ACTIVATED, `Granted ${plan} subscription to ${user.name} for ${durationDays} days. Reason: ${reason || 'Admin action'}`, adminUser.id, adminUser.name, adminUser.role, req);
+            // Send email notification
+            await EmailService.sendSubscriptionActivatedEmail(user.email, user.name, plan, endDate);
+            // Create in-app notification
+            await NotificationService.createNotification({
+                userId: user.id,
+                type: NotificationType.alert,
+                title: '🎉 Subscription Activated!',
+                body: `Your ${plan} subscription has been activated and is valid until ${endDate.toLocaleDateString()}. Enjoy premium features!`,
+                link: '/settings?tab=subscription'
+            });
             res.json({
                 success: true,
                 message: `Successfully granted ${plan} access for ${durationDays} days`,
@@ -105,6 +117,16 @@ export class AdminSubscriptionController {
             console.log(`[ADMIN ACTION] ${adminUser.email} extended subscription for ${user.email} by ${extensionDays} days. Reason: ${reason || 'N/A'}`);
             // Create audit log entry
             await AuditService.logUserAction(AuditAction.SUBSCRIPTION_CHANGED, `Extended subscription for ${user.name} by ${extensionDays} days. New end date: ${newEndDate.toLocaleDateString()}. Reason: ${reason || 'Admin action'}`, adminUser.id, adminUser.name, adminUser.role, req);
+            // Send email notification
+            await EmailService.sendSubscriptionExtendedEmail(user.email, user.name, user.subscriptionPlan, parseInt(extensionDays), newEndDate);
+            // Create in-app notification
+            await NotificationService.createNotification({
+                userId: user.id,
+                type: NotificationType.alert,
+                title: '⏰ Subscription Extended',
+                body: `Your subscription has been extended by ${extensionDays} days. New expiration date: ${newEndDate.toLocaleDateString()}`,
+                link: '/settings?tab=subscription'
+            });
             res.json({
                 success: true,
                 message: `Successfully extended subscription by ${extensionDays} days`,
@@ -141,6 +163,8 @@ export class AdminSubscriptionController {
             if (!user) {
                 return res.status(404).json({ error: 'User not found' });
             }
+            // Store the old plan before updating
+            const previousPlan = user.subscriptionPlan;
             // Downgrade to free plan
             const updatedUser = await prisma.user.update({
                 where: { id: userId },
@@ -154,6 +178,16 @@ export class AdminSubscriptionController {
             console.log(`[ADMIN ACTION] ${adminUser.email} revoked subscription for ${user.email}. Reason: ${reason || 'N/A'}`);
             // Create audit log entry
             await AuditService.logUserAction(AuditAction.SUBSCRIPTION_PAUSED, `Cancelled subscription for ${user.name} (was: ${user.subscriptionPlan}). Downgraded to free plan. Reason: ${reason || 'Admin action'}`, adminUser.id, adminUser.name, adminUser.role, req);
+            // Send email notification
+            await EmailService.sendSubscriptionCancelledEmail(user.email, user.name, previousPlan);
+            // Create in-app notification
+            await NotificationService.createNotification({
+                userId: user.id,
+                type: NotificationType.alert,
+                title: 'Subscription Update',
+                body: `Your ${previousPlan} subscription has been cancelled. Your account has been downgraded to the free Genzura plan.`,
+                link: '/settings?tab=subscription'
+            });
             res.json({
                 success: true,
                 message: 'Successfully revoked subscription',

@@ -29,6 +29,7 @@ import NewCaseModal from './NewCaseModal';
 import Breadcrumbs from './Breadcrumbs';
 import CommandPalette from './CommandPalette';
 import EmptyState from './EmptyState';
+import SubscriptionBanner from './SubscriptionBanner';
 import { invitationService } from '../api/services/invitation.service';
 import { toast } from 'react-hot-toast';
 
@@ -498,6 +499,10 @@ export default function AppLayout({ children, title, action, breadcrumbLabel }: 
               <h1 className="text-xl lg:text-2xl font-bold text-brand-dark">{title}</h1>
             </div>
           )}
+
+          {/* Subscription Banner */}
+          <SubscriptionBanner />
+
           {children}
         </div>
       </main>
