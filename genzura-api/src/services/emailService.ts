@@ -401,11 +401,7 @@ export class EmailService {
     const daysRemaining = 3 - daysExpired;
 
     try {
-      await transporter.sendMail({
-        from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
-        to: email,
-        subject: `⚠️ Grace Period: ${daysRemaining} day${daysRemaining > 1 ? 's' : ''} until downgrade`,
-        html: `
+      await sendEmail(email, `⚠️ Grace Period: ${daysRemaining} day${daysRemaining > 1 ? 's' : ''} until downgrade`, `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 3px solid #dc2626;">
             <div style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); padding: 30px 20px; text-align: center;">
               <div style="background: white; width: 160px; height: 50px; margin: 0 auto 15px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
@@ -467,11 +463,7 @@ export class EmailService {
     const logoUrl = await getLogoUrl();
 
     try {
-      await transporter.sendMail({
-        from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
-        to: email,
-        subject: '📋 Your subscription has expired - Now on Free Plan',
-        html: `
+      await sendEmail(email, '📋 Your subscription has expired - Now on Free Plan', `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             ${getEmailHeader('Subscription Expired 📋', logoUrl)}
 
@@ -740,11 +732,7 @@ export class EmailService {
     const logoUrl = await getLogoUrl();
 
     try {
-      await transporter.sendMail({
-        from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
-        to: email,
-        subject: `⏰ Your Subscription Has Been Extended`,
-        html: `
+      await sendEmail(email, `⏰ Your Subscription Has Been Extended`, `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             ${getEmailHeader('Subscription Extended ⏰', logoUrl)}
 
@@ -795,11 +783,7 @@ export class EmailService {
     const logoUrl = await getLogoUrl();
 
     try {
-      await transporter.sendMail({
-        from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
-        to: email,
-        subject: `Subscription Update - Genzura`,
-        html: `
+      await sendEmail(email, `Subscription Update - Genzura`, `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             ${getEmailHeader('Subscription Update', logoUrl)}
 
