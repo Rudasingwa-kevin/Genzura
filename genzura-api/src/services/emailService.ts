@@ -31,8 +31,10 @@ async function getLogoUrl(): Promise<string> {
     }
   }
 
-  // Fallback to local API server
-  const API_URL = process.env.API_URL || 'http://localhost:5000';
+  // Fallback to production API or local
+  const API_URL = process.env.NODE_ENV === 'production'
+    ? 'https://genzura-api.onrender.com'
+    : (process.env.API_URL || 'http://localhost:5000');
   return `${API_URL}/public/Genzura%20full%20logo.png`;
 }
 
