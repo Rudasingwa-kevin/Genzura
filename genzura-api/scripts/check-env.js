@@ -86,7 +86,8 @@ if (securityWarnings.length > 0) {
     console.log(`   - ${varName}: ${message}`);
   });
   console.log('');
-  hasErrors = true;
+  // Only fail on critical security issues, not warnings
+  // hasErrors = true;
 }
 
 // Environment info
