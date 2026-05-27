@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: genzura-api
+    env: node
+    region: frankfurt # or oregon for US
+    plan: free
+    buildCommand: cd genzura-api && npm install && npm run build
+    startCommand: cd genzura-api && npm start
+    rootDir: genzura-api
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: DATABASE_URL
+        sync: false # We'll add this manually in Render dashboard
+      - key: JWT_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: BREVO_SMTP_USER
+        sync: false
+      - key: BREVO_SMTP_KEY
+        sync: false
+      - key: SENDER_EMAIL
+        sync: false
+      - key: SENDER_NAME
+        value: Genzura Legal
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_REGION
+        value: eu-north-1
+      - key: AWS_S3_BUCKET
+        sync: false
+      - key: AWS_S3_BACKUP_BUCKET
+        sync: false
