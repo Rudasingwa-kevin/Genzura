@@ -1,11 +1,15 @@
 import express from 'express';
 import { InvitationController } from '../controllers/invitationController.js';
 import { authenticate } from '../middleware/authMiddleware.js';
+import { invitationLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
 
 // All routes require authentication
 router.use(authenticate);
+
+// Apply rate limiting to invitation creation
+router.use(invitationLimiter);
 
 // Get my pending invitations
 router.get('/my-invitations', InvitationController.getMyInvitations);

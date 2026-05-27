@@ -1,90 +1,92 @@
 /**
  * Database Backup Script
- *
- * Creates a PostgreSQL backup with timestamp
- * Usage: npm run db:backup
+ * Creates a backup of the PostgreSQL database
+ * Run: node scripts/backup-db.js
  */
 
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { existsSync, mkdirSync } from 'fs';
-
-dotenv.config();
+import { dirname } from 'path';
+import dotenv from 'dotenv';
 
 const execAsync = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-async function backupDatabase() {
-  try {
-    console.log('🗄️  Starting database backup...\n');
+// Load environment variables
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
-    // Parse DATABASE_URL
-    const dbUrl = process.env.DATABASE_URL;
-    if (!dbUrl) {
-      throw new Error('DATABASE_URL not found in .env');
-    }
+const BACKUP_DIR = path.join(__dirname, '..', 'backups');
+const DATABASE_URL = process.env.DATABASE_URL;
 
-    // Extract database info from URL
-    // Format: postgresql://user:password@host:port/database
-    const match = dbUrl.match(/postgresql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/);
-    if (!match) {
-      throw new Error('Invalid DATABASE_URL format');
-    }
-
-    const [, user, password, host, port, database] = match;
-
-    // Create backups directory if it doesn't exist
-    const backupsDir = join(__dirname, '..', 'backups');
-    if (!existsSync(backupsDir)) {
-      mkdirSync(backupsDir, { recursive: true });
-    }
-
-    // Generate backup filename with timestamp
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-    const backupFile = join(backupsDir, `backup-${timestamp}.sql`);
-
-    // Set PostgreSQL password environment variable
-    process.env.PGPASSWORD = password;
-
-    // Run pg_dump
-    const command = `pg_dump -h ${host} -p ${port} -U ${user} -d ${database} -F p -f "${backupFile}"`;
-
-    console.log(`📦 Backing up database: ${database}`);
-    console.log(`📁 Backup location: ${backupFile}\n`);
-
-    await execAsync(command);
-
-    // Get file size
-    const { stdout: sizeOutput } = await execAsync(`wc -c < "${backupFile}"`);
-    const sizeBytes = parseInt(sizeOutput.trim());
-    const sizeMB = (sizeBytes / (1024 * 1024)).toFixed(2);
-
-    console.log('✅ Backup completed successfully!');
-    console.log(`📊 Backup size: ${sizeMB} MB`);
-    console.log(`📄 File: ${backupFile}\n`);
-
-    // Clean up old backups (keep last 30 days)
-    console.log('🧹 Cleaning up old backups (>30 days)...');
-    const cleanupCommand = process.platform === 'win32'
-      ? `forfiles /P "${backupsDir}" /M backup-*.sql /D -30 /C "cmd /c del @path" 2>nul || echo No old backups to clean`
-      : `find "${backupsDir}" -name "backup-*.sql" -type f -mtime +30 -delete`;
-
-    await execAsync(cleanupCommand).catch(() => {
-      console.log('ℹ️  No old backups to clean');
-    });
-
-    console.log('✨ Backup process complete!\n');
-
-    return backupFile;
-  } catch (error) {
-    console.error('❌ Backup failed:', error.message);
-    process.exit(1);
-  }
+if (!DATABASE_URL) {
+  console.error('❌ DATABASE_URL not found in environment variables');
+  process.exit(1);
 }
 
-// Run backup
-backupDatabase();
+// Create backup directory if it doesn't exist
+if (!fs.existsSync(BACKUP_DIR)) {
+  fs.mkdirSync(BACKUP_DIR, { recursive: true });
+  console.log('📁 Created backups directory');
+}
+
+// Generate backup filename with timestamp
+const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+const backupFile = path.join(BACKUP_DIR, `genzura_${timestamp}.sql`);
+
+console.log('🔄 Starting database backup...');
+console.log(`📝 Backup file: ${backupFile}`);
+
+// Execute pg_dump
+const backupCommand = `pg_dump "${DATABASE_URL}" > "${backupFile}"`;
+
+execAsync(backupCommand)
+  .then(() => {
+    // Check file size
+    const stats = fs.statSync(backupFile);
+    const fileSizeMB = (stats.size / (1024 * 1024)).toFixed(2);
+    
+    console.log(`✅ Backup completed successfully!`);
+    console.log(`📦 Backup size: ${fileSizeMB} MB`);
+    console.log(`📍 Location: ${backupFile}`);
+    
+    // Clean up old backups (keep last 30 days)
+    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    const files = fs.readdirSync(BACKUP_DIR);
+    let deletedCount = 0;
+    
+    files.forEach(file => {
+      if (file.endsWith('.sql')) {
+        const filePath = path.join(BACKUP_DIR, file);
+        const fileStats = fs.statSync(filePath);
+        
+        if (fileStats.mtimeMs < thirtyDaysAgo) {
+          fs.unlinkSync(filePath);
+          deletedCount++;
+        }
+      }
+    });
+    
+    if (deletedCount > 0) {
+      console.log(`🗑️  Cleaned up ${deletedCount} old backup(s)`);
+    }
+    
+    // List remaining backups
+    const remainingBackups = fs.readdirSync(BACKUP_DIR).filter(f => f.endsWith('.sql'));
+    console.log(`\n📊 Total backups: ${remainingBackups.length}`);
+    
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error('❌ Backup failed:', error.message);
+    
+    // Clean up failed backup file
+    if (fs.existsSync(backupFile)) {
+      fs.unlinkSync(backupFile);
+    }
+    
+    process.exit(1);
+  });
