@@ -123,15 +123,10 @@ export class EmailService {
    * Send welcome email to new users
    */
   static async sendWelcomeEmail(email: string, name: string) {
-    const transporter = createTransporter();
     const logoUrl = await getLogoUrl(); // Get logo URL from S3 or fallback
 
     try {
-      await transporter.sendMail({
-        from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
-        to: email,
-        subject: 'Welcome to Genzura - Your Legal Management System',
-        html: `
+      await sendEmail(email, 'Welcome to Genzura - Your Legal Management System', `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             ${getEmailHeader('Welcome to Genzura! 🎉', logoUrl)}
 
@@ -165,10 +160,7 @@ export class EmailService {
               ${getEmailFooter(logoUrl)}
             </div>
           </div>
-        `
-      });
-
-      console.log(`✅ Welcome email sent to ${email}`);
+        `);
     } catch (error) {
       console.error('❌ Failed to send welcome email:', error);
       // Don't throw error - signup should still succeed even if email fails
@@ -591,16 +583,11 @@ export class EmailService {
     invitationToken: string,
     invitedBy: string
   ) {
-    const transporter = createTransporter();
     const logoUrl = await getLogoUrl();
     const inviteLink = `${process.env.FRONTEND_URL}/accept-invitation?token=${invitationToken}`;
 
     try {
-      await transporter.sendMail({
-        from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
-        to: email,
-        subject: `You're invited to join Genzura Legal Management`,
-        html: `
+      await sendEmail(email, `You're invited to join Genzura Legal Management`, `
           <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
             ${getEmailHeader('Welcome to the Team! 🎉', logoUrl)}
 
@@ -641,10 +628,7 @@ export class EmailService {
               ${getEmailFooter(logoUrl)}
             </div>
           </div>
-        `
-      });
-
-      console.log(`✅ Invitation email sent to ${email}`);
+        `);
     } catch (error) {
       console.error('❌ Failed to send invitation email:', error);
       throw new Error('Failed to send invitation email');
