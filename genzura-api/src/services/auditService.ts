@@ -234,6 +234,17 @@ export class AuditService {
   }
 
   /**
+   * Get logs for a specific user
+   */
+  static async getUserLogs(userId: string, limit = 20) {
+    return prisma.auditLog.findMany({
+      where: { userId },
+      orderBy: { timestamp: 'desc' },
+      take: limit,
+    });
+  }
+
+  /**
    * Get recent activity logs (for dashboard)
    */
   static async getRecentActivity(limit = 10) {

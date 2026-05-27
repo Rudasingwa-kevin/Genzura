@@ -498,8 +498,8 @@ export class CaseService {
             oldDisplay = oldCase.attorney?.name || 'None';
             newDisplay = updatedCase.attorney?.name || 'None';
           } else if (field.includes('Date') && newValue) {
-            newDisplay = new Date(newValue).toLocaleDateString();
-            if (oldValue) oldDisplay = new Date(oldValue).toLocaleDateString();
+            newDisplay = new Date(newValue as string | Date).toLocaleDateString();
+            if (oldValue) oldDisplay = new Date(oldValue as string | Date).toLocaleDateString();
           } else if (field === 'estimatedValue' && newValue) {
             newDisplay = `$${Number(newValue).toLocaleString()}`;
             if (oldValue) oldDisplay = `$${Number(oldValue).toLocaleString()}`;
