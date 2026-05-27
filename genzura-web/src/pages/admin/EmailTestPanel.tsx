@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, Send, CheckCircle2, XCircle, Loader2, Settings } from 'lucide-react';
+import { Mail, Send, CheckCircle2, Loader2, Settings } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
 import { toast } from 'react-hot-toast';
 import apiClient from '../../api/client';

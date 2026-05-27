@@ -76,7 +76,8 @@ router.post('/email/send', async (req, res) => {
             case 'invitation':
                 const token = 'test-invitation-token-123';
                 const inviterName = 'Admin User';
-                await EmailService.sendInvitationEmail(to, 'Test User', token, inviterName);
+                const role = 'Attorney';
+                await EmailService.sendInvitationEmail(to, 'Test User', role, token, inviterName);
                 result = 'Invitation email sent';
                 break;
             default:
@@ -176,7 +177,7 @@ router.post('/email/all-templates', async (req, res) => {
                         await EmailService.sendWelcomeEmail(to, 'Test User');
                         break;
                     case 'invitation':
-                        await EmailService.sendInvitationEmail(to, 'Test User', 'test-token-123', 'Admin User');
+                        await EmailService.sendInvitationEmail(to, 'Test User', 'Attorney', 'test-token-123', 'Admin User');
                         break;
                 }
                 results.push({ type, status: 'sent ✅' });

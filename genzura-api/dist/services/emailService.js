@@ -771,7 +771,6 @@ export class EmailService {
      */
     static async testConnection() {
         const transporter = createTransporter();
-        const logoUrl = await getLogoUrl();
         try {
             await transporter.verify();
             console.log('✅ Email service connected successfully');

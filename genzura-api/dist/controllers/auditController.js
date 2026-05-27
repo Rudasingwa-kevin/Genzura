@@ -15,7 +15,7 @@ export class AuditController {
                 limit: parseInt(limit, 10),
                 offset: parseInt(offset, 10),
             };
-            const result = await AuditService.getAllLogs(filters);
+            const result = await AuditService.getAll(filters);
             res.json(result);
         }
         catch (error) {
