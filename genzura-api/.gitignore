@@ -1,6 +1,13 @@
 node_modules
-# Keep environment variables out of version control
+
+# Environment variables - NEVER commit these files
 .env
+.env.local
+.env.development
+.env.production
+.env.staging
+.env.test
+.env*.local
 
 /src/generated/prisma
 

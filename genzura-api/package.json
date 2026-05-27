@@ -21,7 +21,9 @@
     "db:seed": "node --loader ts-node/esm prisma/seed.ts",
     "db:check-data": "node scripts/check-seed-data.mjs",
     "db:add-data": "node scripts/add-more-data.mjs",
-    "test:invitation": "node test-invitation.mjs"
+    "test:invitation": "node test-invitation.mjs",
+    "check:env": "node scripts/check-env.js",
+    "prestart": "npm run check:env"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1053.0",
