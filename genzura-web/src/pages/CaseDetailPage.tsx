@@ -118,7 +118,7 @@ const DocumentRow = ({ doc, index }: { doc: CaseDocument & { fileUrl?: string };
           </span>
         </div>
         <p className="text-[11px] sm:text-xs text-text-muted mt-1 sm:mt-1.5 font-medium opacity-70">
-          <span className="font-bold">{doc.size}</span> · <span className="hidden sm:inline">Uploaded </span><span className="font-bold">{new Date(doc.uploadedAt).toLocaleDateString()}</span>
+          <span className="font-bold">{doc.size}</span> · Uploaded <span className="font-bold">{new Date(doc.uploadedAt).toLocaleDateString()}</span>
         </p>
       </div>
       <div className="flex items-center gap-1.5 sm:gap-2 sm:opacity-0 sm:group-hover:opacity-100 sm:translate-x-4 sm:group-hover:translate-x-0 transition-all duration-300">
@@ -128,8 +128,8 @@ const DocumentRow = ({ doc, index }: { doc: CaseDocument & { fileUrl?: string };
         >
           <Download size={16} className="sm:w-[18px] sm:h-[18px]" />
         </button>
-        <button className="hidden sm:block p-3 rounded-xl bg-page-bg/50 hover:bg-brand-blue/5 text-text-muted hover:text-brand-blue transition-all premium-border" title="Share">
-          <Share2 size={18} />
+        <button className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-page-bg/50 hover:bg-brand-blue/5 text-text-muted hover:text-brand-blue transition-all premium-border" title="Share">
+          <Share2 size={16} className="sm:w-[18px] sm:h-[18px]" />
         </button>
       </div>
     </div>
@@ -447,28 +447,28 @@ export default function CaseDetailPage() {
   };
 
   const actionBar = (
-    <div className="flex items-center gap-3">
-      <div className="hidden md:flex items-center gap-1.5 p-1 bg-page-bg rounded-xl border border-border-base mr-2 relative">
-        <button 
+    <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center gap-1 sm:gap-1.5 p-0.5 sm:p-1 bg-page-bg rounded-lg sm:rounded-xl border border-border-base mr-1 sm:mr-2 relative">
+        <button
           onClick={handleShare}
-          className="p-2 rounded-lg text-text-muted hover:text-brand-blue hover:bg-white transition-all"
+          className="p-1.5 sm:p-2 rounded-md sm:rounded-lg text-text-muted hover:text-brand-blue hover:bg-white transition-all"
           title="Share Link"
         >
-          <Share2 size={16} />
+          <Share2 size={14} className="sm:w-4 sm:h-4" />
         </button>
-        <button 
+        <button
           onClick={handleArchive}
-          className="p-2 rounded-lg text-text-muted hover:text-brand-blue hover:bg-white transition-all"
+          className="p-1.5 sm:p-2 rounded-md sm:rounded-lg text-text-muted hover:text-brand-blue hover:bg-white transition-all"
           title="Archive Case"
         >
-          <Archive size={16} />
+          <Archive size={14} className="sm:w-4 sm:h-4" />
         </button>
         <div className="relative">
-          <button 
+          <button
             onClick={() => setShowMoreMenu(!showMoreMenu)}
-            className={`p-2 rounded-lg transition-all ${showMoreMenu ? 'bg-white text-brand-blue shadow-sm' : 'text-text-muted hover:text-brand-blue hover:bg-white'}`}
+            className={`p-1.5 sm:p-2 rounded-md sm:rounded-lg transition-all ${showMoreMenu ? 'bg-white text-brand-blue shadow-sm' : 'text-text-muted hover:text-brand-blue hover:bg-white'}`}
           >
-            <MoreHorizontal size={16} />
+            <MoreHorizontal size={14} className="sm:w-4 sm:h-4" />
           </button>
           
           {showMoreMenu && (
@@ -493,22 +493,23 @@ export default function CaseDetailPage() {
       <button
         onClick={handleExport}
         disabled={isExporting}
-        className="flex items-center gap-2 px-6 py-3 rounded-2xl border border-border-base bg-white text-brand-dark font-bold hover:shadow-md hover:-translate-y-0.5 transition-all active:scale-95 disabled:opacity-60"
+        className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 lg:py-3 rounded-xl sm:rounded-2xl border border-border-base bg-white text-brand-dark text-sm sm:text-base font-bold hover:shadow-md hover:-translate-y-0.5 transition-all active:scale-95 disabled:opacity-60"
       >
-        {isExporting ? <Loader2 size={18} className="animate-spin" /> : <FileDown size={18} />}
-        {isExporting ? 'Generating...' : 'Export PDF'}
+        {isExporting ? <Loader2 size={16} className="sm:w-[18px] sm:h-[18px] animate-spin" /> : <FileDown size={16} className="sm:w-[18px] sm:h-[18px]" />}
+        <span className="hidden xs:inline">{isExporting ? 'Generating...' : 'Export PDF'}</span>
+        <span className="xs:hidden">{isExporting ? '...' : 'PDF'}</span>
       </button>
       <button
         onClick={() => setShowInviteModal(true)}
-        className="flex items-center gap-2 px-6 py-3 rounded-2xl border-2 border-brand-blue text-brand-blue font-bold hover:bg-brand-blue hover:text-white hover:shadow-lg hover:shadow-brand-blue/20 hover:-translate-y-0.5 transition-all active:scale-95"
+        className="hidden md:flex items-center gap-2 px-4 lg:px-6 py-2.5 lg:py-3 rounded-xl lg:rounded-2xl border-2 border-brand-blue text-brand-blue text-sm lg:text-base font-bold hover:bg-brand-blue hover:text-white hover:shadow-lg hover:shadow-brand-blue/20 hover:-translate-y-0.5 transition-all active:scale-95"
       >
-        <Plus size={18} /> Invite Attorney
+        <Plus size={16} className="lg:w-[18px] lg:h-[18px]" /> Invite Attorney
       </button>
-      <button 
+      <button
         onClick={() => setShowEditModal(true)}
-        className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-brand-blue text-white font-bold shadow-lg shadow-brand-blue/30 hover:shadow-xl hover:-translate-y-0.5 transition-all active:scale-95"
+        className="hidden md:flex items-center gap-2 px-4 lg:px-6 py-2.5 lg:py-3 rounded-xl lg:rounded-2xl bg-brand-blue text-white text-sm lg:text-base font-bold shadow-lg shadow-brand-blue/30 hover:shadow-xl hover:-translate-y-0.5 transition-all active:scale-95"
       >
-        <Edit3 size={18} /> Edit Case
+        <Edit3 size={16} className="lg:w-[18px] lg:h-[18px]" /> Edit Case
       </button>
     </div>
   );
@@ -674,8 +675,8 @@ export default function CaseDetailPage() {
               >
                 <div className="flex -space-x-3 overflow-hidden">
                   {(caseData.team || []).map((member: any, i: number) => (
-                    <div 
-                      key={member.user?.name || i}
+                    <div
+                      key={member.user?.id || member.id || i}
                       className="inline-block h-8 w-8 rounded-full ring-2 ring-white bg-brand-dark text-white text-[10px] font-bold flex items-center justify-center transition-transform group-hover:translate-y-[-2px]"
                       style={{ zIndex: 10 - i }}
                       title={`${member.user?.name} - ${member.role}`}
@@ -745,8 +746,7 @@ export default function CaseDetailPage() {
                       {tab === 'timeline' && <History size={12} className="sm:w-3.5 sm:h-3.5" />}
                       {tab === 'documents' && <Paperclip size={12} className="sm:w-3.5 sm:h-3.5" />}
                       {tab === 'notes' && <MessageSquare size={12} className="sm:w-3.5 sm:h-3.5" />}
-                      <span className="hidden sm:inline">{tab}</span>
-                      <span className="sm:hidden capitalize">{tab.slice(0, 3)}</span>
+                      <span>{tab}</span>
                       <span className={`text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-lg border ${
                         activeTab === tab ? 'bg-brand-blue text-white border-brand-blue' : 'bg-white text-text-muted border-border-base'
                       }`}>
@@ -955,9 +955,9 @@ export default function CaseDetailPage() {
                   })}
                   <button
                     onClick={() => setShowInviteModal(true)}
-                    className="w-full py-5 mt-4 rounded-[1.5rem] border-2 border-dashed border-border-base/60 text-xs font-bold text-text-muted hover:border-brand-blue hover:text-brand-blue hover:bg-brand-blue/5 transition-all flex items-center justify-center gap-3 shimmer"
+                    className="hidden md:flex w-full py-4 lg:py-5 mt-4 rounded-xl lg:rounded-[1.5rem] border-2 border-dashed border-border-base/60 text-xs font-bold text-text-muted hover:border-brand-blue hover:text-brand-blue hover:bg-brand-blue/5 transition-all items-center justify-center gap-2 lg:gap-3 shimmer"
                   >
-                    <Plus size={18} /> Add Collaborator
+                    <Plus size={16} className="lg:w-[18px] lg:h-[18px]" /> Add Collaborator
                   </button>
                 </div>
               </SectionCard>

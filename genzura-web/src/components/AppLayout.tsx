@@ -139,7 +139,7 @@ function NotificationPanel({
   };
 
   return (
-    <div className="absolute top-[calc(100%+8px)] right-0 w-[400px] bg-white rounded-[1.5rem] border border-border-base shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+    <div className="fixed sm:absolute top-16 sm:top-[calc(100%+8px)] right-4 sm:right-0 w-[calc(100vw-2rem)] sm:w-[400px] max-w-[400px] bg-white rounded-xl sm:rounded-[1.5rem] border border-border-base shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-border-base">
         <div className="flex items-center gap-3">
