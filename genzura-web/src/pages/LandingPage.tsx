@@ -1158,13 +1158,13 @@ const LandingPage = () => {
                   </div>
                   <h4 className="text-lg font-bold text-brand-dark">Ready to Share?</h4>
                   <Link
-                    to="/feedback"
+                    to="/contact"
                     className="bg-brand-blue text-white px-8 py-4 rounded-xl font-bold hover:shadow-xl hover:-translate-y-1 transition-all shadow-lg shadow-brand-blue/20 inline-flex items-center gap-2 group no-underline"
                   >
                     Submit Feedback
                     <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
                   </Link>
-                  <p className="text-xs text-text-muted">Sign in to submit feedback • Takes 2 minutes</p>
+                  <p className="text-xs text-text-muted">No login required • Takes 2 minutes</p>
                 </div>
               </div>
             </div>

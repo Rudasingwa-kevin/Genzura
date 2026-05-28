@@ -208,8 +208,8 @@ model CaseNote {
 
 model Feedback {
   id        String         @id @default(cuid())
-  user      User           @relation(fields: [userId], references: [id])
-  userId    String
+  user      User?          @relation(fields: [userId], references: [id])
+  userId    String?
   subject   String
   category  String
   message   String         @db.Text

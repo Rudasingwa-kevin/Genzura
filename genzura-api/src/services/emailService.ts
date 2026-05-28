@@ -119,7 +119,7 @@ const getEmailFooter = (logoUrl: string) => `
         <strong>Need help or have feedback?</strong> Please use our official feedback form:
       </p>
       <div style="text-align: center;">
-        <a href="${process.env.NODE_ENV === 'production' ? 'https://genzura.vercel.app' : 'http://localhost:5173'}/#feedback" style="display: inline-block; background: ${BRAND_COLORS.blue}; color: white; text-decoration: none; padding: 12px 30px; border-radius: 8px; font-weight: 700; font-size: 14px; margin-top: 5px;">
+        <a href="${process.env.NODE_ENV === 'production' ? 'https://genzura.vercel.app' : 'http://localhost:5173'}/contact" style="display: inline-block; background: ${BRAND_COLORS.blue}; color: white; text-decoration: none; padding: 12px 30px; border-radius: 8px; font-weight: 700; font-size: 14px; margin-top: 5px;">
           Submit Feedback or Get Support
         </a>
       </div>

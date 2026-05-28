@@ -4,6 +4,10 @@ import { authenticate, authorize } from '../middleware/authMiddleware.js';
 
 const router = Router();
 
+// Public endpoint - no authentication required
+router.post('/public', FeedbackController.createPublic);
+
+// All other routes require authentication
 router.use(authenticate);
 
 // Regular users can submit feedback and get their own

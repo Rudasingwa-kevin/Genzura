@@ -44,4 +44,26 @@ export class FeedbackController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  static async createPublic(req: Request, res: Response) {
+    try {
+      const { name, email, subject, category, message } = req.body;
+
+      if (!name || !email || !subject || !message) {
+        return res.status(400).json({ error: 'Name, email, subject, and message are required' });
+      }
+
+      const feedback = await FeedbackService.createPublicFeedback({
+        name,
+        email,
+        subject,
+        category,
+        message
+      });
+
+      res.status(201).json(feedback);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
 }
