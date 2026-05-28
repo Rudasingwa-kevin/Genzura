@@ -1111,7 +1111,7 @@ const LandingPage = () => {
       </section>
 
       {/* Feedback Section */}
-      <section className="py-24 bg-gradient-to-br from-page-bg to-white">
+      <section id="feedback" className="py-24 bg-gradient-to-br from-page-bg to-white">
         <div className="section-container">
           <div className="max-w-4xl mx-auto text-center space-y-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-blue/10 text-brand-blue text-sm font-bold animate-slide-up">
