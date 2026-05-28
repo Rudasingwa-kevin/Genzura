@@ -1110,6 +1110,81 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Feedback Section */}
+      <section className="py-24 bg-gradient-to-br from-page-bg to-white">
+        <div className="section-container">
+          <div className="max-w-4xl mx-auto text-center space-y-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-blue/10 text-brand-blue text-sm font-bold animate-slide-up">
+              <Sparkles size={16} />
+              We're Listening
+            </div>
+            <h2 className="text-4xl lg:text-5xl font-bold text-brand-dark animate-slide-up stagger-1">
+              Help Us Build the Perfect Platform for You
+            </h2>
+            <p className="text-lg text-text-secondary max-w-2xl mx-auto animate-slide-up stagger-2">
+              Your feedback shapes Genzura. Share your ideas, report issues, or tell us what's working well.
+            </p>
+
+            <div className="bg-white rounded-3xl shadow-2xl p-8 lg:p-12 border border-border-base animate-scale-in stagger-3">
+              <div className="grid md:grid-cols-2 gap-8">
+                <div className="text-left space-y-4">
+                  <h3 className="text-xl font-bold text-brand-dark">Share Your Feedback</h3>
+                  <p className="text-sm text-text-muted">
+                    We read every submission. Your input helps us prioritize features and improvements that matter most to attorneys like you.
+                  </p>
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="text-brand-green shrink-0 mt-1" size={18} />
+                      <span className="text-sm text-text-secondary">Feature requests & suggestions</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="text-brand-green shrink-0 mt-1" size={18} />
+                      <span className="text-sm text-text-secondary">Bug reports & technical issues</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="text-brand-green shrink-0 mt-1" size={18} />
+                      <span className="text-sm text-text-secondary">User experience improvements</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <CheckCircle2 className="text-brand-green shrink-0 mt-1" size={18} />
+                      <span className="text-sm text-text-secondary">General comments & testimonials</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="flex flex-col justify-center items-center space-y-4 bg-gradient-to-br from-brand-blue/5 to-brand-green-light/30 rounded-2xl p-8">
+                  <div className="w-20 h-20 bg-brand-blue rounded-2xl flex items-center justify-center animate-bounce-slow">
+                    <Sparkles className="text-white" size={40} />
+                  </div>
+                  <h4 className="text-lg font-bold text-brand-dark">Ready to Share?</h4>
+                  <Link
+                    to="/feedback"
+                    className="bg-brand-blue text-white px-8 py-4 rounded-xl font-bold hover:shadow-xl hover:-translate-y-1 transition-all shadow-lg shadow-brand-blue/20 inline-flex items-center gap-2 group no-underline"
+                  >
+                    Submit Feedback
+                    <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
+                  </Link>
+                  <p className="text-xs text-text-muted">Sign in to submit feedback • Takes 2 minutes</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-amber-50 border-l-4 border-amber-500 p-6 rounded-lg max-w-2xl mx-auto text-left animate-slide-up stagger-4">
+              <div className="flex items-start gap-3">
+                <Bell className="text-amber-600 shrink-0 mt-1" size={20} />
+                <div>
+                  <p className="text-sm font-bold text-brand-dark mb-1">Important: Email Support</p>
+                  <p className="text-sm text-text-secondary">
+                    Our system emails are automated and unmonitored. Please do not reply to system emails.
+                    Use the feedback form above for all support requests, bug reports, and general inquiries.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Final CTA Section */}
       <section className="py-24 bg-white relative overflow-hidden">
         {/* Animated background pattern */}
@@ -1219,6 +1294,7 @@ const LandingPage = () => {
               <h4 className="font-bold text-brand-dark mb-4">Company</h4>
               <div className="space-y-2">
                 <a href="#testimonials" className="block text-sm text-text-muted hover:text-brand-blue transition-colors">Reviews</a>
+                <Link to="/feedback" className="block text-sm text-text-muted hover:text-brand-blue transition-colors">Feedback</Link>
                 <Link to="/legal/security" className="block text-sm text-text-muted hover:text-brand-blue transition-colors">Security</Link>
               </div>
             </div>
