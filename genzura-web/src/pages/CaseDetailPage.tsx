@@ -48,40 +48,40 @@ const docTypeStyle: Record<string, string> = {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 const SectionCard = ({ title, children, action, className = "" }: { title: string; children: React.ReactNode; action?: React.ReactNode; className?: string }) => (
-  <div className={`glass-card rounded-[2.5rem] shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700 premium-border ${className}`}>
-    <div className="px-10 py-8 border-b border-border-base/50 flex items-center justify-between bg-white/40">
-      <h3 className="font-bold text-brand-dark tracking-tight text-lg">{title}</h3>
+  <div className={`glass-card rounded-2xl sm:rounded-[2.5rem] shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700 premium-border ${className}`}>
+    <div className="px-4 sm:px-6 lg:px-10 py-4 sm:py-6 lg:py-8 border-b border-border-base/50 flex items-center justify-between bg-white/40">
+      <h3 className="font-bold text-brand-dark tracking-tight text-base sm:text-lg">{title}</h3>
       {action}
     </div>
-    <div className="p-10">{children}</div>
+    <div className="p-4 sm:p-6 lg:p-10">{children}</div>
   </div>
 );
 
 const TimelineItem = ({ event, isLast, index }: { event: TimelineEvent; isLast: boolean; index: number }) => {
   const { icon: Icon, bg, color } = timelineIcon(event.type);
   return (
-    <div className="flex gap-8 group animate-in-up" style={{ animationDelay: `${index * 100}ms` }}>
+    <div className="flex gap-4 sm:gap-6 lg:gap-8 group animate-in-up" style={{ animationDelay: `${index * 100}ms` }}>
       <div className="flex flex-col items-center">
-        <div className={`w-12 h-12 rounded-2xl ${bg} ${color} flex items-center justify-center shrink-0 z-10 shadow-lg border-4 border-white transition-all duration-500 group-hover:scale-110 group-hover:rotate-6`}>
-          <Icon size={20} />
+        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl ${bg} ${color} flex items-center justify-center shrink-0 z-10 shadow-lg border-2 sm:border-4 border-white transition-all duration-500 group-hover:scale-110 group-hover:rotate-6`}>
+          <Icon size={16} className="sm:w-5 sm:h-5" />
         </div>
-        {!isLast && <div className="w-0.5 flex-1 bg-gradient-to-b from-border-base/50 via-border-base/20 to-transparent my-3" />}
+        {!isLast && <div className="w-0.5 flex-1 bg-gradient-to-b from-border-base/50 via-border-base/20 to-transparent my-2 sm:my-3" />}
       </div>
-      <div className="pb-10 pt-1.5 flex-1">
-        <div className="flex items-center justify-between gap-4 mb-2">
-          <p className="text-[15px] font-bold text-brand-dark leading-snug group-hover:text-brand-blue transition-colors">{event.description}</p>
-          <span className="text-[10px] font-bold text-text-muted uppercase tracking-[0.2em] whitespace-nowrap bg-page-bg px-2 py-1 rounded-md">
+      <div className="pb-8 sm:pb-10 pt-1 sm:pt-1.5 flex-1 min-w-0">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-2">
+          <p className="text-sm sm:text-[15px] font-bold text-brand-dark leading-snug group-hover:text-brand-blue transition-colors">{event.description}</p>
+          <span className="text-[9px] sm:text-[10px] font-bold text-text-muted uppercase tracking-[0.15em] sm:tracking-[0.2em] whitespace-nowrap bg-page-bg px-2 py-1 rounded-md w-fit">
             {new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-page-bg/50 border border-border-base/50 hover:border-brand-blue/30 transition-colors cursor-default">
-            <div className="w-5 h-5 rounded-lg bg-brand-blue text-white flex items-center justify-center text-[9px] font-black shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl bg-page-bg/50 border border-border-base/50 hover:border-brand-blue/30 transition-colors cursor-default w-fit">
+            <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-md sm:rounded-lg bg-brand-blue text-white flex items-center justify-center text-[8px] sm:text-[9px] font-black shadow-sm">
               {typeof event.author === 'object' ? (event.author?.initials || event.author?.name?.split(' ').map((n: string) => n[0]).join('')) : event.author?.split(' ').map(n => n[0]).join('')}
             </div>
-            <span className="text-xs font-bold text-brand-dark/70">{typeof event.author === 'object' ? event.author?.name : event.author}</span>
+            <span className="text-[11px] sm:text-xs font-bold text-brand-dark/70 truncate max-w-[150px] sm:max-w-none">{typeof event.author === 'object' ? event.author?.name : event.author}</span>
           </div>
-          <span className="text-xs text-text-muted font-medium opacity-60 tracking-tight">
+          <span className="text-[11px] sm:text-xs text-text-muted font-medium opacity-60 tracking-tight">
             {new Date(event.timestamp).toLocaleDateString()}
           </span>
         </div>
@@ -90,7 +90,7 @@ const TimelineItem = ({ event, isLast, index }: { event: TimelineEvent; isLast: 
   );
 };
 
-const DocumentRow = ({ doc, index, caseId }: { doc: CaseDocument & { fileUrl?: string }; index: number; caseId: string }) => {
+const DocumentRow = ({ doc, index }: { doc: CaseDocument & { fileUrl?: string }; index: number }) => {
   const handleDownload = async () => {
     if (doc.fileUrl) {
       const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
@@ -106,29 +106,29 @@ const DocumentRow = ({ doc, index, caseId }: { doc: CaseDocument & { fileUrl?: s
   };
 
   return (
-    <div className="flex items-center gap-5 py-5 border-b border-border-base last:border-0 group animate-in-up" style={{ animationDelay: `${index * 50}ms` }}>
-      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-sm border border-white ${docTypeStyle[doc.type]}`}>
-        <FileText size={24} />
+    <div className="flex items-center gap-3 sm:gap-5 py-4 sm:py-5 border-b border-border-base last:border-0 group animate-in-up" style={{ animationDelay: `${index * 50}ms` }}>
+      <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-sm border border-white ${docTypeStyle[doc.type]}`}>
+        <FileText size={20} className="sm:w-6 sm:h-6" />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-3">
-          <p className="text-[15px] font-bold text-brand-dark truncate group-hover:text-brand-blue transition-colors cursor-pointer">{doc.name}</p>
-          <span className="px-2 py-0.5 rounded-lg bg-page-bg text-[9px] font-black text-text-muted border border-border-base/50 uppercase tracking-wider">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+          <p className="text-sm sm:text-[15px] font-bold text-brand-dark truncate group-hover:text-brand-blue transition-colors cursor-pointer max-w-[200px] sm:max-w-none">{doc.name}</p>
+          <span className="px-1.5 sm:px-2 py-0.5 rounded-lg bg-page-bg text-[8px] sm:text-[9px] font-black text-text-muted border border-border-base/50 uppercase tracking-wider">
             {doc.type}
           </span>
         </div>
-        <p className="text-xs text-text-muted mt-1.5 font-medium opacity-70">
-          <span className="font-bold">{doc.size}</span> · Uploaded <span className="font-bold">{new Date(doc.uploadedAt).toLocaleDateString()}</span>
+        <p className="text-[11px] sm:text-xs text-text-muted mt-1 sm:mt-1.5 font-medium opacity-70">
+          <span className="font-bold">{doc.size}</span> · <span className="hidden sm:inline">Uploaded </span><span className="font-bold">{new Date(doc.uploadedAt).toLocaleDateString()}</span>
         </p>
       </div>
-      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-300">
-        <button 
+      <div className="flex items-center gap-1.5 sm:gap-2 sm:opacity-0 sm:group-hover:opacity-100 sm:translate-x-4 sm:group-hover:translate-x-0 transition-all duration-300">
+        <button
           onClick={handleDownload}
-          className="p-3 rounded-xl bg-page-bg/50 hover:bg-brand-blue/5 text-text-muted hover:text-brand-blue transition-all premium-border" title="Download"
+          className="p-2 sm:p-3 rounded-lg sm:rounded-xl bg-page-bg/50 hover:bg-brand-blue/5 text-text-muted hover:text-brand-blue transition-all premium-border" title="Download"
         >
-          <Download size={18} />
+          <Download size={16} className="sm:w-[18px] sm:h-[18px]" />
         </button>
-        <button className="p-3 rounded-xl bg-page-bg/50 hover:bg-brand-blue/5 text-text-muted hover:text-brand-blue transition-all premium-border" title="Share">
+        <button className="hidden sm:block p-3 rounded-xl bg-page-bg/50 hover:bg-brand-blue/5 text-text-muted hover:text-brand-blue transition-all premium-border" title="Share">
           <Share2 size={18} />
         </button>
       </div>
@@ -730,23 +730,24 @@ export default function CaseDetailPage() {
 
             {/* Interactive Tabbed Interface */}
             <div className="bg-white rounded-[2.5rem] border border-border-base shadow-sm overflow-hidden min-h-[600px] flex flex-col">
-              <div className="px-10 py-8 border-b border-border-base flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white sticky top-0 z-20">
-                <div className="flex gap-2 p-1.5 bg-page-bg rounded-2xl border border-border-base w-fit">
+              <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-8 border-b border-border-base flex flex-col lg:flex-row lg:items-center justify-between gap-4 lg:gap-6 bg-white sticky top-0 z-20">
+                <div className="flex gap-1.5 sm:gap-2 p-1.5 bg-page-bg rounded-2xl border border-border-base w-full lg:w-fit overflow-x-auto">
                   {(['timeline', 'documents', 'notes'] as const).map((tab) => (
                     <button
                       key={tab}
                       onClick={() => setActiveTab(tab)}
-                      className={`px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all duration-300 flex items-center gap-2 ${
+                      className={`px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 rounded-xl text-[10px] sm:text-xs font-bold uppercase tracking-widest transition-all duration-300 flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${
                         activeTab === tab
                           ? 'bg-white text-brand-blue shadow-lg shadow-brand-blue/5 border border-border-base translate-y-[-1px]'
                           : 'text-text-muted hover:text-brand-dark'
                       }`}
                     >
-                      {tab === 'timeline' && <History size={14} />}
-                      {tab === 'documents' && <Paperclip size={14} />}
-                      {tab === 'notes' && <MessageSquare size={14} />}
-                      {tab}
-                      <span className={`ml-1 text-[10px] font-bold px-2 py-0.5 rounded-lg border ${
+                      {tab === 'timeline' && <History size={12} className="sm:w-3.5 sm:h-3.5" />}
+                      {tab === 'documents' && <Paperclip size={12} className="sm:w-3.5 sm:h-3.5" />}
+                      {tab === 'notes' && <MessageSquare size={12} className="sm:w-3.5 sm:h-3.5" />}
+                      <span className="hidden sm:inline">{tab}</span>
+                      <span className="sm:hidden capitalize">{tab.slice(0, 3)}</span>
+                      <span className={`text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-lg border ${
                         activeTab === tab ? 'bg-brand-blue text-white border-brand-blue' : 'bg-white text-text-muted border-border-base'
                       }`}>
                         {tab === 'timeline' ? (caseData.timeline?.length || 0) : tab === 'documents' ? (caseData.documents?.length || 0) : (caseData.notes?.length || 0)}
@@ -754,18 +755,18 @@ export default function CaseDetailPage() {
                     </button>
                   ))}
                 </div>
-                
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
-                    <input 
-                      type="text" 
-                      placeholder="Search records..." 
-                      className="pl-11 pr-4 py-2.5 rounded-xl bg-page-bg border border-transparent focus:border-brand-blue focus:bg-white transition-all text-sm font-bold w-full md:w-[240px]"
+
+                <div className="flex items-center gap-2 sm:gap-3 w-full lg:w-auto">
+                  <div className="relative flex-1 lg:flex-initial">
+                    <Search size={14} className="sm:w-4 sm:h-4 absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-text-muted" />
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      className="pl-9 sm:pl-11 pr-3 sm:pr-4 py-2 sm:py-2.5 rounded-xl bg-page-bg border border-transparent focus:border-brand-blue focus:bg-white transition-all text-xs sm:text-sm font-bold w-full lg:w-[200px] xl:w-[240px]"
                     />
                   </div>
-                  <button className="p-2.5 rounded-xl bg-page-bg border border-transparent hover:border-border-base text-text-muted hover:text-brand-blue transition-all">
-                    <Filter size={18} />
+                  <button className="p-2 sm:p-2.5 rounded-xl bg-page-bg border border-transparent hover:border-border-base text-text-muted hover:text-brand-blue transition-all shrink-0">
+                    <Filter size={16} className="sm:w-[18px] sm:h-[18px]" />
                   </button>
                 </div>
               </div>
@@ -832,7 +833,7 @@ export default function CaseDetailPage() {
                           }
                         />
                       ) : (
-                        (caseData.documents || []).map((doc, i) => <DocumentRow key={doc.id} doc={doc} index={i} caseId={caseData.id} />)
+                        (caseData.documents || []).map((doc, i) => <DocumentRow key={doc.id} doc={doc} index={i} />)
                       )}
                     </div>
                   </div>
@@ -899,7 +900,7 @@ export default function CaseDetailPage() {
           </div>
 
           {/* ── Right Column: Insights & Team ── */}
-          <div className="w-full lg:w-[420px] space-y-8 animate-in-right">
+          <div className="w-full lg:w-[420px] xl:w-[480px] space-y-8 animate-in-right">
             
             {/* Team Widget */}
             <div id="case-team-widget">
