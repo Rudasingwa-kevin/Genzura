@@ -12,7 +12,8 @@
       "Bash(netstat -ano)",
       "Bash(awk '{print $5}')",
       "Bash(xargs -I {} taskkill //PID {} //F)",
-      "Bash(node upload-logo-to-s3.js)"
+      "Bash(node upload-logo-to-s3.js)",
+      "WebFetch(domain:www.amategeko.gov.rw)"
     ]
   }
 }

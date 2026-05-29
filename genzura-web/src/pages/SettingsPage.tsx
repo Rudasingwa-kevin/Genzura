@@ -11,7 +11,17 @@ import {
   ShieldCheck,
   Zap,
   CreditCard,
-  AlertTriangle
+  AlertTriangle,
+  FileText,
+  Upload,
+  Download,
+  Trash2,
+  Award,
+  GraduationCap,
+  Eye,
+  EyeOff,
+  Calendar,
+  X
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import AppLayout from '../components/AppLayout';
@@ -21,10 +31,11 @@ import { authService } from '../api/services/auth.service';
 import { notificationPreferencesService, type NotificationPreferences } from '../api/services/notificationPreferences.service';
 
 // ─── Tab types ────────────────────────────────────────────────────────────────
-type Tab = 'profile' | 'organization' | 'security' | 'notifications' | 'subscription';
+type Tab = 'profile' | 'documents' | 'organization' | 'security' | 'notifications' | 'subscription';
 
 const TABS: { id: Tab; label: string; icon: React.ElementType; color: string }[] = [
   { id: 'profile',      label: 'Personal Profile',    icon: UserIcon,     color: 'text-brand-blue' },
+  { id: 'documents',    label: 'Documents & Credentials', icon: FileText, color: 'text-indigo-600' },
   { id: 'subscription', label: 'Subscription & Billing', icon: CreditCard, color: 'text-purple-600' },
   { id: 'organization', label: 'Organization Info',   icon: Building,     color: 'text-emerald-600' },
   { id: 'security',     label: 'Security & Access',   icon: Shield,       color: 'text-amber-600' },
@@ -98,13 +109,29 @@ const ProfileTab = () => {
   const [phone, setPhone] = useState(user?.phone || '');
   const [location, setLocation] = useState(user?.location || '');
   const [jobTitle, setJobTitle] = useState(user?.jobTitle || '');
+  const [bio, setBio] = useState(user?.bio || '');
+  const [education, setEducation] = useState(user?.education || '');
+  const [barNumber, setBarNumber] = useState(user?.barNumber || '');
+  const [yearsOfExperience, setYearsOfExperience] = useState(user?.yearsOfExperience || '');
   const fileInputRef = useState<HTMLInputElement | null>(null)[1];
+
+  const isAttorney = user?.role === 'Attorney' || user?.role === 'Senior_Attorney';
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     setTimeout(() => {
-      updateUser({ firstName, lastName, phone, location, jobTitle });
+      updateUser({
+        firstName,
+        lastName,
+        phone,
+        location,
+        jobTitle,
+        bio,
+        education,
+        barNumber,
+        yearsOfExperience: yearsOfExperience ? parseInt(yearsOfExperience) : undefined,
+      });
       setIsSaving(false);
       toast.success('Profile updated successfully!', { icon: '👤' });
     }, 800);
@@ -223,6 +250,70 @@ const ProfileTab = () => {
         <Field label="Job Title"><Input value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="e.g., Senior Attorney" /></Field>
         <Field label="Location"><Input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g., Kigali, Rwanda" /></Field>
       </div>
+
+      {/* Attorney-Specific Fields */}
+      {isAttorney && (
+        <>
+          <div className="pt-8 mt-8 border-t border-border-base">
+            <SectionHeader title="Professional Profile" sub="Information shown on public attorney directory" />
+          </div>
+
+          <div className="space-y-8">
+            <Field label="Professional Bio" hint="Tell clients about yourself">
+              <textarea
+                value={bio}
+                onChange={e => setBio(e.target.value)}
+                rows={6}
+                placeholder="e.g., Experienced attorney specializing in corporate law and intellectual property. Over 10 years of practice representing startups and established businesses across Rwanda..."
+                className="w-full px-5 py-4 rounded-2xl border border-border-base focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/5 outline-none transition-all bg-white font-medium text-brand-dark shadow-sm resize-none"
+              />
+              <p className="text-xs text-text-muted mt-2 ml-1">{bio.length}/2000 characters</p>
+            </Field>
+
+            <div className="grid sm:grid-cols-2 gap-8">
+              <Field label="Education" hint="Degrees & qualifications">
+                <Input
+                  value={education}
+                  onChange={e => setEducation(e.target.value)}
+                  placeholder="e.g., LLB, University of Rwanda (2013)"
+                />
+              </Field>
+
+              <Field label="Bar Number" hint="Bar association license">
+                <Input
+                  value={barNumber}
+                  onChange={e => setBarNumber(e.target.value)}
+                  placeholder="e.g., RBA-2013-0123"
+                />
+              </Field>
+
+              <Field label="Years of Experience" hint="Total years practicing law">
+                <Input
+                  type="number"
+                  value={yearsOfExperience}
+                  onChange={e => setYearsOfExperience(e.target.value)}
+                  placeholder="e.g., 10"
+                  min="0"
+                  max="50"
+                />
+              </Field>
+            </div>
+
+            <div className="bg-info-bg border border-brand-blue/20 rounded-2xl p-6">
+              <div className="flex gap-3">
+                <ShieldCheck className="w-5 h-5 text-brand-blue flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold text-brand-dark text-sm">Public Profile Visibility</p>
+                  <p className="text-xs text-text-secondary mt-1">
+                    These fields will be displayed on your public attorney profile at{' '}
+                    <span className="font-mono text-brand-blue">genzura.com/attorneys/{user.id.slice(0, 8)}...</span>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="pt-8 border-t border-border-base flex justify-end">
         <SaveButton isSaving={isSaving} />
@@ -462,6 +553,447 @@ const SecurityTab = () => {
   );
 };
 
+// ─── Documents Tab (Attorney-only) ────────────────────────────────────────────
+
+const DocumentsTab = () => {
+  const { user } = useAuth();
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+
+  const isAttorney = user?.role === 'Attorney' || user?.role === 'Senior_Attorney';
+
+  useEffect(() => {
+    if (isAttorney) {
+      fetchDocuments();
+    }
+  }, [isAttorney]);
+
+  const fetchDocuments = async () => {
+    try {
+      setLoading(true);
+      // TODO: Replace with actual API endpoint
+      const response = await fetch('/api/users/documents');
+      const data = await response.json();
+      if (data.success) {
+        setDocuments(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (docId: string) => {
+    if (!confirm('Are you sure you want to delete this document?')) return;
+
+    try {
+      // TODO: Replace with actual API endpoint
+      const response = await fetch(`/api/users/documents/${docId}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        toast.success('Document deleted');
+        fetchDocuments();
+      }
+    } catch (error) {
+      toast.error('Failed to delete document');
+    }
+  };
+
+  const toggleVisibility = async (docId: string, currentlyPublic: boolean) => {
+    try {
+      // TODO: Replace with actual API endpoint
+      const response = await fetch(`/api/users/documents/${docId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPublic: !currentlyPublic }),
+      });
+      if (response.ok) {
+        toast.success(currentlyPublic ? 'Document hidden from public' : 'Document now public');
+        fetchDocuments();
+      }
+    } catch (error) {
+      toast.error('Failed to update visibility');
+    }
+  };
+
+  if (!isAttorney) {
+    return (
+      <div className="py-20 text-center">
+        <FileText className="w-16 h-16 text-text-muted mx-auto mb-4" />
+        <p className="text-text-secondary font-bold">
+          Professional documents are only available for attorneys
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-10 animate-in-fade">
+      <SectionHeader
+        title="Professional Documents"
+        sub="CV, Certificates, Licenses & Credentials"
+      />
+
+      {/* Upload Button */}
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-text-secondary">
+          Upload professional documents to display on your public attorney profile
+        </p>
+        <button
+          onClick={() => setShowUploadModal(true)}
+          className="bg-brand-blue text-white px-6 py-3 rounded-2xl font-bold text-xs uppercase tracking-[0.15em] flex items-center gap-2 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+        >
+          <Upload size={16} />
+          Upload Document
+        </button>
+      </div>
+
+      {/* Documents List */}
+      {loading ? (
+        <div className="text-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-brand-blue mx-auto" />
+        </div>
+      ) : documents.length === 0 ? (
+        <div className="text-center py-12 bg-page-bg rounded-2xl border-2 border-dashed border-border-base">
+          <FileText className="w-12 h-12 text-text-muted mx-auto mb-3" />
+          <p className="text-brand-dark font-bold mb-2">No documents uploaded yet</p>
+          <p className="text-sm text-text-secondary mb-4">
+            Upload your CV, certificates, and licenses to build credibility
+          </p>
+          <button
+            onClick={() => setShowUploadModal(true)}
+            className="bg-brand-blue text-white px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-[0.1em] inline-flex items-center gap-2"
+          >
+            <Upload size={14} />
+            Upload First Document
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {documents.map((doc) => (
+            <div
+              key={doc.id}
+              className="bg-white border border-border-base rounded-2xl p-5 flex items-start gap-4 hover:border-brand-blue/30 transition-all group"
+            >
+              {/* Icon */}
+              <div className="w-12 h-12 rounded-xl bg-brand-light text-brand-blue flex items-center justify-center flex-shrink-0">
+                {doc.type === 'CV' && <FileText size={20} />}
+                {doc.type === 'Certificate' && <Award size={20} />}
+                {doc.type === 'BarLicense' && <ShieldCheck size={20} />}
+                {doc.type === 'Education' && <GraduationCap size={20} />}
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-brand-dark">{doc.title}</h4>
+                {doc.description && (
+                  <p className="text-sm text-text-secondary mt-1">{doc.description}</p>
+                )}
+                <div className="flex items-center gap-3 mt-2 text-xs text-text-muted">
+                  <span className="inline-flex items-center gap-1">
+                    <Calendar size={12} />
+                    {new Date(doc.uploadedAt).toLocaleDateString()}
+                  </span>
+                  {doc.fileSize && (
+                    <span>
+                      {(doc.fileSize / 1024).toFixed(0)} KB
+                    </span>
+                  )}
+                  <span className={`inline-flex items-center gap-1 ${doc.isPublic ? 'text-brand-green' : 'text-text-muted'}`}>
+                    {doc.isPublic ? <Eye size={12} /> : <EyeOff size={12} />}
+                    {doc.isPublic ? 'Public' : 'Private'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <a
+                  href={doc.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 hover:bg-brand-light rounded-lg transition-colors text-text-secondary hover:text-brand-blue"
+                  title="Download"
+                >
+                  <Download size={16} />
+                </a>
+                <button
+                  onClick={() => toggleVisibility(doc.id, doc.isPublic)}
+                  className="p-2 hover:bg-page-bg rounded-lg transition-colors text-text-secondary hover:text-brand-dark"
+                  title={doc.isPublic ? 'Hide from public' : 'Make public'}
+                >
+                  {doc.isPublic ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+                <button
+                  onClick={() => handleDelete(doc.id)}
+                  className="p-2 hover:bg-red-50 rounded-lg transition-colors text-text-secondary hover:text-red-600"
+                  title="Delete"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <UploadDocumentModal
+          onClose={() => setShowUploadModal(false)}
+          onSuccess={() => {
+            setShowUploadModal(false);
+            fetchDocuments();
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+// ─── Upload Document Modal ────────────────────────────────────────────────────
+
+const UploadDocumentModal = ({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) => {
+  const [uploading, setUploading] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [formData, setFormData] = useState({
+    type: 'CV',
+    title: '',
+    description: '',
+    isPublic: true,
+    issuedDate: '',
+    issuer: '',
+  });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+
+    // Validate file type
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowedTypes.includes(selectedFile.type)) {
+      toast.error('Only PDF and image files are allowed');
+      return;
+    }
+
+    // Validate file size (10MB max)
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      toast.error('File must be smaller than 10MB');
+      return;
+    }
+
+    setFile(selectedFile);
+
+    // Auto-set title from filename if empty
+    if (!formData.title) {
+      setFormData({ ...formData, title: selectedFile.name.replace(/\.[^/.]+$/, '') });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!file) {
+      toast.error('Please select a file');
+      return;
+    }
+
+    if (!formData.title) {
+      toast.error('Please enter a title');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', file);
+      uploadFormData.append('type', formData.type);
+      uploadFormData.append('title', formData.title);
+      uploadFormData.append('description', formData.description);
+      uploadFormData.append('isPublic', formData.isPublic.toString());
+      if (formData.issuedDate) uploadFormData.append('issuedDate', formData.issuedDate);
+      if (formData.issuer) uploadFormData.append('issuer', formData.issuer);
+
+      // TODO: Replace with actual API endpoint
+      const response = await fetch('/api/users/documents', {
+        method: 'POST',
+        body: uploadFormData,
+      });
+
+      if (response.ok) {
+        toast.success('Document uploaded successfully!');
+        onSuccess();
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (error) {
+      toast.error('Failed to upload document');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b border-border-base px-8 py-6 flex items-center justify-between rounded-t-3xl">
+          <div>
+            <h2 className="text-2xl font-bold text-brand-dark">Upload Document</h2>
+            <p className="text-sm text-text-secondary mt-1">Add professional credentials to your profile</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-text-muted hover:text-brand-dark transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          {/* File Upload */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-brand-dark uppercase tracking-[0.1em]">
+              File *
+            </label>
+            <div className="border-2 border-dashed border-border-base rounded-2xl p-8 text-center hover:border-brand-blue/30 transition-all">
+              <input
+                type="file"
+                accept=".pdf,image/*"
+                onChange={handleFileChange}
+                className="hidden"
+                id="file-upload"
+              />
+              <label
+                htmlFor="file-upload"
+                className="cursor-pointer flex flex-col items-center"
+              >
+                <Upload className="w-10 h-10 text-text-muted mb-3" />
+                {file ? (
+                  <div>
+                    <p className="font-bold text-brand-dark">{file.name}</p>
+                    <p className="text-sm text-text-secondary mt-1">
+                      {(file.size / 1024).toFixed(0)} KB
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="font-bold text-brand-dark mb-1">Click to upload</p>
+                    <p className="text-sm text-text-secondary">PDF or images, max 10MB</p>
+                  </div>
+                )}
+              </label>
+            </div>
+          </div>
+
+          {/* Document Type */}
+          <Field label="Document Type">
+            <Select
+              value={formData.type}
+              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+            >
+              <option value="CV">CV / Resume</option>
+              <option value="Certificate">Certificate</option>
+              <option value="BarLicense">Bar License</option>
+              <option value="Education">Education Degree</option>
+              <option value="Award">Award</option>
+              <option value="Publication">Publication</option>
+              <option value="Other">Other</option>
+            </Select>
+          </Field>
+
+          {/* Title */}
+          <Field label="Title *">
+            <Input
+              required
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              placeholder="e.g., Bar Association License"
+            />
+          </Field>
+
+          {/* Description */}
+          <Field label="Description">
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={3}
+              placeholder="Brief description of this document..."
+              className="w-full px-5 py-3 rounded-2xl border border-border-base focus:border-brand-blue outline-none transition-all bg-white font-medium text-brand-dark"
+            />
+          </Field>
+
+          {/* Optional Fields */}
+          <div className="grid sm:grid-cols-2 gap-6">
+            <Field label="Issuer" hint="Optional">
+              <Input
+                value={formData.issuer}
+                onChange={(e) => setFormData({ ...formData, issuer: e.target.value })}
+                placeholder="e.g., Rwanda Bar Association"
+              />
+            </Field>
+
+            <Field label="Issue Date" hint="Optional">
+              <Input
+                type="date"
+                value={formData.issuedDate}
+                onChange={(e) => setFormData({ ...formData, issuedDate: e.target.value })}
+              />
+            </Field>
+          </div>
+
+          {/* Visibility */}
+          <div className="flex items-center justify-between p-5 bg-page-bg rounded-2xl">
+            <div>
+              <p className="font-bold text-brand-dark text-sm">Public Visibility</p>
+              <p className="text-xs text-text-secondary mt-0.5">
+                Show this document on your public attorney profile
+              </p>
+            </div>
+            <Toggle
+              on={formData.isPublic}
+              onChange={() => setFormData({ ...formData, isPublic: !formData.isPublic })}
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-6 py-3.5 border border-border-base text-text-secondary rounded-2xl font-bold text-xs uppercase tracking-[0.1em] hover:bg-page-bg transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={uploading || !file}
+              className="flex-1 bg-brand-blue text-white px-6 py-3.5 rounded-2xl font-bold text-xs uppercase tracking-[0.15em] flex items-center justify-center gap-2 disabled:opacity-50 hover:shadow-xl transition-all"
+            >
+              {uploading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload size={16} />
+                  Upload Document
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 
 const NotificationsTab = () => {
   const [isSaving, setIsSaving] = useState(false);
@@ -556,6 +1088,7 @@ export default function SettingsPage() {
   const renderContent = () => {
     switch (activeTab) {
       case 'profile': return <ProfileTab />;
+      case 'documents': return <DocumentsTab />;
       case 'subscription': return <PricingPage variant="settings" />;
       case 'security': return <SecurityTab />;
       case 'notifications': return <NotificationsTab />;
