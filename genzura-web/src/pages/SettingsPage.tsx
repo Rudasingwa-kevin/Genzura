@@ -29,6 +29,7 @@ import { useAuth } from '../contexts/AuthContext';
 import PricingPage from './PricingPage';
 import { authService } from '../api/services/auth.service';
 import { notificationPreferencesService, type NotificationPreferences } from '../api/services/notificationPreferences.service';
+import { attorneyDocumentService, type AttorneyDocument } from '../api/services/attorneyDocument.service';
 
 // ─── Tab types ────────────────────────────────────────────────────────────────
 type Tab = 'profile' | 'documents' | 'organization' | 'security' | 'notifications' | 'subscription';
@@ -557,7 +558,7 @@ const SecurityTab = () => {
 
 const DocumentsTab = () => {
   const { user } = useAuth();
-  const [documents, setDocuments] = useState<any[]>([]);
+  const [documents, setDocuments] = useState<AttorneyDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -573,14 +574,13 @@ const DocumentsTab = () => {
   const fetchDocuments = async () => {
     try {
       setLoading(true);
-      // TODO: Replace with actual API endpoint
-      const response = await fetch('/api/users/documents');
-      const data = await response.json();
-      if (data.success) {
-        setDocuments(data.data);
+      const response = await attorneyDocumentService.getMyDocuments();
+      if (response.success) {
+        setDocuments(response.data);
       }
     } catch (error) {
       console.error('Error fetching documents:', error);
+      toast.error('Failed to load documents');
     } finally {
       setLoading(false);
     }
@@ -590,14 +590,9 @@ const DocumentsTab = () => {
     if (!confirm('Are you sure you want to delete this document?')) return;
 
     try {
-      // TODO: Replace with actual API endpoint
-      const response = await fetch(`/api/users/documents/${docId}`, {
-        method: 'DELETE',
-      });
-      if (response.ok) {
-        toast.success('Document deleted');
-        fetchDocuments();
-      }
+      await attorneyDocumentService.deleteDocument(docId);
+      toast.success('Document deleted');
+      fetchDocuments();
     } catch (error) {
       toast.error('Failed to delete document');
     }
@@ -605,16 +600,9 @@ const DocumentsTab = () => {
 
   const toggleVisibility = async (docId: string, currentlyPublic: boolean) => {
     try {
-      // TODO: Replace with actual API endpoint
-      const response = await fetch(`/api/users/documents/${docId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isPublic: !currentlyPublic }),
-      });
-      if (response.ok) {
-        toast.success(currentlyPublic ? 'Document hidden from public' : 'Document now public');
-        fetchDocuments();
-      }
+      await attorneyDocumentService.updateDocument(docId, { isPublic: !currentlyPublic });
+      toast.success(currentlyPublic ? 'Document hidden from public' : 'Document now public');
+      fetchDocuments();
     } catch (error) {
       toast.error('Failed to update visibility');
     }
@@ -818,13 +806,9 @@ const UploadDocumentModal = ({ onClose, onSuccess }: { onClose: () => void; onSu
       if (formData.issuedDate) uploadFormData.append('issuedDate', formData.issuedDate);
       if (formData.issuer) uploadFormData.append('issuer', formData.issuer);
 
-      // TODO: Replace with actual API endpoint
-      const response = await fetch('/api/users/documents', {
-        method: 'POST',
-        body: uploadFormData,
-      });
+      const response = await attorneyDocumentService.upload(uploadFormData);
 
-      if (response.ok) {
+      if (response.success) {
         toast.success('Document uploaded successfully!');
         onSuccess();
       } else {
