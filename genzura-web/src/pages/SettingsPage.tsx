@@ -113,7 +113,6 @@ const ProfileTab = () => {
   const [bio, setBio] = useState(user?.bio || '');
   const [education, setEducation] = useState(user?.education || '');
   const [barNumber, setBarNumber] = useState(user?.barNumber || '');
-  const [yearsOfExperience, setYearsOfExperience] = useState(user?.yearsOfExperience || '');
   const fileInputRef = useState<HTMLInputElement | null>(null)[1];
 
   const isAttorney = user?.role === 'Attorney' || user?.role === 'Senior_Attorney';
@@ -131,7 +130,6 @@ const ProfileTab = () => {
         bio,
         education,
         barNumber,
-        yearsOfExperience: yearsOfExperience ? parseInt(yearsOfExperience) : undefined,
       });
       setIsSaving(false);
       toast.success('Profile updated successfully!', { icon: '👤' });
@@ -285,17 +283,6 @@ const ProfileTab = () => {
                   value={barNumber}
                   onChange={e => setBarNumber(e.target.value)}
                   placeholder="e.g., RBA-2013-0123"
-                />
-              </Field>
-
-              <Field label="Years of Experience" hint="Total years practicing law">
-                <Input
-                  type="number"
-                  value={yearsOfExperience}
-                  onChange={e => setYearsOfExperience(e.target.value)}
-                  placeholder="e.g., 10"
-                  min="0"
-                  max="50"
                 />
               </Field>
             </div>

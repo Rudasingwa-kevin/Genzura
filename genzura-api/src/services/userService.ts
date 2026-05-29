@@ -161,7 +161,6 @@ export class UserService {
     bio?: string;
     education?: string;
     barNumber?: string;
-    yearsOfExperience?: number;
   }) {
     return prisma.user.update({
       where: { id },
@@ -175,7 +174,6 @@ export class UserService {
         ...(data.bio !== undefined && { bio: data.bio }),
         ...(data.education !== undefined && { education: data.education }),
         ...(data.barNumber !== undefined && { barNumber: data.barNumber }),
-        ...(data.yearsOfExperience !== undefined && { yearsOfExperience: data.yearsOfExperience }),
       },
     });
   }

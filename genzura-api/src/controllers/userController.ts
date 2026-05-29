@@ -79,7 +79,6 @@ export class UserController {
         bio,
         education,
         barNumber,
-        yearsOfExperience
       } = req.body;
 
       // Combine firstName and lastName into name if provided
@@ -94,7 +93,6 @@ export class UserController {
         bio,
         education,
         barNumber,
-        yearsOfExperience,
       });
 
       const { passwordHash, ...userWithoutPassword } = updated;

@@ -178,7 +178,6 @@ export async function getPublicAttorneyById(req: Request, res: Response) {
         bio: true,
         education: true,
         barNumber: true,
-        yearsOfExperience: true,
         specializations: true,
         createdAt: true,
         _count: {
@@ -263,7 +262,7 @@ export async function getPublicAttorneyById(req: Request, res: Response) {
       education: attorney.education,
       barNumber: attorney.barNumber,
       specializations: attorney.specializations || [],
-      yearsOfExperience: attorney.yearsOfExperience || Math.max(
+      yearsOfExperience: Math.max(
         1,
         Math.floor(
           (Date.now() - new Date(attorney.createdAt).getTime()) /
