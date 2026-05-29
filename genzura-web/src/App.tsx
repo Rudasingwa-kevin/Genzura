@@ -24,6 +24,8 @@ import FeedbackPage   from './pages/FeedbackPage';
 import PublicFeedbackPage from './pages/PublicFeedbackPage';
 import PricingPage    from './pages/PricingPage';
 import SubscriptionSettingsPage from './pages/SubscriptionSettingsPage';
+import AttorneyDirectoryPage from './pages/AttorneyDirectoryPage';
+import AttorneyProfilePage from './pages/AttorneyProfilePage';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -51,6 +53,8 @@ function App() {
             <Route path="/pricing"    element={<PricingPage variant="public" />} />
             <Route path="/legal/:documentId" element={<LegalPage />} />
             <Route path="/contact"    element={<PublicFeedbackPage />} />
+            <Route path="/attorneys"  element={<AttorneyDirectoryPage />} />
+            <Route path="/attorneys/:id" element={<AttorneyProfilePage />} />
 
             <Route path="/dashboard"  element={<ProtectedRoute><Dashboard /></ProtectedRoute>}     />
             <Route path="/cases"      element={<ProtectedRoute><CasesPage /></ProtectedRoute>}     />

@@ -22,6 +22,7 @@ import planRoutes from './routes/planRoutes.js';
 import invitationRoutes from './routes/invitationRoutes.js';
 import notificationPreferenceRoutes from './routes/notificationPreferenceRoutes.js';
 import trackingRoutes from './routes/trackingRoutes.js';
+import publicRoutes from './routes/publicRoutes.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 import { auditLogger } from './middleware/auditMiddleware.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
@@ -121,6 +122,9 @@ app.use('/public', express.static('public'));
 
 
 // Routes
+// Public routes (no authentication required)
+app.use('/api/public', publicRoutes);
+
 app.use('/api/auth', authRoutes);
 app.use('/api/cases', caseRoutes);
 app.use('/api/feedback', feedbackRoutes);

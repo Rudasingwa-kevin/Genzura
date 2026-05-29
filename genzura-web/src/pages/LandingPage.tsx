@@ -211,8 +211,8 @@ const Navbar = () => {
         <div className="hidden md:flex items-center gap-8">
           <a href="#features" className="text-sm font-medium text-text-secondary hover:text-brand-blue transition-colors">Features</a>
           <Link to="/pricing" className="text-sm font-medium text-text-secondary hover:text-brand-blue transition-colors">Pricing</Link>
+          <Link to="/attorneys" className="text-sm font-medium text-text-secondary hover:text-brand-blue transition-colors">Find Attorneys</Link>
           <a href="#how-it-works" className="text-sm font-medium text-text-secondary hover:text-brand-blue transition-colors">How It Works</a>
-          <a href="#testimonials" className="text-sm font-medium text-text-secondary hover:text-brand-blue transition-colors">Reviews</a>
           <Link to="/login" className="text-sm font-medium text-text-secondary hover:text-brand-blue transition-colors">Sign in</Link>
           <Link to="/register" className="bg-brand-blue text-white btn-premium py-2 px-6 text-sm no-underline">
             Start Free Trial
@@ -228,8 +228,8 @@ const Navbar = () => {
         <div className="md:hidden bg-white border-b p-6 flex flex-col gap-4 animate-in slide-in-from-top duration-300">
           <a href="#features" className="font-medium" onClick={() => setIsOpen(false)}>Features</a>
           <Link to="/pricing" className="font-medium" onClick={() => setIsOpen(false)}>Pricing</Link>
+          <Link to="/attorneys" className="font-medium" onClick={() => setIsOpen(false)}>Find Attorneys</Link>
           <a href="#how-it-works" className="font-medium" onClick={() => setIsOpen(false)}>How It Works</a>
-          <a href="#testimonials" className="font-medium" onClick={() => setIsOpen(false)}>Reviews</a>
           <Link to="/login" className="font-medium" onClick={() => setIsOpen(false)}>Sign in</Link>
           <Link to="/register" className="bg-brand-blue text-white py-3 rounded-button text-center no-underline" onClick={() => setIsOpen(false)}>Start Free Trial</Link>
         </div>

@@ -101,6 +101,11 @@ model User {
   location              String?
   jobTitle              String?
   language              String?          @default("EN")
+  bio                   String?          @db.Text  // Attorney bio/description
+  education             String?          // Education background
+  barNumber             String?          // Bar association number
+  yearsOfExperience     Int?             // Explicit years of experience
+  specializations       String[]         // Practice areas
   // Subscription fields
   subscriptionPlan      SubscriptionPlan @default(Genzura)
   subscriptionStartDate DateTime?
@@ -119,6 +124,7 @@ model User {
   calendarEvents        CalendarEvent[]
   eventAttendees        EventAttendee[]
   notificationPreferences NotificationPreference?
+  professionalDocuments AttorneyDocument[]  // CV, certificates, etc.
   createdAt             DateTime         @default(now())
   updatedAt             DateTime         @updatedAt
 }
@@ -157,6 +163,7 @@ model Case {
   documents     CaseDocument[]
   notes         CaseNote[]
   events        CalendarEvent[]
+  applicableLaws CaseLaw[]      // Rwandan laws applicable to this case
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 }
@@ -427,4 +434,248 @@ model AuditLog {
   @@index([status])
   @@index([timestamp])
   @@index([resourceType, resourceId])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RWANDAN LEGAL DATABASE
+// ═══════════════════════════════════════════════════════════════════════════
+
+enum LegalCodeType {
+  Civil_Code           // Code Civil
+  Penal_Code           // Code Pénal
+  Commercial_Code      // Commercial Law
+  Labor_Code           // Labor Law
+  Land_Code            // Land Law
+  Tax_Code             // Tax Law
+  Family_Code          // Family Law
+  Environmental_Code   // Environmental Law
+  Administrative_Code  // Administrative Law
+  Intellectual_Property // IP Law
+  Corporate_Law        // Company Law
+  Banking_Law          // Banking & Finance
+  Insurance_Law        // Insurance
+  Constitution         // Constitution of Rwanda
+  Other
+}
+
+enum LegalStatus {
+  Active      // Currently in force
+  Amended     // Has been amended (link to newer version)
+  Repealed    // No longer in force
+  Proposed    // Proposed legislation
+}
+
+// Main legal code/law document
+model LegalCode {
+  id              String          @id @default(cuid())
+
+  // Identification
+  code            String          @unique // e.g., "LAW_N_27_2021"
+  officialTitle   String          // Official title in Kinyarwanda
+  titleEN         String?         // English translation
+  titleFR         String?         // French translation
+  shortName       String          // e.g., "Penal Code 2018"
+
+  // Classification
+  type            LegalCodeType
+  status          LegalStatus     @default(Active)
+  category        String[]        // Tags: ["Criminal", "Property", "Theft"]
+
+  // Legal Details
+  enactmentDate   DateTime        // When law was passed
+  effectiveDate   DateTime        // When it became effective
+  officialGazette String?         // Official Gazette reference
+  lawNumber       String?         // e.g., "N° 27/2021"
+
+  // Content
+  summary         String?         @db.Text // Brief overview
+  fullText        String?         @db.Text // Complete legal text (optional)
+  pdfUrl          String?         // Link to official PDF
+
+  // Relationships
+  articles        LegalArticle[]
+  relatedCodes    LegalCodeRelation[] @relation("RelatedFrom")
+  relatingCodes   LegalCodeRelation[] @relation("RelatedTo")
+  amendments      LegalAmendment[]
+  caseLaws        CaseLaw[]
+
+  // Search optimization
+  searchVector    String?         @db.Text // For full-text search
+
+  // Metadata
+  createdBy       String?
+  lastReviewedAt  DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([type])
+  @@index([status])
+  @@index([code])
+  @@index([enactmentDate])
+}
+
+// Individual articles within a legal code
+model LegalArticle {
+  id              String       @id @default(cuid())
+
+  // Identification
+  legalCode       LegalCode    @relation(fields: [legalCodeId], references: [id], onDelete: Cascade)
+  legalCodeId     String
+  articleNumber   String       // e.g., "123", "45bis", "Art. 567"
+
+  // Structure
+  title           String?      // Article title/heading
+  section         String?      // Section it belongs to
+  chapter         String?      // Chapter it belongs to
+  book            String?      // Book (for larger codes)
+
+  // Content
+  textKY          String       @db.Text // Kinyarwanda
+  textEN          String?      @db.Text // English
+  textFR          String?      @db.Text // French
+
+  // Context
+  summary         String?      @db.Text // Plain language summary
+  keywords        String[]     // Keywords for matching
+  applicableTo    CaseType[]   // Which case types this applies to
+
+  // Penalties/Consequences (if applicable)
+  penaltyMin      String?      // e.g., "6 months"
+  penaltyMax      String?      // e.g., "5 years"
+  fineMin         Int?         // Fine in RWF
+  fineMax         Int?         // Fine in RWF
+
+  // Relationships
+  relatedArticles LegalArticleRelation[] @relation("ArticleFrom")
+  relatingArticles LegalArticleRelation[] @relation("ArticleTo")
+  caseLaws        CaseLaw[]
+
+  // Metadata
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@unique([legalCodeId, articleNumber])
+  @@index([legalCodeId])
+  @@index([section])
+  @@index([applicableTo])
+}
+
+// Relationships between legal codes (e.g., amendments, references)
+model LegalCodeRelation {
+  id            String    @id @default(cuid())
+  fromCode      LegalCode @relation("RelatedFrom", fields: [fromCodeId], references: [id], onDelete: Cascade)
+  fromCodeId    String
+  toCode        LegalCode @relation("RelatedTo", fields: [toCodeId], references: [id], onDelete: Cascade)
+  toCodeId      String
+  relationType  String    // "amends", "repeals", "references", "implements"
+  description   String?   @db.Text
+  createdAt     DateTime  @default(now())
+
+  @@unique([fromCodeId, toCodeId, relationType])
+}
+
+// Relationships between articles
+model LegalArticleRelation {
+  id              String       @id @default(cuid())
+  fromArticle     LegalArticle @relation("ArticleFrom", fields: [fromArticleId], references: [id], onDelete: Cascade)
+  fromArticleId   String
+  toArticle       LegalArticle @relation("ArticleTo", fields: [toArticleId], references: [id], onDelete: Cascade)
+  toArticleId     String
+  relationType    String       // "references", "modifies", "contradicts", "clarifies"
+  description     String?
+  createdAt       DateTime     @default(now())
+
+  @@unique([fromArticleId, toArticleId, relationType])
+}
+
+// Track amendments to laws
+model LegalAmendment {
+  id              String    @id @default(cuid())
+  legalCode       LegalCode @relation(fields: [legalCodeId], references: [id], onDelete: Cascade)
+  legalCodeId     String
+  amendmentDate   DateTime
+  amendmentBy     String    // Law that made the amendment
+  description     String    @db.Text
+  affectedArticles String[] // Article numbers affected
+  createdAt       DateTime  @default(now())
+
+  @@index([legalCodeId])
+}
+
+// Link cases to applicable laws
+model CaseLaw {
+  id              String       @id @default(cuid())
+
+  // Case reference
+  case            Case         @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  caseId          String
+
+  // Legal reference (can link to either Code or specific Article)
+  legalCode       LegalCode?   @relation(fields: [legalCodeId], references: [id])
+  legalCodeId     String?
+  legalArticle    LegalArticle? @relation(fields: [legalArticleId], references: [id])
+  legalArticleId  String?
+
+  // Application details
+  relevance       String       @default("Primary") // "Primary", "Secondary", "Referenced"
+  notes           String?      @db.Text // How this law applies to the case
+  suggestedBy     String?      // "AI" or userId
+  confirmedBy     String?      // userId who confirmed relevance
+
+  // Metadata
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@unique([caseId, legalCodeId, legalArticleId])
+  @@index([caseId])
+  @@index([legalCodeId])
+  @@index([legalArticleId])
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ATTORNEY PROFESSIONAL DOCUMENTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+enum AttorneyDocumentType {
+  CV                    // Curriculum Vitae / Resume
+  Certificate           // Professional certificates
+  BarLicense            // Bar association license
+  Education             // Degrees, diplomas
+  Award                 // Awards and recognitions
+  Publication           // Published articles, papers
+  Other                 // Other professional documents
+}
+
+model AttorneyDocument {
+  id              String                @id @default(cuid())
+
+  // Owner
+  attorney        User                  @relation(fields: [attorneyId], references: [id], onDelete: Cascade)
+  attorneyId      String
+
+  // Document details
+  type            AttorneyDocumentType
+  title           String                // e.g., "Bar License 2020", "MBA Degree"
+  description     String?               @db.Text
+  fileUrl         String                // S3 URL or local path
+  fileName        String                // Original file name
+  fileSize        Int?                  // Size in bytes
+  mimeType        String?               // e.g., "application/pdf"
+
+  // Visibility
+  isPublic        Boolean               @default(true)  // Show on public profile
+  displayOrder    Int                   @default(0)     // Order in profile
+
+  // Metadata
+  issuedDate      DateTime?             // When certificate/degree was issued
+  expiryDate      DateTime?             // If applicable (e.g., licenses)
+  issuer          String?               // Issuing organization
+
+  // Audit
+  uploadedAt      DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([attorneyId])
+  @@index([type])
+  @@index([isPublic])
 }

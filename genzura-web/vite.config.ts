@@ -14,6 +14,8 @@ export default defineConfig({
         target: 'http://localhost:5000',
         changeOrigin: true,
       }
-    }
+    },
+    // Fix for React Router - always serve index.html
+    historyApiFallback: true,
   }
 })
