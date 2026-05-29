@@ -65,7 +65,8 @@ export class AttorneyDocumentController {
       // Upload to S3 if configured, otherwise use local storage
       if (S3Service.isConfigured()) {
         try {
-          fileUrl = await S3Service.uploadFile(file.path, `documents/${userId}/`);
+          const s3Key = `documents/${userId}/${file.filename}`;
+          fileUrl = await S3Service.uploadFile(file.path, s3Key, file.mimetype);
 
           // Delete local file after successful S3 upload
           if (fs.existsSync(file.path)) {
