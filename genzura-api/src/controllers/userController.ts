@@ -69,7 +69,18 @@ export class UserController {
   static async updateProfile(req: any, res: Response) {
     try {
       const userId = req.user.id; // From auth middleware
-      const { firstName, lastName, phone, location, jobTitle, language } = req.body;
+      const {
+        firstName,
+        lastName,
+        phone,
+        location,
+        jobTitle,
+        language,
+        bio,
+        education,
+        barNumber,
+        yearsOfExperience
+      } = req.body;
 
       // Combine firstName and lastName into name if provided
       const name = firstName && lastName ? `${firstName} ${lastName}` : undefined;
@@ -80,6 +91,10 @@ export class UserController {
         location,
         jobTitle,
         language,
+        bio,
+        education,
+        barNumber,
+        yearsOfExperience,
       });
 
       const { passwordHash, ...userWithoutPassword } = updated;

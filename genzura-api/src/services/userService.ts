@@ -158,6 +158,10 @@ export class UserService {
     jobTitle?: string;
     language?: string;
     avatarUrl?: string;
+    bio?: string;
+    education?: string;
+    barNumber?: string;
+    yearsOfExperience?: number;
   }) {
     return prisma.user.update({
       where: { id },
@@ -168,6 +172,10 @@ export class UserService {
         ...(data.jobTitle !== undefined && { jobTitle: data.jobTitle }),
         ...(data.language && { language: data.language }),
         ...(data.avatarUrl !== undefined && { avatarUrl: data.avatarUrl }),
+        ...(data.bio !== undefined && { bio: data.bio }),
+        ...(data.education !== undefined && { education: data.education }),
+        ...(data.barNumber !== undefined && { barNumber: data.barNumber }),
+        ...(data.yearsOfExperience !== undefined && { yearsOfExperience: data.yearsOfExperience }),
       },
     });
   }
