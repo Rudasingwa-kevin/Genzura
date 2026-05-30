@@ -6,15 +6,11 @@ import {
   Phone,
   MapPin,
   Building2,
-  Briefcase,
   Award,
   TrendingUp,
   Scale,
   CheckCircle2,
   Star,
-  MessageSquare,
-  X,
-  Send,
   BarChart3,
   FileText,
   Download,
@@ -85,7 +81,6 @@ export default function AttorneyProfilePage() {
   const navigate = useNavigate();
   const [attorney, setAttorney] = useState<AttorneyProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showContactModal, setShowContactModal] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -222,17 +217,6 @@ export default function AttorneyProfilePage() {
                     </span>
                   )}
                 </div>
-              </div>
-
-              {/* Contact Button */}
-              <div className="mt-4 md:mt-[4.5rem] flex-shrink-0">
-                <button
-                  onClick={() => setShowContactModal(true)}
-                  className="bg-brand-blue text-white px-6 py-3 rounded-button hover:bg-brand-dark transition-colors flex items-center gap-2 font-medium shadow-lg"
-                >
-                  <MessageSquare className="w-5 h-5" />
-                  Contact Attorney
-                </button>
               </div>
             </div>
 
@@ -483,14 +467,6 @@ export default function AttorneyProfilePage() {
           </div>
         </div>
       </div>
-
-      {/* Contact Modal */}
-      {showContactModal && (
-        <ContactModal
-          attorney={attorney}
-          onClose={() => setShowContactModal(false)}
-        />
-      )}
     </div>
   );
 }
@@ -650,190 +626,6 @@ function StatusBar({
           className={`${colorClasses[color]} h-1.5 rounded-full transition-all`}
           style={{ width: `${percentage}%` }}
         ></div>
-      </div>
-    </div>
-  );
-}
-
-// Contact Modal Component
-function ContactModal({
-  attorney,
-  onClose,
-}: {
-  attorney: AttorneyProfile;
-  onClose: () => void;
-}) {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    caseType: '',
-    message: '',
-  });
-  const [sending, setSending] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.name || !formData.email || !formData.message) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      setSending(true);
-      const response = await fetch('/api/public/contact-attorney', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          attorneyId: attorney.id,
-          ...formData,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        toast.success('Message sent successfully!');
-        onClose();
-      } else {
-        toast.error('Failed to send message');
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-      toast.error('Failed to send message');
-    } finally {
-      setSending(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-card max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-border-base px-6 py-4 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-text-primary">
-            Contact {attorney.name}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-text-muted hover:text-text-secondary transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-text-secondary mb-1">
-                Your Name *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-border-base rounded-button focus:outline-none focus:ring-2 focus:ring-brand-blue"
-                placeholder="John Doe"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-text-secondary mb-1">
-                Your Email *
-              </label>
-              <input
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-border-base rounded-button focus:outline-none focus:ring-2 focus:ring-brand-blue"
-                placeholder="john@example.com"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-text-secondary mb-1">
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-border-base rounded-button focus:outline-none focus:ring-2 focus:ring-brand-blue"
-                placeholder="+250 XXX XXX XXX"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-text-secondary mb-1">
-                Case Type
-              </label>
-              <select
-                value={formData.caseType}
-                onChange={(e) =>
-                  setFormData({ ...formData, caseType: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-border-base rounded-button focus:outline-none focus:ring-2 focus:ring-brand-blue"
-              >
-                <option value="">Select case type</option>
-                {Object.entries(CASE_TYPE_LABELS).map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">
-              Message *
-            </label>
-            <textarea
-              required
-              value={formData.message}
-              onChange={(e) =>
-                setFormData({ ...formData, message: e.target.value })
-              }
-              rows={6}
-              className="w-full px-4 py-2 border border-border-base rounded-button focus:outline-none focus:ring-2 focus:ring-brand-blue"
-              placeholder="Describe your legal matter..."
-            />
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-6 py-3 border border-border-base text-text-secondary rounded-button hover:bg-page-bg transition-colors font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={sending}
-              className="flex-1 px-6 py-3 bg-brand-blue text-white rounded-button hover:bg-brand-dark transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {sending ? (
-                'Sending...'
-              ) : (
-                <>
-                  <Send className="w-4 h-4" />
-                  Send Message
-                </>
-              )}
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   );
