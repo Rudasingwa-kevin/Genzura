@@ -199,7 +199,7 @@ const ProfileTab = () => {
         <div className="relative group shrink-0">
           {user.avatarUrl && !avatarError ? (
             <img
-              src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${user.avatarUrl}`}
+              src={user.avatarUrl}
               alt={user.name}
               onError={() => setAvatarError(true)}
               className="w-28 h-28 rounded-[2rem] object-cover shadow-2xl border-4 border-white transition-transform group-hover:scale-105 duration-500"
