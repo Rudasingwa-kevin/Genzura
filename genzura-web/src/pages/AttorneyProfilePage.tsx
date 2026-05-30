@@ -6,6 +6,7 @@ import {
   Phone,
   MapPin,
   Building2,
+  Briefcase,
   Award,
   TrendingUp,
   Scale,
