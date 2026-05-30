@@ -111,10 +111,6 @@ export async function getPublicAttorneys(req: Request, res: Response) {
         jobTitle: attorney.jobTitle || 'Attorney at Law',
         avatarUrl: attorney.avatarUrl,
         role: attorney.role,
-        yearsOfExperience: Math.floor(
-          (Date.now() - new Date(attorney.createdAt).getTime()) /
-            (1000 * 60 * 60 * 24 * 365)
-        ), // Simplified, you might want to add explicit field
         statistics: {
           totalCases: attorney._count.cases,
           activeCases: attorney.cases.filter((c: any) => c.status === 'Active')
@@ -262,13 +258,6 @@ export async function getPublicAttorneyById(req: Request, res: Response) {
       education: attorney.education,
       barNumber: attorney.barNumber,
       specializations: attorney.specializations || [],
-      yearsOfExperience: Math.max(
-        1,
-        Math.floor(
-          (Date.now() - new Date(attorney.createdAt).getTime()) /
-            (1000 * 60 * 60 * 24 * 365)
-        )
-      ),
       professionalDocuments: attorney.professionalDocuments,
       statistics: {
         totalCases: attorney._count.cases,

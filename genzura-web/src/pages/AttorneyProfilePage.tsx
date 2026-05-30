@@ -54,7 +54,6 @@ interface AttorneyProfile {
   education: string | null;
   barNumber: string | null;
   specializations: string[];
-  yearsOfExperience: number;
   professionalDocuments: AttorneyDocument[];
   statistics: {
     totalCases: number;
@@ -238,7 +237,7 @@ export default function AttorneyProfilePage() {
             </div>
 
             {/* Contact Info */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-border-base">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t border-border-base">
               {attorney.company && (
                 <div className="flex items-center gap-3">
                   <Building2 className="w-5 h-5 text-text-muted" />
@@ -256,15 +255,6 @@ export default function AttorneyProfilePage() {
                   <p className="text-xs text-text-muted">Location</p>
                   <p className="font-medium text-text-primary">
                     {attorney.location}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Briefcase className="w-5 h-5 text-text-muted" />
-                <div>
-                  <p className="text-xs text-text-muted">Experience</p>
-                  <p className="font-medium text-text-primary">
-                    {attorney.yearsOfExperience}+ years
                   </p>
                 </div>
               </div>
@@ -473,12 +463,6 @@ export default function AttorneyProfilePage() {
                 Quick Facts
               </h3>
               <div className="space-y-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-text-secondary">Member Since</span>
-                  <span className="font-medium text-text-primary">
-                    {new Date().getFullYear() - attorney.yearsOfExperience}
-                  </span>
-                </div>
                 {attorney.language && (
                   <div className="flex items-center justify-between">
                     <span className="text-text-secondary">Languages</span>

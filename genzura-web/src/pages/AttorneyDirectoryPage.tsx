@@ -22,7 +22,6 @@ interface Attorney {
   jobTitle: string;
   avatarUrl: string | null;
   role: string;
-  yearsOfExperience: number;
   statistics: {
     totalCases: number;
     activeCases: number;
@@ -377,13 +376,6 @@ function AttorneyCard({ attorney }: { attorney: Attorney }) {
         <div className="flex items-center gap-2">
           <MapPin className="w-4 h-4 text-text-muted flex-shrink-0" />
           <span>{attorney.location}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Briefcase className="w-4 h-4 text-text-muted flex-shrink-0" />
-          <span>
-            {attorney.yearsOfExperience}+ year
-            {attorney.yearsOfExperience !== 1 ? 's' : ''} experience
-          </span>
         </div>
       </div>
 
