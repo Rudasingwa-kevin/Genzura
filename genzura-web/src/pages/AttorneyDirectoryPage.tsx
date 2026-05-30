@@ -4,16 +4,10 @@ import {
   Search,
   MapPin,
   Briefcase,
-  Award,
-  TrendingUp,
   Filter,
-  Mail,
-  Phone,
   Building2,
   ChevronRight,
-  Scale,
   Users,
-  CheckCircle2,
   Star,
   X,
 } from 'lucide-react';
@@ -49,7 +43,6 @@ const CASE_TYPE_LABELS: Record<string, string> = {
 };
 
 export default function AttorneyDirectoryPage() {
-  const navigate = useNavigate();
   const [attorneys, setAttorneys] = useState<Attorney[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -106,15 +99,6 @@ export default function AttorneyDirectoryPage() {
     } catch (error) {
       console.error('Error fetching locations:', error);
     }
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
   };
 
   return (
@@ -347,6 +331,18 @@ function AttorneyCard({ attorney }: { attorney: Attorney }) {
           <img
             src={attorney.avatarUrl}
             alt={attorney.name}
+            onError={(e) => {
+              // Replace broken image with initials fallback
+              const target = e.currentTarget;
+              const parent = target.parentElement;
+              if (parent) {
+                const initials = attorney.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                const fallback = document.createElement('div');
+                fallback.className = 'w-16 h-16 rounded-full bg-gradient-to-br from-brand-blue to-brand-dark flex items-center justify-center text-white font-bold text-lg border-2 border-brand-light';
+                fallback.textContent = initials;
+                parent.replaceChild(fallback, target);
+              }
+            }}
             className="w-16 h-16 rounded-full object-cover border-2 border-brand-light"
           />
         ) : (

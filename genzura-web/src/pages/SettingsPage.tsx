@@ -115,7 +115,14 @@ const ProfileTab = () => {
   const [barNumber, setBarNumber] = useState(user?.barNumber || '');
   const fileInputRef = useState<HTMLInputElement | null>(null)[1];
 
+  const [avatarError, setAvatarError] = useState(false);
+
   const isAttorney = user?.role === 'Attorney' || user?.role === 'Senior_Attorney';
+
+  // Reset avatar error when avatarUrl changes
+  useEffect(() => {
+    setAvatarError(false);
+  }, [user?.avatarUrl]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -188,10 +195,11 @@ const ProfileTab = () => {
       {/* Executive Avatar */}
       <div className="flex flex-col sm:flex-row items-center gap-8 bg-page-bg/50 p-8 rounded-[2rem] border border-border-base shadow-inner">
         <div className="relative group shrink-0">
-          {user.avatarUrl ? (
+          {user.avatarUrl && !avatarError ? (
             <img
               src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${user.avatarUrl}`}
               alt={user.name}
+              onError={() => setAvatarError(true)}
               className="w-28 h-28 rounded-[2rem] object-cover shadow-2xl border-4 border-white transition-transform group-hover:scale-105 duration-500"
             />
           ) : (
@@ -547,7 +555,6 @@ const DocumentsTab = () => {
   const { user } = useAuth();
   const [documents, setDocuments] = useState<AttorneyDocument[]>([]);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
 
   const isAttorney = user?.role === 'Attorney' || user?.role === 'Senior_Attorney';
@@ -967,7 +974,7 @@ const UploadDocumentModal = ({ onClose, onSuccess }: { onClose: () => void; onSu
 
 
 const NotificationsTab = () => {
-  const [isSaving, setIsSaving] = useState(false);
+  const [, setIsSaving] = useState(false);
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 

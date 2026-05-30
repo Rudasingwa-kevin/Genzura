@@ -13,6 +13,9 @@ interface User {
   phone?: string;
   location?: string;
   jobTitle?: string;
+  bio?: string;
+  education?: string;
+  barNumber?: string;
   language?: string;
   subscriptionPlan?: 'Genzura' | 'Intango' | 'Inkingi';
   subscriptionStartDate?: string | null;

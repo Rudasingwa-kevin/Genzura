@@ -182,6 +182,18 @@ export default function AttorneyProfilePage() {
                     <img
                       src={attorney.avatarUrl}
                       alt={attorney.name}
+                      onError={(e) => {
+                        // Replace broken image with initials fallback
+                        const target = e.currentTarget;
+                        const parent = target.parentElement;
+                        if (parent) {
+                          const initials = attorney.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                          const fallback = document.createElement('div');
+                          fallback.className = 'w-32 h-32 rounded-card bg-gradient-to-br from-brand-blue to-brand-dark flex items-center justify-center text-white font-bold text-3xl border-4 border-white shadow-xl';
+                          fallback.textContent = initials;
+                          parent.replaceChild(fallback, target);
+                        }
+                      }}
                       className="w-32 h-32 rounded-card object-cover border-4 border-white shadow-xl"
                     />
                   ) : (
