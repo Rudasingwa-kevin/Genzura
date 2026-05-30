@@ -29,6 +29,7 @@ interface AuthContextType {
   login: (credentials: { email: string; password?: string }) => Promise<User>;
   register: (data: any) => Promise<User>;
   updateUser: (data: Partial<User>) => Promise<void>;
+  setUserDirectly: (userData: User) => void;
   logout: () => void;
 }
 
@@ -93,6 +94,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const setUserDirectly = (userData: User) => {
+    setUser(processUser(userData));
+  };
+
   const logout = () => {
     authService.logout();
     setUser(null);
@@ -101,7 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isAuthenticated = !!user;
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, register, updateUser, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, register, updateUser, setUserDirectly, logout }}>
       {children}
     </AuthContext.Provider>
   );

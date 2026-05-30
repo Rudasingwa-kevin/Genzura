@@ -102,7 +102,7 @@ const Toggle = ({ on, onChange }: { on: boolean; onChange: () => void }) => (
 // ─── Tab Components ───────────────────────────────────────────────────────────
 
 const ProfileTab = () => {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, setUserDirectly } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [firstName, setFirstName] = useState(user?.firstName || '');
@@ -162,7 +162,8 @@ const ProfileTab = () => {
     setIsUploadingAvatar(true);
     try {
       const updatedUser = await authService.uploadAvatar(file);
-      await updateUser(updatedUser);
+      // Directly set the user state with the response from avatar upload
+      setUserDirectly(updatedUser);
       toast.success('Avatar updated successfully!', { icon: '📸' });
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Failed to upload avatar');
@@ -177,7 +178,8 @@ const ProfileTab = () => {
     setIsUploadingAvatar(true);
     try {
       const updatedUser = await authService.removeAvatar();
-      await updateUser(updatedUser);
+      // Directly set the user state with the response from avatar removal
+      setUserDirectly(updatedUser);
       toast.success('Avatar removed', { icon: '🗑️' });
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Failed to remove avatar');
