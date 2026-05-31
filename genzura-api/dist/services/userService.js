@@ -136,6 +136,9 @@ export class UserService {
                 ...(data.jobTitle !== undefined && { jobTitle: data.jobTitle }),
                 ...(data.language && { language: data.language }),
                 ...(data.avatarUrl !== undefined && { avatarUrl: data.avatarUrl }),
+                ...(data.bio !== undefined && { bio: data.bio }),
+                ...(data.education !== undefined && { education: data.education }),
+                ...(data.barNumber !== undefined && { barNumber: data.barNumber }),
             },
         });
     }

@@ -97,6 +97,22 @@ const getEmailHeader = (title, logoUrl) => `
 // Email footer with Genzura branding and logo
 const getEmailFooter = (logoUrl) => `
   <div style="border-top: 2px solid ${BRAND_COLORS.light}; padding-top: 35px; margin-top: 40px; text-align: center;">
+    <!-- Important Notice -->
+    <div style="background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 20px; border-radius: 8px; margin-bottom: 30px; text-align: left;">
+      <h4 style="margin: 0 0 12px 0; color: #92400E; font-size: 14px; font-weight: 700;">⚠️ Do Not Reply to This Email</h4>
+      <p style="color: #78350F; font-size: 13px; line-height: 1.6; margin: 0 0 15px 0;">
+        This is an automated message from an unmonitored email address. Replies will not be received or answered.
+      </p>
+      <p style="color: #78350F; font-size: 13px; line-height: 1.6; margin: 0 0 15px 0;">
+        <strong>Need help or have feedback?</strong> Please use our official feedback form:
+      </p>
+      <div style="text-align: center;">
+        <a href="${process.env.NODE_ENV === 'production' ? 'https://genzura.vercel.app' : 'http://localhost:5173'}/contact" style="display: inline-block; background: ${BRAND_COLORS.blue}; color: white; text-decoration: none; padding: 12px 30px; border-radius: 8px; font-weight: 700; font-size: 14px; margin-top: 5px;">
+          Submit Feedback or Get Support
+        </a>
+      </div>
+    </div>
+
     <div style="margin-bottom: 25px;">
       <img src="${logoUrl}" alt="Genzura Legal" style="height: 120px; width: auto; display: inline-block; margin-bottom: 15px;" />
       <p style="color: ${BRAND_COLORS.dark}; margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">Stay in Control of Every Case</p>

@@ -22,6 +22,7 @@ import planRoutes from './routes/planRoutes.js';
 import invitationRoutes from './routes/invitationRoutes.js';
 import notificationPreferenceRoutes from './routes/notificationPreferenceRoutes.js';
 import trackingRoutes from './routes/trackingRoutes.js';
+import publicRoutes from './routes/publicRoutes.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 import { auditLogger } from './middleware/auditMiddleware.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
@@ -83,6 +84,25 @@ app.get('/uploads/avatars/:filename', async (req, res) => {
     }
     return res.status(404).json({ error: 'Avatar file not found' });
 });
+app.get('/uploads/documents/:filename', async (req, res) => {
+    const { filename } = req.params;
+    const s3Key = `uploads/documents/${filename}`;
+    if (S3Service.isConfigured()) {
+        try {
+            const presignedUrl = await S3Service.getPresignedUrl(s3Key);
+            return res.redirect(302, presignedUrl);
+        }
+        catch (err) {
+            console.error('[Express Uploads] S3 document fetch failed, falling back to local:', err);
+        }
+    }
+    // Fallback to local disk
+    const localPath = path.join(process.cwd(), 'uploads/documents', filename);
+    if (fs.existsSync(localPath)) {
+        return res.sendFile(localPath);
+    }
+    return res.status(404).json({ error: 'Document file not found' });
+});
 app.get('/uploads/:filename', async (req, res) => {
     const { filename } = req.params;
     const s3Key = `uploads/${filename}`;
@@ -104,6 +124,8 @@ app.get('/uploads/:filename', async (req, res) => {
 });
 app.use('/public', express.static('public'));
 // Routes
+// Public routes (no authentication required)
+app.use('/api/public', publicRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/cases', caseRoutes);
 app.use('/api/feedback', feedbackRoutes);

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, UserRole } from '@prisma/client';
 import { S3Service } from '../services/s3Service.js';
 import path from 'path';
 import fs from 'fs';
@@ -10,7 +10,7 @@ interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
     email: string;
-    role: string;
+    role: UserRole;
   };
 }
 

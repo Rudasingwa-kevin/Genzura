@@ -29,6 +29,7 @@
     "prestart": "npm run check:env"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.100.1",
     "@aws-sdk/client-s3": "^3.1053.0",
     "@aws-sdk/s3-request-presigner": "^3.1053.0",
     "@prisma/client": "^5.x.x",

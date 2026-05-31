@@ -28,5 +28,18 @@ export class FeedbackService {
             data: { status }
         });
     }
+    static async createPublicFeedback(data) {
+        // Store public feedback with metadata in message
+        const enrichedMessage = `[Public Submission from ${data.name} (${data.email})]\n\n${data.message}`;
+        return prisma.feedback.create({
+            data: {
+                userId: null, // No user ID for public submissions
+                subject: data.subject,
+                category: data.category,
+                message: enrichedMessage,
+                status: 'Pending',
+            }
+        });
+    }
 }
 //# sourceMappingURL=feedbackService.js.map

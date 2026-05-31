@@ -9,8 +9,8 @@ import {
   matchAndSaveLaws,
   getCaseLaws,
   saveLawsToCase,
-} from '../services/lawMatchingService';
-import { PrismaClient } from '@prisma/client';
+} from '../services/lawMatchingService.js';
+import { PrismaClient, CaseType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -256,7 +256,7 @@ export async function searchLawsEndpoint(req: Request, res: Response) {
           ],
         }),
         ...(caseType && {
-          applicableTo: { has: caseType },
+          applicableTo: { has: caseType as CaseType },
         }),
       },
       include: {
