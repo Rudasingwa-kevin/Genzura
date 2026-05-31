@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   Search,
   MapPin,
-  Briefcase,
   Filter,
   Building2,
   ChevronRight,
