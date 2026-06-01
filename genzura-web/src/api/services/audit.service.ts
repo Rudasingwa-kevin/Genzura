@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export type AuditLog = {
   id: string;
@@ -41,9 +41,9 @@ export const auditService = {
     if (filters?.limit) params.append('limit', filters.limit.toString());
     if (filters?.offset) params.append('offset', filters.offset.toString());
 
-    const response = await fetch(`${API_URL}/audit?${params.toString()}`, {
+    const response = await fetch(`${API_BASE_URL}/audit?${params.toString()}`, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Authorization: `Bearer ${localStorage.getItem('genzura_token')}`,
       },
     });
 
@@ -58,9 +58,9 @@ export const auditService = {
    * Get recent activity logs
    */
   async getRecentActivity(limit = 50): Promise<AuditLog[]> {
-    const response = await fetch(`${API_URL}/audit/recent?limit=${limit}`, {
+    const response = await fetch(`${API_BASE_URL}/audit/recent?limit=${limit}`, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Authorization: `Bearer ${localStorage.getItem('genzura_token')}`,
       },
     });
 
@@ -75,9 +75,9 @@ export const auditService = {
    * Get audit logs for a specific user
    */
   async getUserLogs(userId: string, limit = 20): Promise<AuditLog[]> {
-    const response = await fetch(`${API_URL}/audit/user/${userId}?limit=${limit}`, {
+    const response = await fetch(`${API_BASE_URL}/audit/user/${userId}?limit=${limit}`, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
+        Authorization: `Bearer ${localStorage.getItem('genzura_token')}`,
       },
     });
 

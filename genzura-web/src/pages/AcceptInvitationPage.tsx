@@ -65,7 +65,7 @@ export default function AcceptInvitationPage() {
       });
 
       // Store auth token
-      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('genzura_token', response.data.token);
 
       toast.success('Welcome to Genzura!', {
         icon: '🎉',

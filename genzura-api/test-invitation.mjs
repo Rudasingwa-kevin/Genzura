@@ -4,10 +4,10 @@
  * Tests sending an invitation and verifying the token
  */
 
-import fetch from 'node-fetch';
+
 
 const API_URL = process.env.API_URL || 'http://localhost:5000';
-const ADMIN_EMAIL = 's.miller@genzura.law';
+const ADMIN_EMAIL = 'admin@genzura.com';
 const ADMIN_PASSWORD = 'Genzura2026!';
 
 async function testInvitationFlow() {
