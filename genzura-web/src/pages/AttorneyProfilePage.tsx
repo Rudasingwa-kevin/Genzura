@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -92,7 +94,7 @@ export default function AttorneyProfilePage() {
   const fetchAttorney = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/public/attorneys/${id}`);
+      const response = await fetch(`${API_BASE_URL}/public/attorneys/${id}`);
       const data = await response.json();
 
       if (data.success) {

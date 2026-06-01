@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 import {
   Shield,
   Zap,
@@ -7,8 +9,6 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
-  DollarSign,
-  Calendar,
   Users,
   FileText,
   Database,
@@ -68,7 +68,7 @@ export default function PlanManagement() {
 
   const fetchPlans = async () => {
     try {
-      const response = await fetch('/api/admin/plans', {
+      const response = await fetch(`${API_BASE_URL}/admin/plans`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('genzura_token')}`
         }
@@ -168,7 +168,7 @@ export default function PlanManagement() {
     setIsSaving(plan.plan);
 
     try {
-      const response = await fetch('/api/admin/plans', {
+      const response = await fetch(`${API_BASE_URL}/admin/plans`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

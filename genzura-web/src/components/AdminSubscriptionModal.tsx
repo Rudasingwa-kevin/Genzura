@@ -1,4 +1,6 @@
 import { useState } from 'react';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 import { X, Calendar, Gift, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -28,7 +30,7 @@ export default function AdminSubscriptionModal({ isOpen, onClose, user, onSucces
 
       if (action === 'grant') {
         // Grant free access/trial
-        const response = await fetch('/api/admin/subscriptions/grant', {
+        const response = await fetch(`${API_BASE_URL}/admin/subscriptions/grant`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -50,7 +52,7 @@ export default function AdminSubscriptionModal({ isOpen, onClose, user, onSucces
         });
       } else if (action === 'extend') {
         // Extend existing subscription
-        const response = await fetch('/api/admin/subscriptions/extend', {
+        const response = await fetch(`${API_BASE_URL}/admin/subscriptions/extend`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -71,7 +73,7 @@ export default function AdminSubscriptionModal({ isOpen, onClose, user, onSucces
         });
       } else {
         // Cancel subscription
-        const response = await fetch('/api/admin/subscriptions/cancel', {
+        const response = await fetch(`${API_BASE_URL}/admin/subscriptions/cancel`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

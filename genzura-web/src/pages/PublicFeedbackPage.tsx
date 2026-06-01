@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  MessageSquare,
   Send,
   Sparkles,
   CheckCircle2,
@@ -42,8 +41,8 @@ export default function PublicFeedbackPage() {
     setIsSubmitting(true);
 
     try {
-      // Send feedback to API (public endpoint)
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/feedback/public`, {
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBase}/feedback/public`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, subject, category, message })

@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -63,7 +65,7 @@ export default function AttorneyDirectoryPage() {
       if (searchTerm) params.append('search', searchTerm);
       if (selectedLocation) params.append('location', selectedLocation);
 
-      const response = await fetch(`/api/public/attorneys?${params}`);
+      const response = await fetch(`${API_BASE_URL}/public/attorneys?${params}`);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -87,7 +89,7 @@ export default function AttorneyDirectoryPage() {
 
   const fetchLocations = async () => {
     try {
-      const response = await fetch('/api/public/attorney-locations');
+      const response = await fetch(`${API_BASE_URL}/public/attorney-locations`);
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
