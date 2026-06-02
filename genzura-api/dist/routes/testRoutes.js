@@ -86,10 +86,20 @@ router.post('/email/send', async (req, res) => {
                 await EmailService.sendInvitationEmail(to, 'Test User', role, token, inviterName);
                 result = 'Invitation email sent';
                 break;
+            case 'deadline_approaching':
+                await EmailService.sendDeadlineAlert(to, 'CASE-2026-999', 'Mock Impending Merger Case', new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
+                3);
+                result = 'Deadline approaching email sent';
+                break;
+            case 'deadline_expired':
+                await EmailService.sendDeadlineAlert(to, 'CASE-2026-999', 'Mock Expired Litigation Case', new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+                -1);
+                result = 'Deadline expired email sent';
+                break;
             default:
                 return res.status(400).json({
                     success: false,
-                    error: 'Invalid email type. Use: subscription_activated, subscription_extended, subscription_cancelled, welcome, invitation'
+                    error: 'Invalid email type. Use: subscription_activated, subscription_extended, subscription_cancelled, welcome, invitation, deadline_approaching, deadline_expired'
                 });
         }
         res.json({

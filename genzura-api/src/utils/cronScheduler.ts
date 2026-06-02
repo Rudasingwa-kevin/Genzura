@@ -1,5 +1,6 @@
 import cron, { ScheduledTask } from 'node-cron';
 import { SubscriptionExpiryJob } from '../jobs/subscriptionExpiryJob.js';
+import { CaseDeadlineJob } from '../jobs/caseDeadlineJob.js';
 
 export class CronScheduler {
   private static tasks: ScheduledTask[] = [];
@@ -22,10 +23,24 @@ export class CronScheduler {
       timezone: 'Africa/Kigali'
     });
 
+    // Case deadline check - runs daily at 3:00 AM
+    const deadlineJob = cron.schedule('0 3 * * *', async () => {
+      console.log('🕐 [CRON] Running scheduled case deadline check...');
+      try {
+        await CaseDeadlineJob.run();
+      } catch (error) {
+        console.error('❌ [CRON] Case deadline check job failed:', error);
+      }
+    }, {
+      timezone: 'Africa/Kigali'
+    });
+
     this.tasks.push(expiryJob);
+    this.tasks.push(deadlineJob);
 
     console.log('✅ Cron scheduler initialized');
     console.log('   📅 Subscription expiry check: Daily at 2:00 AM (Africa/Kigali)');
+    console.log('   📅 Case deadline check: Daily at 3:00 AM (Africa/Kigali)');
   }
 
   /**

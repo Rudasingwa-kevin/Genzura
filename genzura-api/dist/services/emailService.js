@@ -264,31 +264,47 @@ export class EmailService {
      */
     static async sendDeadlineAlert(email, caseNumber, caseTitle, deadline, daysUntil) {
         const logoUrl = await getLogoUrl();
-        const urgencyColor = daysUntil <= 1 ? '#dc2626' : daysUntil <= 3 ? '#f59e0b' : '#3b82f6';
-        const urgencyText = daysUntil === 0 ? 'TODAY' : daysUntil === 1 ? 'TOMORROW' : `in ${daysUntil} days`;
+        const isExpired = daysUntil < 0;
+        const urgencyColor = isExpired ? '#dc2626' : daysUntil <= 1 ? '#dc2626' : daysUntil <= 3 ? '#f59e0b' : '#3b82f6';
+        const urgencyText = isExpired ? 'EXPIRED' : daysUntil === 0 ? 'TODAY' : daysUntil === 1 ? 'TOMORROW' : `in ${daysUntil} days`;
+        const subject = isExpired
+            ? `🚨 Deadline EXPIRED: ${caseNumber} - EXPIRED`
+            : `🚨 Deadline Alert: ${caseNumber} - ${urgencyText.toUpperCase()}`;
         try {
-            await sendEmail(email, `🚨 Deadline Alert: ${caseNumber} - ${urgencyText.toUpperCase()}`, `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid ${urgencyColor}; border-radius: 12px;">
-            <div style="text-align: center; margin-bottom: 30px; background-color: ${urgencyColor}; padding: 15px; border-radius: 8px;">
-              <h1 style="color: white; margin: 0;">🚨 DEADLINE ALERT</h1>
-              <p style="color: white; margin-top: 10px; font-size: 18px; font-weight: bold;">${urgencyText.toUpperCase()}</p>
-            </div>
+            await sendEmail(email, subject, `
+          <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 3px solid ${urgencyColor};">
+            ${getEmailHeader(isExpired ? 'Deadline Expired! 🚨' : 'Deadline Alert! 🚨', logoUrl)}
 
-            <div style="background-color: #fef2f2; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid ${urgencyColor};">
-              <h2 style="margin-top: 0; color: #1e293b;">${caseTitle}</h2>
-              <p style="color: #475569; margin: 10px 0;"><strong>Case Number:</strong> ${caseNumber}</p>
-              <p style="color: #475569; margin: 10px 0;"><strong>Deadline:</strong> ${deadline.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-              <p style="color: ${urgencyColor}; margin: 10px 0; font-weight: bold; font-size: 16px;">⏰ Due ${urgencyText}</p>
-            </div>
+            <div style="padding: 35px 30px;">
+              <h2 style="color: ${BRAND_COLORS.dark}; margin: 0 0 20px 0; font-size: 22px; font-weight: 700;">
+                ${isExpired ? 'Attention Required:' : 'Upcoming Deadline Alert:'}
+              </h2>
 
-            <div style="text-align: center; margin-bottom: 30px;">
-              <a href="${process.env.FRONTEND_URL}/cases/${caseNumber}" style="background-color: ${urgencyColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
-                View Case Details
-              </a>
-            </div>
+              <div style="background: linear-gradient(135deg, ${urgencyColor}15 0%, ${urgencyColor}05 100%); padding: 25px; border-radius: 10px; margin-bottom: 30px; border-left: 4px solid ${urgencyColor};">
+                <h3 style="margin: 0 0 10px 0; color: ${BRAND_COLORS.dark}; font-size: 18px; font-weight: 700;">
+                  ${caseTitle}
+                </h3>
+                <p style="color: #475569; margin: 5px 0; font-size: 14px;"><strong>Case Number:</strong> ${caseNumber}</p>
+                <p style="color: #475569; margin: 5px 0; font-size: 14px;">
+                  <strong>Deadline:</strong> ${deadline.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </p>
+                <p style="color: ${urgencyColor}; margin: 15px 0 0 0; font-weight: 800; font-size: 18px; text-transform: uppercase;">
+                  ⏰ ${isExpired ? 'Expired already' : `Due ${urgencyText}`}
+                </p>
+              </div>
 
-            <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 30px; font-size: 12px; color: #94a3b8; text-align: center;">
-              <p>&copy; 2026 Genzura Legal Management</p>
+              <div style="text-align: center; margin-bottom: 30px;">
+                <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/cases/${caseNumber}" 
+                   style="background: linear-gradient(135deg, ${urgencyColor} 0%, ${urgencyColor}dd 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 700; display: inline-block; font-size: 15px; box-shadow: 0 4px 12px ${urgencyColor}40;">
+                  View Case Details →
+                </a>
+              </div>
+
+              <p style="color: #64748b; line-height: 1.6; font-size: 13px; text-align: center;">
+                Need help? Contact our support team at <a href="mailto:support@genzura.rw" style="color: ${BRAND_COLORS.blue}; text-decoration: none; font-weight: 600;">support@genzura.rw</a>
+              </p>
+
+              ${getEmailFooter(logoUrl)}
             </div>
           </div>
         `);
