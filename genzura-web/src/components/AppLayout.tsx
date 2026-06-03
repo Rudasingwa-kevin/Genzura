@@ -31,6 +31,7 @@ import CommandPalette from './CommandPalette';
 import EmptyState from './EmptyState';
 import SubscriptionBanner from './SubscriptionBanner';
 import SubscriptionWarningBanner from './SubscriptionWarningBanner';
+import CaseDeadlineWarningBanner from './CaseDeadlineWarningBanner';
 import { invitationService } from '../api/services/invitation.service';
 import { toast } from 'react-hot-toast';
 
@@ -500,6 +501,9 @@ export default function AppLayout({ children, title, action, breadcrumbLabel }: 
               <h1 className="text-xl lg:text-2xl font-bold text-brand-dark">{title}</h1>
             </div>
           )}
+
+          {/* Case Deadline Reminders and Expiry Banner */}
+          <CaseDeadlineWarningBanner />
 
           {/* System-wide Subscription Warning (shows when enforcement is coming) */}
           <SubscriptionWarningBanner />
