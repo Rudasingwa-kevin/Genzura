@@ -196,14 +196,14 @@ const Navbar = () => {
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-sm border-b border-black/5 shadow-sm">
-      <div className="max-w-7xl mx-auto px-6 h-[120px] flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 lg:h-[120px] flex items-center justify-between">
         <div className="flex items-center">
           <Link to="/" onClick={handleLogoClick} className="block">
             <img
               key={logoKey}
               src="/Genzura website header.png"
               alt="Genzura"
-              className="h-24 w-auto object-contain cursor-pointer hover:scale-110 transition-transform animate-bounce"
+              className="h-10 lg:h-24 w-auto object-contain cursor-pointer hover:scale-110 transition-transform animate-bounce"
             />
           </Link>
         </div>
@@ -326,25 +326,26 @@ const LandingPage = () => {
   }, []);
 
   return (
-    <div className="min-height-screen">
+    <div className="min-h-screen overflow-x-hidden flex flex-col w-full">
       <Navbar />
 
       {/* Floating CTA Button */}
       {showFloatingCTA && (
-        <div className="fixed bottom-8 right-8 z-50 animate-slide-up">
+        <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-50 animate-slide-up">
           <Link
             to="/register"
-            className="bg-brand-blue text-white px-6 py-4 rounded-full shadow-2xl hover:shadow-3xl flex items-center gap-2 no-underline font-bold hover:scale-110 transition-all group animate-bounce-slow"
+            className="bg-brand-blue text-white px-4 py-3 md:px-6 md:py-4 rounded-full shadow-2xl hover:shadow-3xl flex items-center gap-2 no-underline font-bold hover:scale-110 transition-all group animate-bounce-slow text-sm md:text-base"
           >
-            <Sparkles size={20} className="animate-pulse" />
-            Start Free Trial
-            <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+            <Sparkles className="w-4 h-4 md:w-5 md:h-5 animate-pulse" />
+            <span className="hidden sm:inline">Start Free Trial</span>
+            <span className="sm:hidden">Try Free</span>
+            <ArrowRight className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
       )}
 
       {/* Hero Section */}
-      <section className="pt-48 pb-20 overflow-hidden bg-gradient-to-b from-brand-light/30 to-white relative">
+      <section className="pt-32 lg:pt-48 pb-20 overflow-hidden bg-gradient-to-b from-brand-light/30 to-white relative">
         {/* Animated background elements */}
         <div className="absolute top-20 left-10 w-72 h-72 bg-brand-blue/5 rounded-full blur-3xl animate-pulse-slow"></div>
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-brand-green/5 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
@@ -744,7 +745,7 @@ const LandingPage = () => {
 
           <div className="space-y-24">
             {/* Dashboard Showcase */}
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               <div className="space-y-6">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-blue/10 text-brand-blue text-sm font-bold">
                   <BarChart3 size={16} />
@@ -772,8 +773,8 @@ const LandingPage = () => {
               <div className="relative">
                 <div className="absolute -inset-4 bg-gradient-to-tr from-brand-blue/20 to-transparent blur-3xl -z-10" />
                 <div className="bg-page-bg rounded-2xl shadow-2xl border border-border-base p-6">
-                  <div className="bg-white rounded-xl p-6 space-y-4">
-                    <div className="flex items-center justify-between pb-4 border-b">
+                  <div className="bg-white rounded-xl p-6">
+                    <div className="flex items-center justify-between pb-4 border-b mb-4">
                       <h4 className="font-bold text-brand-dark">My Dashboard</h4>
                       <span className="text-xs text-text-muted">Today</span>
                     </div>
@@ -808,12 +809,12 @@ const LandingPage = () => {
             </div>
 
             {/* Case Management Showcase */}
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               <div className="order-2 lg:order-1 relative">
                 <div className="absolute -inset-4 bg-gradient-to-tl from-brand-green/20 to-transparent blur-3xl -z-10" />
                 <div className="bg-page-bg rounded-2xl shadow-2xl border border-border-base p-6">
-                  <div className="bg-white rounded-xl p-6 space-y-4">
-                    <div className="flex items-center justify-between pb-4 border-b">
+                  <div className="bg-white rounded-xl p-6">
+                    <div className="flex items-center justify-between pb-4 border-b mb-4">
                       <div>
                         <h4 className="font-bold text-brand-dark">Johnson v. State Corp</h4>
                         <div className="text-xs text-text-muted">Civil Litigation • Case #2026-CV-1234</div>
@@ -886,7 +887,7 @@ const LandingPage = () => {
             </div>
 
             {/* Document Management Showcase */}
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               <div className="space-y-6">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-blue/10 text-brand-blue text-sm font-bold">
                   <FolderOpen size={16} />
@@ -914,8 +915,8 @@ const LandingPage = () => {
               <div className="relative">
                 <div className="absolute -inset-4 bg-gradient-to-br from-brand-blue/20 to-transparent blur-3xl -z-10" />
                 <div className="bg-page-bg rounded-2xl shadow-2xl border border-border-base p-6">
-                  <div className="bg-white rounded-xl p-6 space-y-4">
-                    <div className="flex items-center gap-3 pb-4 border-b">
+                  <div className="bg-white rounded-xl p-6">
+                    <div className="flex items-center gap-3 pb-4 border-b mb-4">
                       <input
                         type="text"
                         placeholder="Search documents..."
@@ -958,12 +959,12 @@ const LandingPage = () => {
             </div>
 
             {/* Calendar Showcase */}
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               <div className="order-2 lg:order-1 relative">
                 <div className="absolute -inset-4 bg-gradient-to-tr from-amber-500/20 to-transparent blur-3xl -z-10" />
                 <div className="bg-page-bg rounded-2xl shadow-2xl border border-border-base p-6">
-                  <div className="bg-white rounded-xl p-6 space-y-4">
-                    <div className="flex items-center justify-between pb-4 border-b">
+                  <div className="bg-white rounded-xl p-6">
+                    <div className="flex items-center justify-between pb-4 border-b mb-4">
                       <h4 className="font-bold text-brand-dark">This Week</h4>
                       <span className="text-xs text-brand-blue font-medium">March 10-16, 2026</span>
                     </div>
