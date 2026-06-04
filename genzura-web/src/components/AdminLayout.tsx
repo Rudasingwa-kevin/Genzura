@@ -135,9 +135,17 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                 </p>
                 <p className="text-[10px] font-bold text-brand-blue uppercase mt-1 tracking-widest">Superuser</p>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-brand-dark flex items-center justify-center text-white font-bold text-xs shadow-lg shadow-brand-dark/20 border border-white/10">
-                {user?.initials || 'AD'}
-              </div>
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.name}
+                  className="w-10 h-10 rounded-xl object-cover shadow-lg shadow-brand-dark/20 border border-white/10"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-xl bg-brand-dark flex items-center justify-center text-white font-bold text-xs shadow-lg shadow-brand-dark/20 border border-white/10">
+                  {user?.initials || 'AD'}
+                </div>
+              )}
             </div>
           </div>
         </header>

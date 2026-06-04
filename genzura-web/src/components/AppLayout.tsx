@@ -414,9 +414,17 @@ export default function AppLayout({ children, title, action, breadcrumbLabel }: 
 
         <div className="pt-6 border-t border-border-base mt-6 shrink-0">
           <div className="bg-brand-light/50 p-4 rounded-2xl flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-brand-blue flex items-center justify-center text-white font-bold text-sm">
-              {user?.initials || 'JW'}
-            </div>
+            {user?.avatarUrl ? (
+              <img 
+                src={user.avatarUrl} 
+                alt={user.name}
+                className="w-10 h-10 rounded-full object-cover border-2 border-brand-light"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-brand-blue flex items-center justify-center text-white font-bold text-sm">
+                {user?.initials || 'JW'}
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               <p className="font-bold text-brand-dark text-sm truncate">{user?.name || 'James Wilson'}</p>
               <button
