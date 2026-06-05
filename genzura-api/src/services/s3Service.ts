@@ -1,5 +1,6 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { Readable } from 'stream';
 import fs from 'fs';
 
 const bucketName = process.env.AWS_S3_BUCKET;
@@ -99,6 +100,37 @@ export class S3Service {
       console.error(`[S3Service] Failed to generate presigned URL for key ${cleanKey}:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Streams an S3 object body directly (no redirect).
+   * Use this for serving images/files through Express so the browser never
+   * makes a cross-origin request to S3 (which triggers CORP blocking).
+   * @param s3Key The object key in S3
+   * @returns Object with a readable stream body and the ContentType string
+   */
+  static async streamObject(s3Key: string): Promise<{ body: Readable; contentType: string }> {
+    if (!s3Client || !bucketName) {
+      throw new Error('S3 integration is not configured.');
+    }
+
+    const cleanKey = s3Key.startsWith('/') ? s3Key.substring(1) : s3Key;
+
+    const command = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: cleanKey,
+    });
+
+    const response = await s3Client.send(command);
+
+    if (!response.Body) {
+      throw new Error(`S3 object body is empty for key: ${cleanKey}`);
+    }
+
+    return {
+      body: response.Body as Readable,
+      contentType: response.ContentType || 'application/octet-stream',
+    };
   }
 
   /**
