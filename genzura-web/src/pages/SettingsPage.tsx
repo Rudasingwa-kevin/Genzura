@@ -28,6 +28,7 @@ import AppLayout from '../components/AppLayout';
 import { useAuth } from '../contexts/AuthContext';
 import PricingPage from './PricingPage';
 import { authService } from '../api/services/auth.service';
+import { resolveAssetUrl } from '../utils/assetUrl';
 import { notificationPreferencesService, type NotificationPreferences } from '../api/services/notificationPreferences.service';
 import { attorneyDocumentService, type AttorneyDocument } from '../api/services/attorneyDocument.service';
 
@@ -199,7 +200,7 @@ const ProfileTab = () => {
         <div className="relative group shrink-0">
           {user.avatarUrl && !avatarError ? (
             <img
-              src={user.avatarUrl}
+              src={resolveAssetUrl(user.avatarUrl)}
               alt={user.name}
               onError={() => setAvatarError(true)}
               className="w-28 h-28 rounded-[2rem] object-cover shadow-2xl border-4 border-white transition-transform group-hover:scale-105 duration-500"

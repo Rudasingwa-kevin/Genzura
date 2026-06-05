@@ -116,7 +116,9 @@ export class UserController {
       // Delete old avatar if exists
       if (user?.avatarUrl) {
         if (S3Service.isConfigured()) {
-          await S3Service.deleteFile(user.avatarUrl);
+          // Key is the relative path without the leading slash
+          const oldKey = user.avatarUrl.replace(/^\//, '');
+          await S3Service.deleteFile(oldKey);
         } else {
           const oldPath = path.join(process.cwd(), user.avatarUrl);
           if (fs.existsSync(oldPath)) {
@@ -125,14 +127,17 @@ export class UserController {
         }
       }
 
-      // Save new avatar URL
+      // Always store a relative path. The Express /uploads/avatars/:filename
+      // endpoint handles S3 presigned URL redirect vs local file serving.
       const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+
       if (S3Service.isConfigured()) {
         try {
-          await S3Service.uploadFile(req.file.path, avatarUrl, req.file.mimetype);
+          // s3Key is the path without the leading slash
+          const s3Key = avatarUrl.replace(/^\//, '');
+          await S3Service.uploadFile(req.file.path, s3Key, req.file.mimetype);
         } catch (s3Error) {
           console.error('[UserController] S3 avatar upload error, keeping local file as backup:', s3Error);
-          // Fallback: keep local file if upload to S3 fails
         }
       }
 
@@ -142,7 +147,6 @@ export class UserController {
       res.json(userWithoutPassword);
     } catch (error: any) {
       console.error('[UserController] Avatar upload error:', error);
-      // Cleanup local file on error if it still exists
       if (req.file && fs.existsSync(req.file.path)) {
         try {
           fs.unlinkSync(req.file.path);

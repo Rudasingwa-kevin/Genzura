@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, type ReactNode } from 'react';
+import { resolveAssetUrl } from '../utils/assetUrl';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -416,7 +417,7 @@ export default function AppLayout({ children, title, action, breadcrumbLabel }: 
           <div className="bg-brand-light/50 p-4 rounded-2xl flex items-center gap-3">
             {user?.avatarUrl ? (
               <img 
-                src={user.avatarUrl} 
+                src={resolveAssetUrl(user.avatarUrl)} 
                 alt={user.name}
                 className="w-10 h-10 rounded-full object-cover border-2 border-brand-light"
               />

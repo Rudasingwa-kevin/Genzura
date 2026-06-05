@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { resolveAssetUrl } from '../utils/assetUrl';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -137,7 +138,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
               </div>
               {user?.avatarUrl ? (
                 <img
-                  src={user.avatarUrl}
+                  src={resolveAssetUrl(user.avatarUrl)}
                   alt={user.name}
                   className="w-10 h-10 rounded-xl object-cover shadow-lg shadow-brand-dark/20 border border-white/10"
                 />

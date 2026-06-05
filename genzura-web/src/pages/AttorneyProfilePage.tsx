@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { resolveAssetUrl } from '../utils/assetUrl';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 import { useParams, Link, useNavigate } from 'react-router-dom';
@@ -177,7 +178,7 @@ export default function AttorneyProfilePage() {
                 <div className="flex-shrink-0">
                   {attorney.avatarUrl ? (
                     <img
-                      src={attorney.avatarUrl}
+                      src={resolveAssetUrl(attorney.avatarUrl)}
                       alt={attorney.name}
                       onError={(e) => {
                         // Replace broken image with initials fallback
