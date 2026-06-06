@@ -293,8 +293,8 @@ export default function AttorneyProfilePage() {
                   color="purple"
                 />
                 <StatCard
-                  label="Success Rate"
-                  value={`${attorney.statistics.successRate}%`}
+                  label="Pending"
+                  value={attorney.statistics.pendingCases}
                   icon={Award}
                   color="amber"
                 />

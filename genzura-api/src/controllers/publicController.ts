@@ -86,13 +86,15 @@ export async function getPublicAttorneys(req: Request, res: Response) {
         return acc;
       }, {});
 
-      // Calculate success rate (resolved cases)
+      // Calculate success rate (resolved out of closed cases only)
       const resolvedCases = attorney.cases.filter(
         (c: any) => c.status === 'Resolved'
       ).length;
-      const totalCases = attorney.cases.length;
+      const closedCases = attorney.cases.filter(
+        (c: any) => c.status === 'Resolved' || c.status === 'Archived'
+      ).length;
       const successRate =
-        totalCases > 0 ? Math.round((resolvedCases / totalCases) * 100) : 0;
+        closedCases > 0 ? Math.round((resolvedCases / closedCases) * 100) : 0;
 
       // Get top 3 specializations
       const specializations = Object.entries(caseTypes)
@@ -230,9 +232,12 @@ export async function getPublicAttorneyById(req: Request, res: Response) {
     }, {});
 
     const resolvedCases = casesByStatus['Resolved'] || 0;
-    const totalCases = attorney.cases.length;
+    const archivedCasesCount = casesByStatus['Archived'] || 0;
+    // Success rate = resolved out of all closed cases (Resolved + Archived)
+    // Excludes Active/Pending since they haven't concluded yet
+    const closedCases = resolvedCases + archivedCasesCount;
     const successRate =
-      totalCases > 0 ? Math.round((resolvedCases / totalCases) * 100) : 0;
+      closedCases > 0 ? Math.round((resolvedCases / closedCases) * 100) : 0;
 
     // Get specializations with case counts
     const specializations = Object.entries(casesByType)
@@ -240,7 +245,7 @@ export async function getPublicAttorneyById(req: Request, res: Response) {
       .map(([type, count]) => ({
         type,
         count,
-        percentage: Math.round(((count as number) / totalCases) * 100),
+        percentage: Math.round(((count as number) / attorney.cases.length) * 100),
       }));
 
     const formattedAttorney = {
