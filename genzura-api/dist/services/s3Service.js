@@ -90,6 +90,31 @@ export class S3Service {
         }
     }
     /**
+     * Streams an S3 object body directly (no redirect).
+     * Use this for serving images/files through Express so the browser never
+     * makes a cross-origin request to S3 (which triggers CORP blocking).
+     * @param s3Key The object key in S3
+     * @returns Object with a readable stream body and the ContentType string
+     */
+    static async streamObject(s3Key) {
+        if (!s3Client || !bucketName) {
+            throw new Error('S3 integration is not configured.');
+        }
+        const cleanKey = s3Key.startsWith('/') ? s3Key.substring(1) : s3Key;
+        const command = new GetObjectCommand({
+            Bucket: bucketName,
+            Key: cleanKey,
+        });
+        const response = await s3Client.send(command);
+        if (!response.Body) {
+            throw new Error(`S3 object body is empty for key: ${cleanKey}`);
+        }
+        return {
+            body: response.Body,
+            contentType: response.ContentType || 'application/octet-stream',
+        };
+    }
+    /**
      * Deletes a file/object from S3.
      * @param s3Key The object key to delete
      */

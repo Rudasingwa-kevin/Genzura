@@ -1,4 +1,5 @@
 import express from 'express';
+import compression from 'compression';
 import cors from 'cors';
 import helmet from 'helmet';
 import * as Sentry from '@sentry/node';
@@ -36,6 +37,7 @@ import testRoutes from './routes/testRoutes.js';
 import { S3Service } from './services/s3Service.js';
 dotenv.config();
 const app = express();
+app.use(compression());
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 5000;
 // Initialize Sentry for error tracking in production
@@ -65,16 +67,22 @@ app.use('/api', apiLimiter);
 // Global audit logging middleware for critical operations
 app.use(auditLogger());
 // Dynamic S3 or Local disk serving for uploads
+// NOTE: We stream S3 objects directly (do NOT redirect to presigned URLs).
+// A 302 redirect sends the browser to S3, which responds with
+// Cross-Origin-Resource-Policy: same-origin, blocking <img> cross-origin embeds.
 app.get('/uploads/avatars/:filename', async (req, res) => {
     const { filename } = req.params;
     const s3Key = `uploads/avatars/${filename}`;
     if (S3Service.isConfigured()) {
         try {
-            const presignedUrl = await S3Service.getPresignedUrl(s3Key);
-            return res.redirect(302, presignedUrl);
+            const { body, contentType } = await S3Service.streamObject(s3Key);
+            res.setHeader('Content-Type', contentType);
+            res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+            res.setHeader('Cache-Control', 'public, max-age=86400');
+            return body.pipe(res);
         }
         catch (err) {
-            console.error('[Express Uploads] S3 avatar fetch failed, falling back to local:', err);
+            console.error('[Express Uploads] S3 avatar stream failed, falling back to local:', err);
         }
     }
     // Fallback to local disk
@@ -89,11 +97,14 @@ app.get('/uploads/documents/:filename', async (req, res) => {
     const s3Key = `uploads/documents/${filename}`;
     if (S3Service.isConfigured()) {
         try {
-            const presignedUrl = await S3Service.getPresignedUrl(s3Key);
-            return res.redirect(302, presignedUrl);
+            const { body, contentType } = await S3Service.streamObject(s3Key);
+            res.setHeader('Content-Type', contentType);
+            res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+            res.setHeader('Cache-Control', 'public, max-age=86400');
+            return body.pipe(res);
         }
         catch (err) {
-            console.error('[Express Uploads] S3 document fetch failed, falling back to local:', err);
+            console.error('[Express Uploads] S3 document stream failed, falling back to local:', err);
         }
     }
     // Fallback to local disk
@@ -108,11 +119,14 @@ app.get('/uploads/:filename', async (req, res) => {
     const s3Key = `uploads/${filename}`;
     if (S3Service.isConfigured()) {
         try {
-            const presignedUrl = await S3Service.getPresignedUrl(s3Key);
-            return res.redirect(302, presignedUrl);
+            const { body, contentType } = await S3Service.streamObject(s3Key);
+            res.setHeader('Content-Type', contentType);
+            res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+            res.setHeader('Cache-Control', 'public, max-age=86400');
+            return body.pipe(res);
         }
         catch (err) {
-            console.error('[Express Uploads] S3 file fetch failed, falling back to local:', err);
+            console.error('[Express Uploads] S3 file stream failed, falling back to local:', err);
         }
     }
     // Fallback to local disk

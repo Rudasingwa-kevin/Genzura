@@ -70,10 +70,10 @@ export async function getPublicAttorneys(req, res) {
                 acc[c.type] = (acc[c.type] || 0) + 1;
                 return acc;
             }, {});
-            // Calculate success rate (resolved cases)
+            // Calculate success rate (resolved out of closed cases only)
             const resolvedCases = attorney.cases.filter((c) => c.status === 'Resolved').length;
-            const totalCases = attorney.cases.length;
-            const successRate = totalCases > 0 ? Math.round((resolvedCases / totalCases) * 100) : 0;
+            const closedCases = attorney.cases.filter((c) => c.status === 'Resolved' || c.status === 'Archived').length;
+            const successRate = closedCases > 0 ? Math.round((resolvedCases / closedCases) * 100) : 0;
             // Get top 3 specializations
             const specializations = Object.entries(caseTypes)
                 .sort((a, b) => b[1] - a[1])
@@ -202,15 +202,18 @@ export async function getPublicAttorneyById(req, res) {
             return acc;
         }, {});
         const resolvedCases = casesByStatus['Resolved'] || 0;
-        const totalCases = attorney.cases.length;
-        const successRate = totalCases > 0 ? Math.round((resolvedCases / totalCases) * 100) : 0;
+        const archivedCasesCount = casesByStatus['Archived'] || 0;
+        // Success rate = resolved out of all closed cases (Resolved + Archived)
+        // Excludes Active/Pending since they haven't concluded yet
+        const closedCases = resolvedCases + archivedCasesCount;
+        const successRate = closedCases > 0 ? Math.round((resolvedCases / closedCases) * 100) : 0;
         // Get specializations with case counts
         const specializations = Object.entries(casesByType)
             .sort((a, b) => b[1] - a[1])
             .map(([type, count]) => ({
             type,
             count,
-            percentage: Math.round((count / totalCases) * 100),
+            percentage: Math.round((count / attorney.cases.length) * 100),
         }));
         const formattedAttorney = {
             id: attorney.id,

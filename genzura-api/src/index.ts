@@ -1,4 +1,5 @@
 import express from 'express';
+import compression from 'compression';
 import cors from 'cors';
 import helmet from 'helmet';
 import * as Sentry from '@sentry/node';
@@ -38,6 +39,7 @@ import { S3Service } from './services/s3Service.js';
 dotenv.config();
 
 const app = express();
+app.use(compression());
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 5000;
 
