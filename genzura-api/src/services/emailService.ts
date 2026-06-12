@@ -35,7 +35,7 @@ async function getLogoUrl(): Promise<string> {
   const API_URL = process.env.NODE_ENV === 'production'
     ? 'https://genzura-api.onrender.com'
     : (process.env.API_URL || 'http://localhost:5000');
-  return `${API_URL}/public/Genzura%20full%20logo.png`;
+  return `${API_URL}/public/genzura-logo.png`;
 }
 
 // Check if Brevo API is configured (preferred for serverless)
@@ -100,7 +100,7 @@ const sendEmail = async (to: string, subject: string, htmlContent: string) => {
 const getEmailHeader = (title: string, logoUrl: string) => `
   <div style="background: linear-gradient(135deg, ${BRAND_COLORS.blue} 0%, ${BRAND_COLORS.dark} 100%); padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;">
     <div style="background: white; padding: 25px 40px; margin: 0 auto 25px; border-radius: 14px; display: inline-block; box-shadow: 0 6px 16px rgba(0,0,0,0.2);">
-      <img src="${logoUrl}" alt="Genzura Legal" style="height: 150px; width: auto; display: block; margin: 0 auto;" />
+      <img src="${logoUrl}" alt="Genzura Legal" width="180" style="display: block; width: 180px; max-width: 100%; height: auto; margin: 0 auto;" />
     </div>
     <h2 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">${title}</h2>
   </div>
@@ -126,7 +126,7 @@ const getEmailFooter = (logoUrl: string) => `
     </div>
 
     <div style="margin-bottom: 25px;">
-      <img src="${logoUrl}" alt="Genzura Legal" style="height: 120px; width: auto; display: inline-block; margin-bottom: 15px;" />
+      <img src="${logoUrl}" alt="Genzura Legal" width="140" style="display: inline-block; width: 140px; max-width: 100%; height: auto; margin-bottom: 15px;" />
       <p style="color: ${BRAND_COLORS.dark}; margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;">Stay in Control of Every Case</p>
     </div>
     <p style="color: #94a3b8; font-size: 13px; margin: 6px 0; font-weight: 500;">© 2026 Genzura Legal Management. All rights reserved.</p>
