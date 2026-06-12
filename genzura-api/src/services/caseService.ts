@@ -73,9 +73,11 @@ export class CaseService {
     if (!caseData) return null;
 
     // Check if user has access (is attorney or team member)
-    // This applies to ALL users including admins
+    // Admins and SuperAdmins can view any case
     if (userId) {
+      const isAdmin = userRole === 'Admin' || userRole === 'SuperAdmin';
       const hasAccess =
+        isAdmin ||
         caseData.attorneyId === userId ||
         caseData.team.some(member => member.userId === userId);
 

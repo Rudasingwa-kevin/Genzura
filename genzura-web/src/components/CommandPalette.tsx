@@ -9,7 +9,7 @@ import apiClient from '../api/client';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface SearchResults {
-  cases: Array<{ id: string; title: string; client: string; status: string; priority: string }>;
+  cases: Array<{ id: string; caseNumber?: string; title: string; client: string; status: string; priority: string }>;
   users: Array<{ id: string; name: string; email: string; role: string; initials: string }>;
   documents: Array<{ id: string; name: string; type: string; caseId: string }>;
 }
@@ -88,7 +88,12 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
   ];
 
   const handleNavigate = useCallback((item: typeof allItems[0]) => {
-    if (item.type === 'case')     navigate(`/cases/${item.data.id}`);
+    if (item.type === 'case') {
+      // Prefer caseNumber (e.g. CV-0098) so the backend lookup hits caseNumber index,
+      // fall back to UUID id — same pattern used in CasesPage & Dashboard.
+      const caseRouteId = (item.data as any).caseNumber || item.data.id;
+      navigate(`/cases/${caseRouteId}`);
+    }
     if (item.type === 'user')     navigate(`/users`);
     if (item.type === 'document') navigate(`/cases/${(item.data as any).caseId}`);
     onClose();
