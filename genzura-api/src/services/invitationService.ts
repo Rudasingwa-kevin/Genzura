@@ -76,7 +76,7 @@ export class InvitationService {
         type: 'invitation',
         title: 'Case Invitation',
         body: `${inviter?.name} invited you to join case ${caseData?.caseNumber}: ${caseData?.title}`,
-        link: `/cases/${caseId}`,
+        link: `/cases/${caseData?.caseNumber || caseId}`,
         metadata: {
           invitationId: invitation.id,
           caseId,
@@ -232,7 +232,7 @@ export class InvitationService {
         type: 'case',
         title: 'Invitation Accepted',
         body: `${invitee?.name} accepted your invitation to join case ${caseData?.caseNumber}`,
-        link: `/cases/${invitation.caseId}`,
+        link: `/cases/${caseData?.caseNumber || invitation.caseId}`,
       },
     });
 
@@ -299,7 +299,7 @@ export class InvitationService {
         type: 'alert',
         title: 'Invitation Declined',
         body: `${invitee?.name} declined your invitation to join case ${caseData?.caseNumber}`,
-        link: `/cases/${invitation.caseId}`,
+        link: `/cases/${caseData?.caseNumber || invitation.caseId}`,
       },
     });
 

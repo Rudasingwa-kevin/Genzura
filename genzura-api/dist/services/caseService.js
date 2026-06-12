@@ -36,7 +36,8 @@ export class CaseService {
     static async getCaseById(idOrCaseNumber, userId, userRole) {
         // Try to find by caseNumber first (if it matches the pattern), then by ID
         // Flexible pattern: PREFIX-NUMBERS (e.g., CV-2025-003, CV-2026-0482, IP-2024-1234)
-        const isCaseNumber = /^[A-Z]+-\d+-\d+$/.test(idOrCaseNumber);
+        // Matches both PREFIX-NUMBERS (e.g. CV-0098) and PREFIX-NUMBERS-NUMBERS (e.g. CV-2025-003)
+        const isCaseNumber = /^[A-Z]+-\d+(-\d+)?$/.test(idOrCaseNumber);
         const whereClause = isCaseNumber
             ? { caseNumber: idOrCaseNumber }
             : { id: idOrCaseNumber };
@@ -65,9 +66,11 @@ export class CaseService {
         if (!caseData)
             return null;
         // Check if user has access (is attorney or team member)
-        // This applies to ALL users including admins
+        // Admins and SuperAdmins can view any case
         if (userId) {
-            const hasAccess = caseData.attorneyId === userId ||
+            const isAdmin = userRole === 'Admin' || userRole === 'SuperAdmin';
+            const hasAccess = isAdmin ||
+                caseData.attorneyId === userId ||
                 caseData.team.some(member => member.userId === userId);
             if (!hasAccess) {
                 throw new Error('You do not have permission to access this case');
@@ -85,7 +88,7 @@ export class CaseService {
     }
     static async updateCaseStatus(idOrCaseNumber, status, userId) {
         // Support updating by case number or ID
-        const isCaseNumber = /^[A-Z]+-\d+-\d+$/.test(idOrCaseNumber);
+        const isCaseNumber = /^[A-Z]+-\d+(-\d+)?$/.test(idOrCaseNumber);
         const whereClause = isCaseNumber
             ? { caseNumber: idOrCaseNumber }
             : { id: idOrCaseNumber };
@@ -134,7 +137,7 @@ export class CaseService {
                 type: 'case',
                 title: 'New Case Note',
                 body: `A new note was added to case ${caseObj.title}.`,
-                link: `/cases/${caseObj.id}`
+                link: `/cases/${caseObj.caseNumber || caseObj.id}`
             });
             emitToAll('new_notification', notification);
         }
@@ -366,7 +369,7 @@ export class CaseService {
     }
     static async updateCase(idOrCaseNumber, data, userId) {
         // Support updating by case number or ID
-        const isCaseNumber = /^[A-Z]+-\d+-\d+$/.test(idOrCaseNumber);
+        const isCaseNumber = /^[A-Z]+-\d+(-\d+)?$/.test(idOrCaseNumber);
         const whereClause = isCaseNumber
             ? { caseNumber: idOrCaseNumber }
             : { id: idOrCaseNumber };
@@ -470,7 +473,7 @@ export class CaseService {
     }
     static async deleteCase(idOrCaseNumber) {
         // Support deleting by case number or ID
-        const isCaseNumber = /^[A-Z]+-\d+-\d+$/.test(idOrCaseNumber);
+        const isCaseNumber = /^[A-Z]+-\d+(-\d+)?$/.test(idOrCaseNumber);
         // First find the case to get its actual ID for related records
         const caseToDelete = await this.getCaseById(idOrCaseNumber);
         if (!caseToDelete) {

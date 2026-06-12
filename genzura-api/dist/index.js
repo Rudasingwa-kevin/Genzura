@@ -59,7 +59,34 @@ app.use(helmet({
     contentSecurityPolicy: false, // Disable for now to allow inline scripts
     crossOriginEmbedderPolicy: false // Allow loading images from S3
 }));
-app.use(cors());
+// Robust CORS configuration supporting credentials, localhost, Vercel deployments, and production URLs
+const allowedOrigins = [
+    'https://genzura-six.vercel.app',
+    'https://genzura-web.vercel.app',
+    process.env.FRONTEND_URL
+].filter(Boolean);
+app.use(cors({
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps, curl, or postman)
+        if (!origin)
+            return callback(null, true);
+        const isAllowed = allowedOrigins.includes(origin) ||
+            origin.endsWith('.vercel.app') ||
+            origin.startsWith('http://localhost:') ||
+            process.env.NODE_ENV !== 'production';
+        if (isAllowed) {
+            callback(null, true);
+        }
+        else {
+            // In case of unexpected production origins, allow them but log a warning
+            console.warn(`[CORS] Request from unexpected origin: ${origin}`);
+            callback(null, true);
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+}));
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
 // Apply rate limiting to all API routes

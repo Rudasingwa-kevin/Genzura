@@ -157,7 +157,7 @@ export class CaseService {
         type: 'case',
         title: 'New Case Note',
         body: `A new note was added to case ${caseObj.title}.`,
-        link: `/cases/${caseObj.id}`
+        link: `/cases/${caseObj.caseNumber || caseObj.id}`
       });
       emitToAll('new_notification', notification);
     }
