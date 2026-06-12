@@ -24,13 +24,25 @@ export class CronScheduler {
       timezone: 'Africa/Kigali'
     });
 
-    // Case deadline check - runs daily at 3:00 AM
-    const deadlineJob = cron.schedule('0 3 * * *', async () => {
-      console.log('🕐 [CRON] Running scheduled case deadline check...');
+    // Case deadline check - runs at 8:00 AM (server is warm) + noon backup
+    const deadlineJob = cron.schedule('0 8 * * *', async () => {
+      console.log('🕐 [CRON] Running scheduled case deadline check (8 AM)...');
       try {
         await CaseDeadlineJob.run();
       } catch (error) {
         console.error('❌ [CRON] Case deadline check job failed:', error);
+      }
+    }, {
+      timezone: 'Africa/Kigali'
+    });
+
+    // Case deadline backup check at noon — catches missed 8 AM run (deduplication prevents double-sending)
+    const deadlineBackupJob = cron.schedule('0 12 * * *', async () => {
+      console.log('🕐 [CRON] Running backup case deadline check (12 PM)...');
+      try {
+        await CaseDeadlineJob.run();
+      } catch (error) {
+        console.error('❌ [CRON] Backup deadline check job failed:', error);
       }
     }, {
       timezone: 'Africa/Kigali'
@@ -47,11 +59,12 @@ export class CronScheduler {
 
     this.tasks.push(expiryJob);
     this.tasks.push(deadlineJob);
+    this.tasks.push(deadlineBackupJob);
     this.tasks.push(keepAliveJob);
 
     console.log('✅ Cron scheduler initialized');
     console.log('   📅 Subscription expiry check: Daily at 2:00 AM (Africa/Kigali)');
-    console.log('   📅 Case deadline check: Daily at 3:00 AM (Africa/Kigali)');
+    console.log('   📅 Case deadline check: Daily at 8:00 AM + 12:00 PM (Africa/Kigali)');
     console.log('   🏓 Keep-alive ping: Every 14 minutes (production only)');
   }
 

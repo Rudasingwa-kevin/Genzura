@@ -4,6 +4,24 @@ import { NotificationService } from '../services/notificationService.js';
 
 const prisma = new PrismaClient();
 
+// Deduplication: prevent sending the same deadline alert more than once per day
+async function alreadySentAlertToday(userId: string, caseNumber: string): Promise<boolean> {
+  const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+  const existing = await prisma.notification.findFirst({
+    where: {
+      userId,
+      type: NotificationType.deadline,
+      body: {
+        contains: caseNumber
+      },
+      createdAt: {
+        gte: twelveHoursAgo
+      }
+    }
+  });
+  return !!existing;
+}
+
 interface DeadlineCheckResult {
   processedCases: number;
   alertsSent: number;
@@ -62,9 +80,21 @@ export class CaseDeadlineJob {
           const deadlineDate = new Date(kase.deadline);
           const daysUntil = this.calculateDaysDifference(deadlineDate, now);
 
-          // We only alert on exact milestones: -1, 0, 1, 3, 7 days
-          const targetMilestones = [-1, 0, 1, 3, 7];
-          if (!targetMilestones.includes(daysUntil)) {
+          // Alert milestones:
+          // - Exact: 7 days out (early warning)
+          // - Range: 0-3 days (catches missed daily runs during business hours)
+          // - Overdue: -1 and below (every day until resolved)
+          const isUrgentRange = daysUntil >= 0 && daysUntil <= 3;
+          const isEarlyWarning = daysUntil === 7;
+          const isExpired = daysUntil < 0 && daysUntil >= -7; // alert for up to 7 days after expiry
+          if (!isUrgentRange && !isEarlyWarning && !isExpired) {
+            continue;
+          }
+
+          // Deduplication: skip if we already sent a deadline alert for this case today
+          const alreadySent = await alreadySentAlertToday(kase.attorneyId, kase.caseNumber);
+          if (alreadySent) {
+            console.log(`⏭️  Skipping case ${kase.caseNumber} — alert already sent in the last 12h`);
             continue;
           }
 
@@ -88,9 +118,10 @@ export class CaseDeadlineJob {
           let notifTitle = '';
           let notifBody = '';
 
-          if (daysUntil === -1) {
+          if (daysUntil < 0) {
+            const absDays = Math.abs(daysUntil);
             notifTitle = 'Case Deadline EXPIRED 🚨';
-            notifBody = `Case ${kase.caseNumber} (${kase.title}) deadline has EXPIRED (${formattedDate}).`;
+            notifBody = `Case ${kase.caseNumber} (${kase.title}) deadline EXPIRED ${absDays} day${absDays === 1 ? '' : 's'} ago (${formattedDate}).`;
             result.warnedExpired++;
           } else if (daysUntil === 0) {
             notifTitle = 'Case Deadline TODAY ⏰';
@@ -100,9 +131,9 @@ export class CaseDeadlineJob {
             notifTitle = 'Case Deadline Tomorrow ⏰';
             notifBody = `Case ${kase.caseNumber} (${kase.title}) deadline is TOMORROW (${formattedDate}).`;
             result.warned1Day++;
-          } else if (daysUntil === 3) {
+          } else if (daysUntil <= 3) {
             notifTitle = 'Case Deadline Approaching 📅';
-            notifBody = `Case ${kase.caseNumber} (${kase.title}) deadline is in 3 days (${formattedDate}).`;
+            notifBody = `Case ${kase.caseNumber} (${kase.title}) deadline is in ${daysUntil} days (${formattedDate}).`;
             result.warned3Days++;
           } else if (daysUntil === 7) {
             notifTitle = 'Case Deadline Approaching 📅';
