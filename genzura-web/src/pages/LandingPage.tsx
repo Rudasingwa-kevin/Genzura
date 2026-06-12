@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { clsx, type ClassValue } from 'clsx';
+import { settingsService } from '../api/services/settings.service';
 import { twMerge } from 'tailwind-merge';
 
 function cn(...inputs: ClassValue[]) {
@@ -185,7 +186,7 @@ if (typeof document !== 'undefined') {
   document.head.appendChild(styleTag);
 }
 
-const Navbar = () => {
+const Navbar = ({ subscriptionStatus }: { subscriptionStatus: string }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [logoKey, setLogoKey] = React.useState(0);
 
@@ -210,7 +211,9 @@ const Navbar = () => {
 
         <div className="hidden md:flex items-center gap-8">
           <a href="#features" className="text-sm font-medium text-text-secondary hover:text-brand-blue transition-colors">Features</a>
-          <Link to="/pricing" className="text-sm font-medium text-text-secondary hover:text-brand-blue transition-colors">Pricing</Link>
+          {subscriptionStatus !== 'PAUSED' && (
+            <Link to="/pricing" className="text-sm font-medium text-text-secondary hover:text-brand-blue transition-colors">Pricing</Link>
+          )}
           <Link to="/attorneys" className="text-sm font-medium text-text-secondary hover:text-brand-blue transition-colors">Find Attorneys</Link>
           <a href="#how-it-works" className="text-sm font-medium text-text-secondary hover:text-brand-blue transition-colors">How It Works</a>
           <Link to="/login" className="text-sm font-medium text-text-secondary hover:text-brand-blue transition-colors">Sign in</Link>
@@ -227,7 +230,9 @@ const Navbar = () => {
       {isOpen && (
         <div className="md:hidden bg-white border-b p-6 flex flex-col gap-4 animate-in slide-in-from-top duration-300">
           <a href="#features" className="font-medium" onClick={() => setIsOpen(false)}>Features</a>
-          <Link to="/pricing" className="font-medium" onClick={() => setIsOpen(false)}>Pricing</Link>
+          {subscriptionStatus !== 'PAUSED' && (
+            <Link to="/pricing" className="font-medium" onClick={() => setIsOpen(false)}>Pricing</Link>
+          )}
           <Link to="/attorneys" className="font-medium" onClick={() => setIsOpen(false)}>Find Attorneys</Link>
           <a href="#how-it-works" className="font-medium" onClick={() => setIsOpen(false)}>How It Works</a>
           <Link to="/login" className="font-medium" onClick={() => setIsOpen(false)}>Sign in</Link>
@@ -314,6 +319,19 @@ const StatCard = ({ value, label }: { value: string, label: string }) => (
 
 const LandingPage = () => {
   const [showFloatingCTA, setShowFloatingCTA] = React.useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = React.useState<string>('PAUSED');
+
+  React.useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const info = await settingsService.getSubscriptionInfo();
+        setSubscriptionStatus(info.status);
+      } catch (err) {
+        console.error('Failed to fetch subscription status:', err);
+      }
+    };
+    fetchStatus();
+  }, []);
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -327,7 +345,7 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen overflow-x-hidden flex flex-col w-full">
-      <Navbar />
+      <Navbar subscriptionStatus={subscriptionStatus} />
 
       {/* Floating CTA Button */}
       {showFloatingCTA && (
@@ -385,9 +403,11 @@ const LandingPage = () => {
               <Link to="/register" className="bg-brand-blue text-white btn-premium flex items-center gap-2 no-underline text-lg px-8 py-4 hover:scale-105 transition-transform shadow-lg hover:shadow-2xl group">
                 Start Free Trial <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link to="/pricing" className="bg-white text-brand-dark border-2 border-brand-blue btn-premium text-lg px-8 py-4 no-underline hover:bg-brand-light transition-all hover:scale-105 shadow-md hover:shadow-xl">
-                View Pricing
-              </Link>
+              {subscriptionStatus !== 'PAUSED' && (
+                <Link to="/pricing" className="bg-white text-brand-dark border-2 border-brand-blue btn-premium text-lg px-8 py-4 no-underline hover:bg-brand-light transition-all hover:scale-105 shadow-md hover:shadow-xl">
+                  View Pricing
+                </Link>
+              )}
             </div>
 
             <div className="flex items-center gap-6 pt-4">
@@ -1286,7 +1306,9 @@ const LandingPage = () => {
               <h4 className="font-bold text-brand-dark mb-4">Product</h4>
               <div className="space-y-2">
                 <a href="#features" className="block text-sm text-text-muted hover:text-brand-blue transition-colors">Features</a>
-                <Link to="/pricing" className="block text-sm text-text-muted hover:text-brand-blue transition-colors">Pricing</Link>
+                {subscriptionStatus !== 'PAUSED' && (
+                  <Link to="/pricing" className="block text-sm text-text-muted hover:text-brand-blue transition-colors">Pricing</Link>
+                )}
                 <a href="#how-it-works" className="block text-sm text-text-muted hover:text-brand-blue transition-colors">How It Works</a>
               </div>
             </div>

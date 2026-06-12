@@ -40,7 +40,8 @@ export class CaseService {
   static async getCaseById(idOrCaseNumber: string, userId?: string, userRole?: string) {
     // Try to find by caseNumber first (if it matches the pattern), then by ID
     // Flexible pattern: PREFIX-NUMBERS (e.g., CV-2025-003, CV-2026-0482, IP-2024-1234)
-    const isCaseNumber = /^[A-Z]+-\d+-\d+$/.test(idOrCaseNumber);
+    // Matches both PREFIX-NUMBERS (e.g. CV-0098) and PREFIX-NUMBERS-NUMBERS (e.g. CV-2025-003)
+    const isCaseNumber = /^[A-Z]+-\d+(-\d+)?$/.test(idOrCaseNumber);
 
     const whereClause = isCaseNumber
       ? { caseNumber: idOrCaseNumber }
@@ -97,7 +98,7 @@ export class CaseService {
 
   static async updateCaseStatus(idOrCaseNumber: string, status: CaseStatus, userId?: string) {
     // Support updating by case number or ID
-    const isCaseNumber = /^[A-Z]+-\d+-\d+$/.test(idOrCaseNumber);
+    const isCaseNumber = /^[A-Z]+-\d+(-\d+)?$/.test(idOrCaseNumber);
 
     const whereClause = isCaseNumber
       ? { caseNumber: idOrCaseNumber }
@@ -417,7 +418,7 @@ export class CaseService {
 
   static async updateCase(idOrCaseNumber: string, data: any, userId?: string) {
     // Support updating by case number or ID
-    const isCaseNumber = /^[A-Z]+-\d+-\d+$/.test(idOrCaseNumber);
+    const isCaseNumber = /^[A-Z]+-\d+(-\d+)?$/.test(idOrCaseNumber);
 
     const whereClause = isCaseNumber
       ? { caseNumber: idOrCaseNumber }
@@ -529,7 +530,7 @@ export class CaseService {
 
   static async deleteCase(idOrCaseNumber: string) {
     // Support deleting by case number or ID
-    const isCaseNumber = /^[A-Z]+-\d+-\d+$/.test(idOrCaseNumber);
+    const isCaseNumber = /^[A-Z]+-\d+(-\d+)?$/.test(idOrCaseNumber);
 
     // First find the case to get its actual ID for related records
     const caseToDelete = await this.getCaseById(idOrCaseNumber);
