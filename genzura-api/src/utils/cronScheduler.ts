@@ -1,6 +1,7 @@
 import cron, { ScheduledTask } from 'node-cron';
 import { SubscriptionExpiryJob } from '../jobs/subscriptionExpiryJob.js';
 import { CaseDeadlineJob } from '../jobs/caseDeadlineJob.js';
+import { KeepAliveJob } from '../jobs/keepAliveJob.js';
 
 export class CronScheduler {
   private static tasks: ScheduledTask[] = [];
@@ -35,12 +36,23 @@ export class CronScheduler {
       timezone: 'Africa/Kigali'
     });
 
+    // Keep-alive ping — every 14 minutes (Render free tier spins down at 15 min idle)
+    const keepAliveJob = cron.schedule('*/14 * * * *', async () => {
+      try {
+        await KeepAliveJob.run();
+      } catch (error) {
+        console.error('❌ [CRON] Keep-alive job failed:', error);
+      }
+    });
+
     this.tasks.push(expiryJob);
     this.tasks.push(deadlineJob);
+    this.tasks.push(keepAliveJob);
 
     console.log('✅ Cron scheduler initialized');
     console.log('   📅 Subscription expiry check: Daily at 2:00 AM (Africa/Kigali)');
     console.log('   📅 Case deadline check: Daily at 3:00 AM (Africa/Kigali)');
+    console.log('   🏓 Keep-alive ping: Every 14 minutes (production only)');
   }
 
   /**
