@@ -530,6 +530,58 @@ export class CaseService {
     return updatedCase;
   }
 
+  static async duplicateCase(idOrCaseNumber: string, requestingUserId: string) {
+    // Find the original case
+    const original = await this.getCaseById(idOrCaseNumber, requestingUserId);
+    if (!original) throw new Error('Case not found');
+
+    // Generate a unique case number based on the original's number
+    const baseNumber = original.caseNumber.replace(/-COPY(\d*)$/, '');
+    const existingSuffixes = await prisma.case.findMany({
+      where: { caseNumber: { startsWith: `${baseNumber}-COPY` } },
+      select: { caseNumber: true }
+    });
+    const nextIndex = existingSuffixes.length + 1;
+    const newCaseNumber = `${baseNumber}-COPY${nextIndex > 1 ? nextIndex : ''}`;
+
+    const newCase = await prisma.case.create({
+      data: {
+        caseNumber:  newCaseNumber,
+        title:       `${original.title} (Copy)`,
+        description: original.description,
+        type:        original.type,
+        priority:    original.priority,
+        status:      'Pending',
+        deadline:    original.deadline,
+        clientId:    original.clientId,
+        attorneyId:  requestingUserId, // Assign to the duplicating attorney
+        filedDate:   DateService.now(),
+      },
+      include: {
+        attorney: true,
+        client: true,
+        team: { include: { user: true } },
+        timeline: { include: { author: true }, orderBy: { timestamp: 'desc' } },
+        documents: { include: { uploadedBy: true } },
+        notes: { include: { author: true }, orderBy: { timestamp: 'desc' } }
+      }
+    });
+
+    // Add an initial timeline event
+    await prisma.timelineEvent.create({
+      data: {
+        caseId:      newCase.id,
+        authorId:    requestingUserId,
+        type:        'filed',
+        description: `Case duplicated from ${original.caseNumber}`,
+        timestamp:   DateService.now()
+      }
+    });
+
+    emitToAll('case_created', newCase);
+    return newCase;
+  }
+
   static async deleteCase(idOrCaseNumber: string) {
     // Support deleting by case number or ID
     const isCaseNumber = /^[A-Z]+-\d+(-\d+)?$/.test(idOrCaseNumber);

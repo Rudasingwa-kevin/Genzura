@@ -50,4 +50,9 @@ export const caseService = {
     const response = await apiClient.delete(`/cases/${id}`);
     return response.data;
   },
+
+  duplicate: async (id: string) => {
+    const response = await apiClient.post(`/cases/${id}/duplicate`);
+    return response.data;
+  },
 };

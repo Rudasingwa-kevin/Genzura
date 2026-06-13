@@ -129,6 +129,19 @@ export class CaseController {
     }
   }
 
+  static async duplicate(req: any, res: Response) {
+    try {
+      const { id } = req.params;
+      const newCase = await CaseService.duplicateCase(id, req.user.id);
+      res.status(201).json(newCase);
+    } catch (error: any) {
+      if (error.message.includes('permission')) {
+        return res.status(403).json({ error: error.message });
+      }
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   static async delete(req: Request, res: Response) {
     try {
       const { id } = req.params;

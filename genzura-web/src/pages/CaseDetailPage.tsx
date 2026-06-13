@@ -478,7 +478,17 @@ export default function CaseDetailPage() {
                 <button onClick={() => { setShowMoreMenu(false); handleExport(); }} disabled={isExporting} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-page-bg text-sm font-bold text-text-secondary hover:text-brand-blue transition-all disabled:opacity-60">
                   {isExporting ? <Loader2 size={16} className="animate-spin" /> : <FileDown size={16} />} Export PDF Summary
                 </button>
-                <button onClick={() => { setShowMoreMenu(false); toast.success('Case duplicated'); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-page-bg text-sm font-bold text-text-secondary hover:text-brand-blue transition-all">
+                <button onClick={async () => {
+                  setShowMoreMenu(false);
+                  const loadId = toast.loading('Duplicating case...');
+                  try {
+                    const newCase = await caseService.duplicate(id!);
+                    toast.success('Case duplicated successfully!', { id: loadId });
+                    navigate(`/cases/${newCase.caseNumber || newCase.id}`);
+                  } catch (error) {
+                    toast.error('Failed to duplicate case', { id: loadId });
+                  }
+                }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-page-bg text-sm font-bold text-text-secondary hover:text-brand-blue transition-all">
                   <Copy size={16} /> Duplicate Case
                 </button>
                 <div className="my-1 border-t border-border-base/50" />
