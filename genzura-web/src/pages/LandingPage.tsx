@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import {
   ShieldCheck,
   Scale,
@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { clsx, type ClassValue } from 'clsx';
-import { settingsService } from '../api/services/settings.service';
 import { twMerge } from 'tailwind-merge';
 
 function cn(...inputs: ClassValue[]) {
@@ -186,7 +185,7 @@ if (typeof document !== 'undefined') {
   document.head.appendChild(styleTag);
 }
 
-const Navbar = ({ subscriptionStatus }: { subscriptionStatus: string }) => {
+const Navbar = () => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [logoKey, setLogoKey] = React.useState(0);
 
@@ -211,14 +210,11 @@ const Navbar = ({ subscriptionStatus }: { subscriptionStatus: string }) => {
 
         <div className="hidden md:flex items-center gap-8">
           <a href="#features" className="text-sm font-medium text-text-secondary hover:text-brand-blue transition-colors">Features</a>
-          {subscriptionStatus !== 'PAUSED' && (
-            <Link to="/pricing" className="text-sm font-medium text-text-secondary hover:text-brand-blue transition-colors">Pricing</Link>
-          )}
           <Link to="/attorneys" className="text-sm font-medium text-text-secondary hover:text-brand-blue transition-colors">Find Attorneys</Link>
           <a href="#how-it-works" className="text-sm font-medium text-text-secondary hover:text-brand-blue transition-colors">How It Works</a>
           <Link to="/login" className="text-sm font-medium text-text-secondary hover:text-brand-blue transition-colors">Sign in</Link>
           <Link to="/register" className="bg-brand-blue text-white btn-premium py-2 px-6 text-sm no-underline">
-            Start Free Trial
+            Get Free Workspace
           </Link>
         </div>
 
@@ -230,13 +226,10 @@ const Navbar = ({ subscriptionStatus }: { subscriptionStatus: string }) => {
       {isOpen && (
         <div className="md:hidden bg-white border-b p-6 flex flex-col gap-4 animate-in slide-in-from-top duration-300">
           <a href="#features" className="font-medium" onClick={() => setIsOpen(false)}>Features</a>
-          {subscriptionStatus !== 'PAUSED' && (
-            <Link to="/pricing" className="font-medium" onClick={() => setIsOpen(false)}>Pricing</Link>
-          )}
           <Link to="/attorneys" className="font-medium" onClick={() => setIsOpen(false)}>Find Attorneys</Link>
           <a href="#how-it-works" className="font-medium" onClick={() => setIsOpen(false)}>How It Works</a>
           <Link to="/login" className="font-medium" onClick={() => setIsOpen(false)}>Sign in</Link>
-          <Link to="/register" className="bg-brand-blue text-white py-3 rounded-button text-center no-underline" onClick={() => setIsOpen(false)}>Start Free Trial</Link>
+          <Link to="/register" className="bg-brand-blue text-white py-3 rounded-button text-center no-underline" onClick={() => setIsOpen(false)}>Get Free Workspace</Link>
         </div>
       )}
     </nav>
@@ -319,19 +312,6 @@ const StatCard = ({ value, label }: { value: string, label: string }) => (
 
 const LandingPage = () => {
   const [showFloatingCTA, setShowFloatingCTA] = React.useState(false);
-  const [subscriptionStatus, setSubscriptionStatus] = React.useState<string>('PAUSED');
-
-  React.useEffect(() => {
-    const fetchStatus = async () => {
-      try {
-        const info = await settingsService.getSubscriptionInfo();
-        setSubscriptionStatus(info.status);
-      } catch (err) {
-        console.error('Failed to fetch subscription status:', err);
-      }
-    };
-    fetchStatus();
-  }, []);
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -345,7 +325,7 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen overflow-x-hidden flex flex-col w-full">
-      <Navbar subscriptionStatus={subscriptionStatus} />
+      <Navbar />
 
       {/* Floating CTA Button */}
       {showFloatingCTA && (
@@ -355,8 +335,8 @@ const LandingPage = () => {
             className="bg-brand-blue text-white px-4 py-3 md:px-6 md:py-4 rounded-full shadow-2xl hover:shadow-3xl flex items-center gap-2 no-underline font-bold hover:scale-110 transition-all group animate-bounce-slow text-sm md:text-base"
           >
             <Sparkles className="w-4 h-4 md:w-5 md:h-5 animate-pulse" />
-            <span className="hidden sm:inline">Start Free Trial</span>
-            <span className="sm:hidden">Try Free</span>
+            <span className="hidden sm:inline">Get Free Workspace</span>
+            <span className="sm:hidden">Join Free</span>
             <ArrowRight className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
@@ -372,22 +352,22 @@ const LandingPage = () => {
           <div className="space-y-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-green-light text-brand-green text-xs font-bold uppercase tracking-wider animate-slide-left shadow-sm">
               <Scale size={16} className="animate-bounce-slow" />
-              Built for Legal Professionals
+              Built for Legal Professionals in Rwanda
             </div>
             <h1 className="text-5xl lg:text-7xl font-bold leading-[1.1] text-brand-dark animate-slide-up">
-              Your Law Firm, <span className="gradient-text relative">
-                Simplified.
+              Prepare Your Cases. <span className="gradient-text relative">
+                Perfect Before Court.
                 <Sparkles className="absolute -top-6 -right-6 text-brand-blue animate-pulse" size={24} />
               </span>
             </h1>
             <p className="text-xl text-text-secondary max-w-lg leading-relaxed animate-slide-up stagger-1">
-              Stop drowning in deadlines and documents. Genzura helps attorneys manage cases, track time, and deliver results—without the chaos.
+              Genzura is your private workspace to organize, draft, and prepare your cases—then deploy them confidently to the government portal (IECMS) when they're ready.
             </p>
 
             <div className="bg-white border-2 border-brand-blue/20 rounded-2xl p-6 space-y-3 animate-slide-up stagger-2 shadow-lg hover:shadow-2xl transition-shadow">
               <div className="flex items-center gap-3 animate-slide-left stagger-3">
                 <CheckCircle2 className="text-brand-green shrink-0 animate-scale-in" size={20} />
-                <span className="text-text-primary font-medium">Never miss a court deadline again</span>
+                <span className="text-text-primary font-medium">Organize & prepare cases before submitting to IECMS</span>
               </div>
               <div className="flex items-center gap-3 animate-slide-left stagger-4">
                 <CheckCircle2 className="text-brand-green shrink-0 animate-scale-in" size={20} />
@@ -395,29 +375,24 @@ const LandingPage = () => {
               </div>
               <div className="flex items-center gap-3 animate-slide-left stagger-5">
                 <CheckCircle2 className="text-brand-green shrink-0 animate-scale-in" size={20} />
-                <span className="text-text-primary font-medium">Save 10+ hours per week on admin work</span>
+                <span className="text-text-primary font-medium">Never miss a step in your case preparation</span>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-4 animate-slide-up stagger-3">
               <Link to="/register" className="bg-brand-blue text-white btn-premium flex items-center gap-2 no-underline text-lg px-8 py-4 hover:scale-105 transition-transform shadow-lg hover:shadow-2xl group">
-                Start Free Trial <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                Create Your Free Workspace <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
               </Link>
-              {subscriptionStatus !== 'PAUSED' && (
-                <Link to="/pricing" className="bg-white text-brand-dark border-2 border-brand-blue btn-premium text-lg px-8 py-4 no-underline hover:bg-brand-light transition-all hover:scale-105 shadow-md hover:shadow-xl">
-                  View Pricing
-                </Link>
-              )}
             </div>
 
             <div className="flex items-center gap-6 pt-4">
               <div className="flex items-center gap-2 text-sm text-text-muted">
                 <CheckCircle2 size={16} className="text-brand-green" />
-                <span>No credit card required</span>
+                <span>Free to use — no subscription needed</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-text-muted">
                 <CheckCircle2 size={16} className="text-brand-green" />
-                <span>Free 20 cases forever</span>
+                <span>Ready in 2 minutes</span>
               </div>
             </div>
           </div>
@@ -557,10 +532,10 @@ const LandingPage = () => {
 
           <div className="text-center animate-slide-up stagger-4">
             <p className="text-2xl font-bold text-brand-dark mb-6">
-              There's a better way. <span className="text-brand-blue animate-pulse">Genzura fixes all of this.</span>
+              There's a better way. <span className="text-brand-blue animate-pulse">Genzura is your private preparation workspace.</span>
             </p>
             <Link to="/register" className="bg-brand-blue text-white btn-premium inline-flex items-center gap-2 no-underline text-lg px-8 py-4 hover:scale-110 transition-transform shadow-xl hover:shadow-2xl group animate-bounce-slow">
-              Try It Free <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
+              Start Preparing Your Cases <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
             </Link>
           </div>
         </div>
@@ -571,10 +546,10 @@ const LandingPage = () => {
         <div className="section-container">
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
             <h2 className="text-4xl lg:text-5xl font-bold text-brand-dark">
-              Everything You Need to Run Your Practice
+              Everything You Need to Prepare a Winning Case
             </h2>
             <p className="text-xl text-text-secondary">
-              From client intake to case closure, Genzura handles it all—so you can focus on practicing law.
+              Genzura is your private workspace to organize cases before deploying them to the government portal (IECMS). Get everything in order first.
             </p>
           </div>
 
@@ -628,9 +603,9 @@ const LandingPage = () => {
 
           <div className="mt-16 text-center">
             <Link to="/register" className="bg-brand-blue text-white btn-premium inline-flex items-center gap-2 no-underline text-lg px-8 py-4">
-              Start Your Free Trial <ArrowRight size={20} />
+              Get Free Access <ArrowRight size={20} />
             </Link>
-            <p className="text-sm text-text-muted mt-4">20 cases free forever. No credit card required.</p>
+            <p className="text-sm text-text-muted mt-4">100% free to get started. Organize your cases in a private workspace.</p>
           </div>
         </div>
       </section>
@@ -640,10 +615,10 @@ const LandingPage = () => {
         <div className="section-container">
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
             <h2 className="text-4xl lg:text-5xl font-bold text-brand-dark">
-              Up and Running in <span className="gradient-text">Minutes</span>
+              From Preparation to <span className="gradient-text">Submission</span>
             </h2>
             <p className="text-xl text-text-secondary">
-              No complicated setup. No training required. Start managing cases today.
+              Three simple steps to go from a new case to a perfectly prepared submission for the government portal.
             </p>
           </div>
 
@@ -653,9 +628,9 @@ const LandingPage = () => {
                 <div className="w-16 h-16 rounded-full bg-brand-blue text-white flex items-center justify-center text-2xl font-bold mb-6">
                   1
                 </div>
-                <h3 className="text-2xl font-bold text-brand-dark mb-4">Sign Up Free</h3>
+                <h3 className="text-2xl font-bold text-brand-dark mb-4">Create Your Free Workspace</h3>
                 <p className="text-text-secondary leading-relaxed">
-                  Create your account in 60 seconds. Add your firm details and invite your team.
+                  Sign up in 60 seconds. Add your firm details and invite your team — completely free.
                 </p>
               </div>
               <div className="hidden md:block absolute top-1/2 -right-4 w-8 h-0.5 bg-brand-blue/30" />
@@ -666,9 +641,9 @@ const LandingPage = () => {
                 <div className="w-16 h-16 rounded-full bg-brand-blue text-white flex items-center justify-center text-2xl font-bold mb-6">
                   2
                 </div>
-                <h3 className="text-2xl font-bold text-brand-dark mb-4">Add Your Cases</h3>
+                <h3 className="text-2xl font-bold text-brand-dark mb-4">Organize & Prepare Your Cases</h3>
                 <p className="text-text-secondary leading-relaxed">
-                  Import existing cases or start fresh. Upload documents, set deadlines, assign attorneys.
+                  Add cases, upload documents, set deadlines, and build a complete and well-organized case file — all in one private workspace.
                 </p>
               </div>
               <div className="hidden md:block absolute top-1/2 -right-4 w-8 h-0.5 bg-brand-blue/30" />
@@ -678,16 +653,16 @@ const LandingPage = () => {
               <div className="w-16 h-16 rounded-full bg-brand-blue text-white flex items-center justify-center text-2xl font-bold mb-6">
                 3
               </div>
-              <h3 className="text-2xl font-bold text-brand-dark mb-4">Focus on Law</h3>
+              <h3 className="text-2xl font-bold text-brand-dark mb-4">Submit to IECMS — Ready</h3>
               <p className="text-text-secondary leading-relaxed">
-                Let Genzura handle the admin. Get alerts, find documents instantly, update clients automatically.
+                When your case is fully prepared, deploy it to Rwanda's government portal (IECMS) with confidence. No last-minute chaos.
               </p>
             </div>
           </div>
 
           <div className="mt-12 text-center">
             <Link to="/register" className="bg-brand-blue text-white btn-premium inline-flex items-center gap-2 no-underline text-lg px-8 py-4">
-              Get Started Now <ArrowRight size={20} />
+              Start Preparing Now <ArrowRight size={20} />
             </Link>
           </div>
         </div>
@@ -743,9 +718,9 @@ const LandingPage = () => {
           </div>
 
           <div className="mt-12 text-center">
-            <p className="text-brand-light/80 text-lg mb-6">Sound familiar? You're not alone.</p>
+            <p className="text-brand-light/80 text-lg mb-6">Sound familiar? Genzura is your solution — and it's free.</p>
             <Link to="/register" className="bg-white text-brand-dark btn-premium font-bold no-underline inline-flex items-center gap-2">
-              Try Genzura Free <ArrowRight size={20} />
+              Start Free <ArrowRight size={20} />
             </Link>
           </div>
         </div>
@@ -1051,9 +1026,9 @@ const LandingPage = () => {
           </div>
 
           <div className="mt-16 text-center">
-            <p className="text-2xl font-bold text-brand-dark mb-6">Ready to transform your practice?</p>
+            <p className="text-2xl font-bold text-brand-dark mb-6">Ready to walk into court fully prepared?</p>
             <Link to="/register" className="bg-brand-blue text-white btn-premium inline-flex items-center gap-2 no-underline text-lg px-8 py-4">
-              Start Free Trial <ArrowRight size={20} />
+              Create Free Workspace <ArrowRight size={20} />
             </Link>
           </div>
         </div>
@@ -1239,30 +1214,30 @@ const LandingPage = () => {
 
             <div className="relative z-10 space-y-8 max-w-4xl mx-auto">
               <h2 className="text-4xl lg:text-6xl font-bold leading-tight animate-slide-up">
-                Ready to Reclaim Your Time?
+                Start Organizing Your Cases Today — It's Free
               </h2>
               <p className="text-xl text-white/90 max-w-2xl mx-auto animate-slide-up stagger-1">
-                Join hundreds of attorneys who've already said goodbye to chaos. Start your free trial today—no credit card required.
+                Genzura is your private workspace to prepare, organize, and perfect your cases before submitting to the government portal. Join for free — no subscription required.
               </p>
 
               <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-8 max-w-2xl mx-auto animate-scale-in stagger-2 hover:bg-white/15 transition-colors">
                 <div className="grid md:grid-cols-3 gap-6 mb-8">
                   <div className="animate-slide-up stagger-3 group cursor-default">
-                    <div className="text-3xl font-bold mb-2 group-hover:scale-110 transition-transform">20 Cases</div>
-                    <div className="text-sm text-white/70">Free Forever</div>
+                    <div className="text-3xl font-bold mb-2 group-hover:scale-110 transition-transform">Free</div>
+                    <div className="text-sm text-white/70">No subscription needed</div>
                   </div>
                   <div className="animate-slide-up stagger-4 group cursor-default">
-                    <div className="text-3xl font-bold mb-2 group-hover:scale-110 transition-transform">No Card</div>
-                    <div className="text-sm text-white/70">Required to Start</div>
+                    <div className="text-3xl font-bold mb-2 group-hover:scale-110 transition-transform">Private</div>
+                    <div className="text-sm text-white/70">Your own secure workspace</div>
                   </div>
                   <div className="animate-slide-up stagger-5 group cursor-default">
                     <div className="text-3xl font-bold mb-2 group-hover:scale-110 transition-transform">2 Minutes</div>
-                    <div className="text-sm text-white/70">To Get Started</div>
+                    <div className="text-sm text-white/70">To get started</div>
                   </div>
                 </div>
 
                 <Link to="/register" className="bg-white text-brand-dark btn-premium font-bold no-underline inline-flex items-center gap-2 text-lg px-10 py-5 hover:scale-110 transition-transform shadow-2xl group animate-bounce-slow">
-                  Start Your Free Trial <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
+                  Create Free Workspace <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
                 </Link>
               </div>
 
@@ -1273,11 +1248,11 @@ const LandingPage = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle2 size={16} />
-                  <span>Cancel anytime</span>
+                  <span>No credit card required</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle2 size={16} />
-                  <span>Free tier forever</span>
+                  <span>Completely free to start</span>
                 </div>
               </div>
             </div>
@@ -1306,10 +1281,8 @@ const LandingPage = () => {
               <h4 className="font-bold text-brand-dark mb-4">Product</h4>
               <div className="space-y-2">
                 <a href="#features" className="block text-sm text-text-muted hover:text-brand-blue transition-colors">Features</a>
-                {subscriptionStatus !== 'PAUSED' && (
-                  <Link to="/pricing" className="block text-sm text-text-muted hover:text-brand-blue transition-colors">Pricing</Link>
-                )}
                 <a href="#how-it-works" className="block text-sm text-text-muted hover:text-brand-blue transition-colors">How It Works</a>
+                <Link to="/attorneys" className="block text-sm text-text-muted hover:text-brand-blue transition-colors">Find Attorneys</Link>
               </div>
             </div>
 
@@ -1333,11 +1306,11 @@ const LandingPage = () => {
 
           <div className="pt-8 border-t border-border-base flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-text-muted">
-              &copy; 2026 Genzura Inc. All rights reserved.
+              &copy; 2026 Genzura. Your private case preparation workspace.
             </p>
             <div className="flex gap-6">
               <Link to="/login" className="text-sm text-text-muted hover:text-brand-blue transition-colors">Sign In</Link>
-              <Link to="/register" className="text-sm font-bold text-brand-blue hover:underline">Start Free Trial</Link>
+              <Link to="/register" className="text-sm font-bold text-brand-blue hover:underline">Get Free Access</Link>
             </div>
           </div>
         </div>
