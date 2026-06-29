@@ -1,5 +1,4 @@
 import cron, { ScheduledTask } from 'node-cron';
-import { SubscriptionExpiryJob } from '../jobs/subscriptionExpiryJob.js';
 import { CaseDeadlineJob } from '../jobs/caseDeadlineJob.js';
 import { KeepAliveJob } from '../jobs/keepAliveJob.js';
 
@@ -12,17 +11,7 @@ export class CronScheduler {
   static initialize() {
     console.log('⏰ Initializing cron scheduler...');
 
-    // Subscription expiry check - runs daily at 2:00 AM
-    const expiryJob = cron.schedule('0 2 * * *', async () => {
-      console.log('🕐 [CRON] Running scheduled subscription expiry check...');
-      try {
-        await SubscriptionExpiryJob.run();
-      } catch (error) {
-        console.error('❌ [CRON] Subscription expiry job failed:', error);
-      }
-    }, {
-      timezone: 'Africa/Kigali'
-    });
+
 
     // Case deadline check - runs at 8:00 AM (server is warm) + noon backup
     const deadlineJob = cron.schedule('0 8 * * *', async () => {
@@ -57,13 +46,11 @@ export class CronScheduler {
       }
     });
 
-    this.tasks.push(expiryJob);
     this.tasks.push(deadlineJob);
     this.tasks.push(deadlineBackupJob);
     this.tasks.push(keepAliveJob);
 
     console.log('✅ Cron scheduler initialized');
-    console.log('   📅 Subscription expiry check: Daily at 2:00 AM (Africa/Kigali)');
     console.log('   📅 Case deadline check: Daily at 8:00 AM + 12:00 PM (Africa/Kigali)');
     console.log('   🏓 Keep-alive ping: Every 14 minutes (production only)');
   }

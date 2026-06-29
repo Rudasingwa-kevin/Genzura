@@ -8,8 +8,7 @@ import {
   TimelineEventType,
   DocumentType,
   NotificationType,
-  CalendarEventType,
-  SubscriptionPlan
+  CalendarEventType
 } from '@prisma/client';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
@@ -18,16 +17,16 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 const USERS = [
-  { id: 'U-101', name: 'James Wilson', email: 'j.wilson@genzura.law', role: 'Senior_Attorney', status: 'Active', initials: 'JW', phone: '+250 788 123 456', location: 'Kigali, Rwanda', jobTitle: 'Senior Attorney', subscriptionPlan: 'Inkingi' as SubscriptionPlan },
-  { id: 'U-102', name: 'Sarah Miller', email: 's.miller@genzura.law', role: 'Admin', status: 'Active', initials: 'SM', phone: '+250 788 234 567', location: 'Kigali, Rwanda', jobTitle: 'System Administrator', subscriptionPlan: 'Inkingi' as SubscriptionPlan },
-  { id: 'U-103', name: 'David Chen', email: 'd.chen@genzura.law', role: 'Attorney', status: 'Active', initials: 'DC', phone: '+250 788 345 678', location: 'Kigali, Rwanda', jobTitle: 'Attorney', subscriptionPlan: 'Intango' as SubscriptionPlan },
-  { id: 'U-104', name: 'Elena Rodriguez', email: 'e.rodriguez@genzura.law', role: 'Paralegal', status: 'Active', initials: 'ER', phone: '+250 788 456 789', location: 'Kigali, Rwanda', jobTitle: 'Paralegal', subscriptionPlan: 'Genzura' as SubscriptionPlan },
-  { id: 'U-105', name: 'Michael Uwimana', email: 'm.uwimana@genzura.law', role: 'Attorney', status: 'Active', initials: 'MU', phone: '+250 788 567 890', location: 'Kigali, Rwanda', jobTitle: 'Corporate Attorney', subscriptionPlan: 'Intango' as SubscriptionPlan },
-  { id: 'U-106', name: 'Grace Mugisha', email: 'g.mugisha@genzura.law', role: 'Senior_Attorney', status: 'Active', initials: 'GM', phone: '+250 788 678 901', location: 'Kigali, Rwanda', jobTitle: 'Senior Attorney - IP', subscriptionPlan: 'Inkingi' as SubscriptionPlan },
-  { id: 'U-107', name: 'Patrick Nkurunziza', email: 'p.nkurunziza@genzura.law', role: 'Paralegal', status: 'Active', initials: 'PN', phone: '+250 788 789 012', location: 'Kigali, Rwanda', jobTitle: 'Senior Paralegal', subscriptionPlan: 'Genzura' as SubscriptionPlan },
-  { id: 'U-108', name: 'Alice Kayitesi', email: 'a.kayitesi@genzura.law', role: 'Attorney', status: 'Invited', initials: 'AK', phone: '+250 788 890 123', location: 'Kigali, Rwanda', jobTitle: 'Employment Attorney', subscriptionPlan: 'Genzura' as SubscriptionPlan },
-  { id: 'U-109', name: 'Robert Habimana', email: 'r.habimana@genzura.law', role: 'Support', status: 'Active', initials: 'RH', phone: '+250 788 901 234', location: 'Kigali, Rwanda', jobTitle: 'Legal Support Specialist', subscriptionPlan: 'Genzura' as SubscriptionPlan },
-  { id: 'U-110', name: 'Diana Umutesi', email: 'd.umutesi@genzura.law', role: 'Attorney', status: 'Active', initials: 'DU', phone: '+250 788 012 345', location: 'Kigali, Rwanda', jobTitle: 'Real Estate Attorney', subscriptionPlan: 'Intango' as SubscriptionPlan },
+  { id: 'U-101', name: 'James Wilson', email: 'j.wilson@genzura.law', role: 'Senior_Attorney', status: 'Active', initials: 'JW', phone: '+250 788 123 456', location: 'Kigali, Rwanda', jobTitle: 'Senior Attorney' },
+  { id: 'U-102', name: 'Sarah Miller', email: 's.miller@genzura.law', role: 'Admin', status: 'Active', initials: 'SM', phone: '+250 788 234 567', location: 'Kigali, Rwanda', jobTitle: 'System Administrator' },
+  { id: 'U-103', name: 'David Chen', email: 'd.chen@genzura.law', role: 'Attorney', status: 'Active', initials: 'DC', phone: '+250 788 345 678', location: 'Kigali, Rwanda', jobTitle: 'Attorney' },
+  { id: 'U-104', name: 'Elena Rodriguez', email: 'e.rodriguez@genzura.law', role: 'Paralegal', status: 'Active', initials: 'ER', phone: '+250 788 456 789', location: 'Kigali, Rwanda', jobTitle: 'Paralegal' },
+  { id: 'U-105', name: 'Michael Uwimana', email: 'm.uwimana@genzura.law', role: 'Attorney', status: 'Active', initials: 'MU', phone: '+250 788 567 890', location: 'Kigali, Rwanda', jobTitle: 'Corporate Attorney' },
+  { id: 'U-106', name: 'Grace Mugisha', email: 'g.mugisha@genzura.law', role: 'Senior_Attorney', status: 'Active', initials: 'GM', phone: '+250 788 678 901', location: 'Kigali, Rwanda', jobTitle: 'Senior Attorney - IP' },
+  { id: 'U-107', name: 'Patrick Nkurunziza', email: 'p.nkurunziza@genzura.law', role: 'Paralegal', status: 'Active', initials: 'PN', phone: '+250 788 789 012', location: 'Kigali, Rwanda', jobTitle: 'Senior Paralegal' },
+  { id: 'U-108', name: 'Alice Kayitesi', email: 'a.kayitesi@genzura.law', role: 'Attorney', status: 'Invited', initials: 'AK', phone: '+250 788 890 123', location: 'Kigali, Rwanda', jobTitle: 'Employment Attorney' },
+  { id: 'U-109', name: 'Robert Habimana', email: 'r.habimana@genzura.law', role: 'Support', status: 'Active', initials: 'RH', phone: '+250 788 901 234', location: 'Kigali, Rwanda', jobTitle: 'Legal Support Specialist' },
+  { id: 'U-110', name: 'Diana Umutesi', email: 'd.umutesi@genzura.law', role: 'Attorney', status: 'Active', initials: 'DU', phone: '+250 788 012 345', location: 'Kigali, Rwanda', jobTitle: 'Real Estate Attorney' },
 ];
 
 const CLIENTS = [
@@ -180,12 +179,6 @@ async function main() {
     console.log('👥 Seeding users...');
     for (const user of USERS) {
       console.log(`   - Creating user: ${user.email}`);
-      const subscriptionStartDate = user.subscriptionPlan !== 'Genzura' ? new Date('2026-01-01') : null;
-      const subscriptionEndDate = user.subscriptionPlan === 'Inkingi'
-        ? new Date('2027-01-01')
-        : user.subscriptionPlan === 'Intango'
-          ? new Date('2026-04-01')
-          : null;
 
       await prisma.user.create({
         data: {
@@ -199,9 +192,6 @@ async function main() {
           phone: user.phone,
           location: user.location,
           jobTitle: user.jobTitle,
-          subscriptionPlan: user.subscriptionPlan,
-          subscriptionStartDate,
-          subscriptionEndDate,
         },
       });
     }

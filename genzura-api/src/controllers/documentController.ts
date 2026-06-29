@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { DocumentService } from '../services/documentService.js';
 import { SettingsService } from '../services/settingsService.js';
-import { SubscriptionService } from '../services/subscriptionService.js';
+
 import { S3Service } from '../services/s3Service.js';
 
 export class DocumentController {
@@ -45,23 +45,7 @@ export class DocumentController {
         return res.status(400).json({ error: 'No file uploaded' });
       }
 
-      // Check subscription enforcement
-      const subscriptionStatus = await SettingsService.getSubscriptionStatus();
 
-      if (subscriptionStatus === 'ACTIVE') {
-        const canUpload = await SubscriptionService.canUploadDocument(req.user.id);
-        if (!canUpload.allowed) {
-          // If S3 is configured, we might have uploaded file locally in multer middleware.
-          // Delete local file to avoid residue.
-          if (fs.existsSync(file.path)) {
-            fs.unlinkSync(file.path);
-          }
-          return res.status(403).json({
-            error: canUpload.message,
-            code: 'SUBSCRIPTION_EXPIRED'
-          });
-        }
-      }
 
       // Check file size (should be caught by multer, but double-check)
       const maxSize = 100 * 1024 * 1024; // 100MB

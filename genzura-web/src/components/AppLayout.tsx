@@ -30,8 +30,6 @@ import NewCaseModal from './NewCaseModal';
 import Breadcrumbs from './Breadcrumbs';
 import CommandPalette from './CommandPalette';
 import EmptyState from './EmptyState';
-import SubscriptionBanner from './SubscriptionBanner';
-import SubscriptionWarningBanner from './SubscriptionWarningBanner';
 import CaseDeadlineWarningBanner from './CaseDeadlineWarningBanner';
 import { invitationService } from '../api/services/invitation.service';
 import { toast } from 'react-hot-toast';
@@ -511,14 +509,8 @@ export default function AppLayout({ children, title, action, breadcrumbLabel }: 
             </div>
           )}
 
-          {/* Case Deadline Reminders and Expiry Banner */}
+          {/* Case Deadline Reminders */}
           <CaseDeadlineWarningBanner />
-
-          {/* System-wide Subscription Warning (shows when enforcement is coming) */}
-          <SubscriptionWarningBanner />
-
-          {/* Individual Subscription Banner (shows when user has paid plan) */}
-          <SubscriptionBanner />
 
           {children}
         </div>

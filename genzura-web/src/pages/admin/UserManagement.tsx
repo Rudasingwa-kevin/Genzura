@@ -9,9 +9,7 @@ import {
   Loader2,
   Zap,
   ShieldCheck,
-  Award,
-  CreditCard,
-  Crown
+  Award
 } from 'lucide-react';
 import AdminLayout from '../../components/AdminLayout';
 import { TableSkeleton } from '../../components/Skeleton';
@@ -35,11 +33,7 @@ const STATUS_DOT: Record<UserStatus, string> = {
   Suspended: 'bg-rose-500',
 };
 
-const PLAN_STYLES: Record<string, { bg: string; text: string; icon: any }> = {
-  'Genzura': { bg: 'bg-slate-50', text: 'text-slate-600', icon: ShieldCheck },
-  'Intango': { bg: 'bg-blue-50', text: 'text-brand-blue', icon: Zap },
-  'Inkingi': { bg: 'bg-amber-50', text: 'text-amber-600', icon: Crown },
-};
+
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -228,7 +222,6 @@ export default function UserManagement() {
                 <tr className="bg-page-bg/30 border-b border-border-base">
                   <th className="px-8 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest">Team Member</th>
                   <th className="px-8 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest">Role</th>
-                  <th className="px-8 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest">Plan</th>
                   <th className="px-8 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest text-center">Status</th>
                   <th className="px-8 py-4 text-[10px] font-bold text-text-muted uppercase tracking-widest">Last Active</th>
                   <th className="px-8 py-4 w-10"></th>
@@ -256,19 +249,6 @@ export default function UserManagement() {
                       <span className={`text-[10px] font-bold uppercase px-3 py-1.5 rounded-full border border-current/10 ${ROLE_STYLES[member.role]}`}>
                         {member.role}
                       </span>
-                    </td>
-                    <td className="px-8 py-6">
-                      {(() => {
-                        const plan = member.subscriptionPlan || 'Genzura';
-                        const style = PLAN_STYLES[plan] || PLAN_STYLES['Genzura'];
-                        const Icon = style.icon;
-                        return (
-                          <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full ${style.bg} ${style.text} text-[10px] font-bold uppercase`}>
-                            <Icon size={12} />
-                            {plan}
-                          </div>
-                        );
-                      })()}
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex justify-center">

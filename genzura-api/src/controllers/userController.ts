@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { UserService } from '../services/userService.js';
 import fs from 'fs';
 import path from 'path';
-import { SubscriptionService } from '../services/subscriptionService.js';
 import { S3Service } from '../services/s3Service.js';
 
 export class UserController {
@@ -214,13 +213,4 @@ export class UserController {
     }
   }
 
-  static async getMySubscription(req: any, res: Response) {
-    try {
-      const userId = req.user.id;
-      const limits = await SubscriptionService.getSubscriptionLimits(userId);
-      res.json(limits);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  }
 }

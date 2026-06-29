@@ -388,7 +388,7 @@ const LandingPage = () => {
             <div className="flex items-center gap-6 pt-4">
               <div className="flex items-center gap-2 text-sm text-text-muted">
                 <CheckCircle2 size={16} className="text-brand-green" />
-                <span>Free to use — no subscription needed</span>
+                <span>Free workspace — no credit card needed</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-text-muted">
                 <CheckCircle2 size={16} className="text-brand-green" />
@@ -1217,14 +1217,14 @@ const LandingPage = () => {
                 Start Organizing Your Cases Today — It's Free
               </h2>
               <p className="text-xl text-white/90 max-w-2xl mx-auto animate-slide-up stagger-1">
-                Genzura is your private workspace to prepare, organize, and perfect your cases before submitting to the government portal. Join for free — no subscription required.
+                Genzura is your private workspace to prepare, organize, and perfect your cases before submitting to the government portal. Join for free — completely free to start.
               </p>
 
               <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-8 max-w-2xl mx-auto animate-scale-in stagger-2 hover:bg-white/15 transition-colors">
                 <div className="grid md:grid-cols-3 gap-6 mb-8">
                   <div className="animate-slide-up stagger-3 group cursor-default">
                     <div className="text-3xl font-bold mb-2 group-hover:scale-110 transition-transform">Free</div>
-                    <div className="text-sm text-white/70">No subscription needed</div>
+                    <div className="text-sm text-white/70">Your own secure workspace</div>
                   </div>
                   <div className="animate-slide-up stagger-4 group cursor-default">
                     <div className="text-3xl font-bold mb-2 group-hover:scale-110 transition-transform">Private</div>

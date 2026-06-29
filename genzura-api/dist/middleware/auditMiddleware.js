@@ -13,16 +13,6 @@ const getClientIp = (req) => {
  */
 const mapRouteToAuditAction = (method, path) => {
     const normalizedPath = path.toLowerCase();
-    // Admin subscription actions
-    if (normalizedPath.includes('/admin/subscriptions/grant')) {
-        return AuditAction.SUBSCRIPTION_ACTIVATED;
-    }
-    if (normalizedPath.includes('/admin/subscriptions/extend')) {
-        return AuditAction.SUBSCRIPTION_CHANGED;
-    }
-    if (normalizedPath.includes('/admin/subscriptions/revoke') || normalizedPath.includes('/admin/subscriptions/cancel')) {
-        return AuditAction.SUBSCRIPTION_PAUSED;
-    }
     // User management
     if (method === 'POST' && normalizedPath.includes('/users') && !normalizedPath.includes('login')) {
         return AuditAction.USER_CREATED;
@@ -73,10 +63,6 @@ const mapRouteToAuditAction = (method, path) => {
     if (method === 'PUT' && normalizedPath.includes('/settings')) {
         return AuditAction.SETTINGS_UPDATED;
     }
-    // Plan configuration
-    if ((method === 'PUT' || method === 'PATCH') && normalizedPath.includes('/plans/')) {
-        return AuditAction.PLAN_UPDATED;
-    }
     // Export operations
     if (method === 'GET' && normalizedPath.includes('/export')) {
         return AuditAction.EXPORT_DATA;
@@ -101,18 +87,6 @@ const generateDescription = (req, action) => {
     const userName = user?.name || 'Unknown user';
     const method = req.method;
     const path = req.path;
-    // Custom descriptions for specific actions
-    if (action === AuditAction.SUBSCRIPTION_ACTIVATED) {
-        const { plan, durationDays } = req.body;
-        return `${userName} granted ${plan} subscription for ${durationDays} days`;
-    }
-    if (action === AuditAction.SUBSCRIPTION_CHANGED) {
-        const { extensionDays } = req.body;
-        return `${userName} extended subscription by ${extensionDays} days`;
-    }
-    if (action === AuditAction.SUBSCRIPTION_PAUSED) {
-        return `${userName} revoked subscription access`;
-    }
     if (action === AuditAction.USER_CREATED) {
         const { name, email, role } = req.body;
         return `${userName} created user account for ${name} (${email}) with role ${role}`;
@@ -135,10 +109,6 @@ const generateDescription = (req, action) => {
     }
     if (action === AuditAction.SETTINGS_UPDATED) {
         return `${userName} updated system settings`;
-    }
-    if (action === AuditAction.PLAN_UPDATED) {
-        const { plan } = req.body;
-        return `${userName} updated plan configuration: ${plan}`;
     }
     if (action === AuditAction.USER_LOGIN) {
         const { email } = req.body;
@@ -163,9 +133,6 @@ const extractResourceInfo = (req) => {
     }
     if (path.includes('/clients/')) {
         return { resourceType: 'Client', resourceId: req.params.id || req.params.clientId };
-    }
-    if (path.includes('/subscriptions/')) {
-        return { resourceType: 'Subscription', resourceId: req.body.userId };
     }
     return {};
 };

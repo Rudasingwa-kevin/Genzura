@@ -17,9 +17,6 @@ interface User {
   education?: string;
   barNumber?: string;
   language?: string;
-  subscriptionPlan?: 'Genzura' | 'Intango' | 'Inkingi';
-  subscriptionStartDate?: string | null;
-  subscriptionEndDate?: string | null;
 }
 
 interface AuthContextType {

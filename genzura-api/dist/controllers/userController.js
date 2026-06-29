@@ -1,7 +1,6 @@
 import { UserService } from '../services/userService.js';
 import fs from 'fs';
 import path from 'path';
-import { SubscriptionService } from '../services/subscriptionService.js';
 import { S3Service } from '../services/s3Service.js';
 export class UserController {
     static async getAll(req, res) {
@@ -185,16 +184,6 @@ export class UserController {
                 message: 'Invitation sent successfully',
                 user: newUser
             });
-        }
-        catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    }
-    static async getMySubscription(req, res) {
-        try {
-            const userId = req.user.id;
-            const limits = await SubscriptionService.getSubscriptionLimits(userId);
-            res.json(limits);
         }
         catch (error) {
             res.status(500).json({ error: error.message });

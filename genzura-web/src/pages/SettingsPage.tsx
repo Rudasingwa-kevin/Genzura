@@ -10,7 +10,6 @@ import {
   ChevronRight,
   ShieldCheck,
   Zap,
-  CreditCard,
   AlertTriangle,
   FileText,
   Upload,
@@ -26,19 +25,17 @@ import {
 import { toast } from 'react-hot-toast';
 import AppLayout from '../components/AppLayout';
 import { useAuth } from '../contexts/AuthContext';
-import PricingPage from './PricingPage';
 import { authService } from '../api/services/auth.service';
 import { resolveAssetUrl } from '../utils/assetUrl';
 import { notificationPreferencesService, type NotificationPreferences } from '../api/services/notificationPreferences.service';
 import { attorneyDocumentService, type AttorneyDocument } from '../api/services/attorneyDocument.service';
 
 // ─── Tab types ────────────────────────────────────────────────────────────────
-type Tab = 'profile' | 'documents' | 'organization' | 'security' | 'notifications' | 'subscription';
+type Tab = 'profile' | 'documents' | 'organization' | 'security' | 'notifications';
 
 const TABS: { id: Tab; label: string; icon: React.ElementType; color: string }[] = [
   { id: 'profile',      label: 'Personal Profile',    icon: UserIcon,     color: 'text-brand-blue' },
   { id: 'documents',    label: 'Documents & Credentials', icon: FileText, color: 'text-indigo-600' },
-  { id: 'subscription', label: 'Subscription & Billing', icon: CreditCard, color: 'text-purple-600' },
   { id: 'organization', label: 'Organization Info',   icon: Building,     color: 'text-emerald-600' },
   { id: 'security',     label: 'Security & Access',   icon: Shield,       color: 'text-amber-600' },
   { id: 'notifications',label: 'Notifications',       icon: Bell,         color: 'text-violet-600' },
@@ -1070,7 +1067,6 @@ export default function SettingsPage() {
     switch (activeTab) {
       case 'profile': return <ProfileTab />;
       case 'documents': return <DocumentsTab />;
-      case 'subscription': return <PricingPage variant="settings" />;
       case 'security': return <SecurityTab />;
       case 'notifications': return <NotificationsTab />;
       default: return <div className="py-20 text-center text-text-muted font-bold uppercase tracking-[0.1em]">Workspace Management (Coming Soon)</div>;
@@ -1109,9 +1105,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Content Card */}
-          <div className={`flex-1 w-full bg-white border border-border-base rounded-[3rem] shadow-sm relative overflow-hidden min-h-[600px] ${
-            activeTab === 'subscription' ? 'p-6' : 'p-10'
-          }`}>
+          <div className="flex-1 w-full bg-white border border-border-base rounded-[3rem] shadow-sm relative overflow-hidden min-h-[600px] p-10">
             <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none">
               <Zap size={240} />
             </div>

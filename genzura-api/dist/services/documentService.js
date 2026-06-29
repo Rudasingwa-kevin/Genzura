@@ -30,7 +30,7 @@ export class DocumentService {
     }
     static async getCaseDocuments(idOrCaseNumber, userId) {
         // Support lookup by case number or ID
-        const isCaseNumber = /^[A-Z]+-\d+-\d+$/.test(idOrCaseNumber);
+        const isCaseNumber = /^[A-Z]+-\d+(-\d+)?(-COPY\d*)?$/.test(idOrCaseNumber);
         let caseId = idOrCaseNumber;
         // If case number, find the actual case ID
         if (isCaseNumber) {
@@ -75,7 +75,7 @@ export class DocumentService {
     }
     static async createDocument(data) {
         // Support case number or ID
-        const isCaseNumber = /^[A-Z]+-\d+-\d+$/.test(data.caseId);
+        const isCaseNumber = /^[A-Z]+-\d+(-\d+)?(-COPY\d*)?$/.test(data.caseId);
         let actualCaseId = data.caseId;
         // If case number, find the actual case ID
         if (isCaseNumber) {

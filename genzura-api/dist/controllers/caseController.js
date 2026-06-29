@@ -1,6 +1,4 @@
 import { CaseService } from '../services/caseService.js';
-import { SettingsService } from '../services/settingsService.js';
-import { SubscriptionService } from '../services/subscriptionService.js';
 export class CaseController {
     static async getAll(req, res) {
         try {
@@ -32,19 +30,6 @@ export class CaseController {
     }
     static async create(req, res) {
         try {
-            // Check subscription enforcement
-            const subscriptionStatus = await SettingsService.getSubscriptionStatus();
-            if (subscriptionStatus === 'ACTIVE') {
-                const canCreate = await SubscriptionService.canCreateCase(req.user.id);
-                if (!canCreate.allowed) {
-                    return res.status(403).json({
-                        error: canCreate.message,
-                        code: 'SUBSCRIPTION_LIMIT_REACHED',
-                        currentCases: canCreate.currentCases,
-                        maxCases: canCreate.maxCases
-                    });
-                }
-            }
             const newCase = await CaseService.createCase({
                 ...req.body,
                 attorneyId: req.user.id // Automatically assign logged-in user as lead attorney
@@ -114,6 +99,19 @@ export class CaseController {
             res.json(updatedCase);
         }
         catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
+    static async duplicate(req, res) {
+        try {
+            const { id } = req.params;
+            const newCase = await CaseService.duplicateCase(id, req.user.id);
+            res.status(201).json(newCase);
+        }
+        catch (error) {
+            if (error.message.includes('permission')) {
+                return res.status(403).json({ error: error.message });
+            }
             res.status(500).json({ error: error.message });
         }
     }

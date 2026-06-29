@@ -10,8 +10,6 @@ router.use(authenticate);
 router.use(authorize(['Admin']));
 router.use(auditAdminAction());
 
-// POST /api/admin/jobs/run-expiry-check - Manually trigger subscription expiry check
-router.post('/run-expiry-check', AdminJobsController.runExpiryCheck);
 
 // POST /api/admin/jobs/run-deadline-check - Manually trigger case deadline check
 router.post('/run-deadline-check', AdminJobsController.runDeadlineCheck);

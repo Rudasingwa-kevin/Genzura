@@ -22,8 +22,6 @@ import CaseDetailPage from './pages/CaseDetailPage';
 import LegalPage      from './pages/LegalPage';
 import FeedbackPage   from './pages/FeedbackPage';
 import PublicFeedbackPage from './pages/PublicFeedbackPage';
-import PricingPage    from './pages/PricingPage';
-import SubscriptionSettingsPage from './pages/SubscriptionSettingsPage';
 import AttorneyDirectoryPage from './pages/AttorneyDirectoryPage';
 import AttorneyProfilePage from './pages/AttorneyProfilePage';
 
@@ -33,8 +31,6 @@ import UserAnalyticsPage from './pages/admin/UserAnalyticsPage';
 import UserManagement from './pages/admin/UserManagement';
 import SystemSettings from './pages/admin/SystemSettings';
 import AuditLogPage   from './pages/admin/AuditLogPage';
-import SubscriptionManagement from './pages/admin/SubscriptionManagement';
-import PlanManagement from './pages/admin/PlanManagement';
 import FeedbackManagement from './pages/admin/FeedbackManagement';
 import EmailTestPanel from './pages/admin/EmailTestPanel';
 
@@ -50,7 +46,6 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
-            <Route path="/pricing"    element={<PricingPage variant="public" />} />
             <Route path="/legal/:documentId" element={<LegalPage />} />
             <Route path="/contact"    element={<PublicFeedbackPage />} />
             <Route path="/attorneys"  element={<AttorneyDirectoryPage />} />
@@ -65,15 +60,12 @@ function App() {
             <Route path="/clients/:id"   element={<ProtectedRoute><ClientDetailPage /></ProtectedRoute>}  />
             <Route path="/analytics"  element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
             <Route path="/settings"   element={<ProtectedRoute><SettingsPage /></ProtectedRoute>}  />
-            <Route path="/settings/subscription" element={<ProtectedRoute><SubscriptionSettingsPage /></ProtectedRoute>} />
             <Route path="/feedback"   element={<ProtectedRoute><FeedbackPage /></ProtectedRoute>}  />
             
             {/* Admin Routes */}
             <Route path="/admin"          element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="/admin/analytics" element={<AdminRoute><UserAnalyticsPage /></AdminRoute>} />
             <Route path="/admin/users"    element={<AdminRoute><UserManagement /></AdminRoute>} />
-            <Route path="/admin/subscriptions" element={<AdminRoute><SubscriptionManagement /></AdminRoute>} />
-            <Route path="/admin/plans"    element={<AdminRoute><PlanManagement /></AdminRoute>} />
             <Route path="/admin/feedback" element={<AdminRoute><FeedbackManagement /></AdminRoute>} />
             <Route path="/admin/settings" element={<AdminRoute><SystemSettings /></AdminRoute>} />
             <Route path="/admin/audit"    element={<AdminRoute><AuditLogPage /></AdminRoute>} />

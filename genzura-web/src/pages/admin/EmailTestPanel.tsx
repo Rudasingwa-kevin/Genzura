@@ -9,7 +9,7 @@ export default function EmailTestPanel() {
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isSendingAll, setIsSendingAll] = useState(false);
   const [testEmail, setTestEmail] = useState('');
-  const [selectedTemplate, setSelectedTemplate] = useState('subscription_activated');
+  const [selectedTemplate, setSelectedTemplate] = useState('welcome');
   const [connectionStatus, setConnectionStatus] = useState<any>(null);
   const [config, setConfig] = useState<any>(null);
 
@@ -243,9 +243,6 @@ export default function EmailTestPanel() {
                 onChange={(e) => setSelectedTemplate(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border border-border-base focus:border-brand-blue outline-none font-bold"
               >
-                <option value="subscription_activated">Subscription Activated</option>
-                <option value="subscription_extended">Subscription Extended</option>
-                <option value="subscription_cancelled">Subscription Cancelled</option>
                 <option value="welcome">Welcome Email</option>
                 <option value="invitation">Invitation Email</option>
               </select>
