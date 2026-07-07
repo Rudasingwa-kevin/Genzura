@@ -101,18 +101,7 @@ export default function NewCaseModal({ onClose }: { onClose: () => void }) {
       toast.success('Case created successfully!');
       onClose();
       window.location.reload();
-    } catch (error: any) {
-      console.error('Create case error:', error);
-
-      // Handle subscription limit errors
-      if (error.response?.data?.code === 'SUBSCRIPTION_LIMIT_REACHED') {
-        toast.error(error.response.data.error, {
-          duration: 5000,
-          icon: '🔒',
-        });
-      } else {
-        toast.error(error.response?.data?.error || 'Failed to create case');
-      }
+      toast.error(error.response?.data?.error || 'Failed to create case');
     } finally {
       setIsLoading(false);
     }

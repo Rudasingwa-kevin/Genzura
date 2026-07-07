@@ -296,7 +296,7 @@ export default function EmailTestPanel() {
             <li><strong>2.</strong> Enter your email address in the test field</li>
             <li><strong>3.</strong> Select a template and click "Send Test Email"</li>
             <li><strong>4.</strong> Check your inbox (and spam folder) for the test email</li>
-            <li><strong>5.</strong> Or click "Send All Templates" to test all 5 email templates at once</li>
+            <li><strong>5.</strong> Or click "Send All Templates" to test all email templates at once</li>
           </ol>
         </div>
       </div>

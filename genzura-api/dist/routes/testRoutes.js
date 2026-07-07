@@ -61,20 +61,6 @@ router.post('/email/send', async (req, res) => {
         }
         let result;
         switch (type) {
-            case 'subscription_activated':
-                await EmailService.sendSubscriptionActivatedEmail(to, 'Test User', 'Intango', new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // 90 days from now
-                );
-                result = 'Subscription activated email sent';
-                break;
-            case 'subscription_extended':
-                await EmailService.sendSubscriptionExtendedEmail(to, 'Test User', 'Intango', 30, new Date(Date.now() + 120 * 24 * 60 * 60 * 1000) // 120 days from now
-                );
-                result = 'Subscription extended email sent';
-                break;
-            case 'subscription_cancelled':
-                await EmailService.sendSubscriptionCancelledEmail(to, 'Test User', 'Intango');
-                result = 'Subscription cancelled email sent';
-                break;
             case 'welcome':
                 await EmailService.sendWelcomeEmail(to, 'Test User');
                 result = 'Welcome email sent';
@@ -99,7 +85,7 @@ router.post('/email/send', async (req, res) => {
             default:
                 return res.status(400).json({
                     success: false,
-                    error: 'Invalid email type. Use: subscription_activated, subscription_extended, subscription_cancelled, welcome, invitation, deadline_approaching, deadline_expired'
+                    error: 'Invalid email type. Use: welcome, invitation, deadline_approaching, deadline_expired'
                 });
         }
         res.json({
@@ -169,26 +155,11 @@ router.post('/email/all-templates', async (req, res) => {
             });
         }
         const results = [];
-        const templates = [
-            'subscription_activated',
-            'subscription_extended',
-            'subscription_cancelled',
-            'welcome',
-            'invitation'
-        ];
+        const templates = ['welcome', 'invitation'];
         for (const type of templates) {
             try {
                 await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s between emails
                 switch (type) {
-                    case 'subscription_activated':
-                        await EmailService.sendSubscriptionActivatedEmail(to, 'Test User', 'Intango', new Date(Date.now() + 90 * 24 * 60 * 60 * 1000));
-                        break;
-                    case 'subscription_extended':
-                        await EmailService.sendSubscriptionExtendedEmail(to, 'Test User', 'Intango', 30, new Date(Date.now() + 120 * 24 * 60 * 60 * 1000));
-                        break;
-                    case 'subscription_cancelled':
-                        await EmailService.sendSubscriptionCancelledEmail(to, 'Test User', 'Intango');
-                        break;
                     case 'welcome':
                         await EmailService.sendWelcomeEmail(to, 'Test User');
                         break;

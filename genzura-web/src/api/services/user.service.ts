@@ -38,8 +38,4 @@ export const userService = {
     return response.data;
   },
 
-  getMySubscription: async () => {
-    const response = await apiClient.get('/users/me/subscription');
-    return response.data;
-  },
 };

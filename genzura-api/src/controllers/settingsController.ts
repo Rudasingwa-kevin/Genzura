@@ -20,32 +20,4 @@ export class SettingsController {
       res.status(500).json({ error: error.message });
     }
   }
-
-  // Subscription system management
-  static async getSubscriptionInfo(req: Request, res: Response) {
-    try {
-      const info = await SettingsService.getSubscriptionInfo();
-      res.json(info);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  static async activateSubscriptionSystem(req: Request, res: Response) {
-    try {
-      const result = await SettingsService.activateSubscriptionSystem();
-      res.json(result);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  static async pauseSubscriptionSystem(req: Request, res: Response) {
-    try {
-      const result = await SettingsService.pauseSubscriptionSystem();
-      res.json(result);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  }
 }
