@@ -51,11 +51,11 @@ function App() {
             <Route path="/contact"    element={<PublicFeedbackPage />} />
             <Route path="/attorneys"  element={<AttorneyDirectoryPage />} />
             <Route path="/attorneys/:id" element={<AttorneyProfilePage />} />
-            <Route path="/laws"       element={<LawSearchPage />} />
 
             <Route path="/dashboard"  element={<ProtectedRoute><Dashboard /></ProtectedRoute>}     />
             <Route path="/cases"      element={<ProtectedRoute><CasesPage /></ProtectedRoute>}     />
             <Route path="/cases/:id"  element={<ProtectedRoute><CaseDetailPage /></ProtectedRoute>} />
+            <Route path="/laws"       element={<ProtectedRoute><LawSearchPage /></ProtectedRoute>}  />
             <Route path="/calendar"   element={<ProtectedRoute><CalendarPage /></ProtectedRoute>}  />
             <Route path="/documents"  element={<ProtectedRoute><DocumentsPage /></ProtectedRoute>} />
             <Route path="/clients"      element={<ProtectedRoute><ClientsPage /></ProtectedRoute>}       />

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import {
   Search, Scale, Filter, ChevronRight, BookOpen,
-  ExternalLink, X, Loader2, FileText, Tag
+  X, Loader2, Tag
 } from 'lucide-react';
 import { lawService } from '../api/services/law.service';
+import AppLayout from '../components/AppLayout';
 
 const LAW_TYPE_LABELS: Record<string, string> = {
   Penal_Code: 'Penal Code',
@@ -69,149 +69,111 @@ export default function LawSearchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-page-bg">
-      {/* Header */}
-      <header className="bg-white border-b border-border-base sticky top-0 z-10 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-navbar flex items-center justify-between">
-          <Link to="/" className="flex items-center">
-            <img
-              src="/Genzura website header.png"
-              alt="Genzura"
-              className="h-24 w-auto object-contain"
+    <AppLayout title="Rwandan Legal Database">
+      <div className="space-y-6">
+
+        {/* Search & Filters Bar */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
+            <input
+              type="text"
+              placeholder="Search by keyword, article number, or legal concept..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full h-12 pl-11 pr-10 rounded-2xl bg-white border border-border-base focus:border-brand-blue focus:ring-4 focus:ring-brand-blue/5 outline-none transition-all font-bold text-sm"
             />
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link
-              to="/login"
-              className="text-text-secondary hover:text-brand-blue font-medium transition-colors"
-            >
-              Sign In
-            </Link>
-            <Link
-              to="/register"
-              className="bg-brand-blue text-white px-6 py-2 rounded-button hover:bg-brand-dark font-medium transition-colors"
-            >
-              Get Started
-            </Link>
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-brand-dark transition-colors"
+              >
+                <X size={16} />
+              </button>
+            )}
           </div>
-        </div>
-      </header>
+          <div className="relative">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl border font-bold text-sm transition-all ${
+                showFilters || selectedType
+                  ? 'bg-brand-blue text-white border-brand-blue shadow-lg shadow-brand-blue/20'
+                  : 'bg-white text-text-secondary border-border-base hover:border-brand-blue/30'
+              }`}
+            >
+              <Filter size={16} />
+              Filters
+              {selectedType && (
+                <span className="bg-white/20 text-white text-[10px] px-2 py-0.5 rounded-full">
+                  {LAW_TYPE_LABELS[selectedType]}
+                </span>
+              )}
+            </button>
 
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-brand-blue to-brand-dark text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white text-xs font-bold uppercase tracking-wider mb-6 border border-white/20">
-              <Scale size={14} /> Rwandan Legal Database
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Search Applicable Laws
-            </h1>
-            <p className="text-xl text-brand-light mb-8 max-w-2xl mx-auto">
-              Browse and search through Rwandan legal codes, statutes, and articles.
-              Find the laws that apply to your case.
-            </p>
-
-            {/* Search Bar */}
-            <div className="max-w-3xl mx-auto">
-              <div className="bg-white rounded-card shadow-card p-2 flex flex-col md:flex-row gap-2">
-                <div className="flex-1 flex items-center gap-2 px-3 py-2 bg-page-bg rounded-button">
-                  <Search className="w-5 h-5 text-text-muted" />
-                  <input
-                    type="text"
-                    placeholder="Search by keyword, article number, or legal concept..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="flex-1 bg-transparent border-none focus:outline-none text-text-primary placeholder-text-muted"
-                  />
-                  {searchTerm && (
-                    <button onClick={() => setSearchTerm('')} className="text-text-muted hover:text-text-secondary">
-                      <X size={16} />
-                    </button>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setShowFilters(!showFilters)}
-                    className="flex items-center gap-2 px-4 py-2 bg-page-bg text-text-secondary rounded-button hover:bg-brand-light transition-colors"
-                  >
-                    <Filter className="w-4 h-4" />
-                    Filters
-                    {selectedType && (
-                      <span className="bg-brand-blue text-white text-xs px-2 py-0.5 rounded-full">
-                        1
-                      </span>
-                    )}
+            {showFilters && (
+              <div className="absolute top-full right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-border-base p-4 z-50 animate-in fade-in zoom-in-95 duration-200">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-bold text-brand-dark text-sm">Filters</h3>
+                  <button onClick={() => setShowFilters(false)} className="text-text-muted hover:text-brand-dark">
+                    <X size={16} />
                   </button>
                 </div>
-              </div>
-
-              {/* Filters Dropdown */}
-              {showFilters && (
-                <div className="mt-4 bg-white rounded-card shadow-card p-4 text-left">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-semibold text-text-primary">Filters</h3>
-                    <button onClick={() => setShowFilters(false)} className="text-text-muted hover:text-text-secondary">
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium text-text-secondary mb-1">Law Type</label>
-                      <select
-                        value={selectedType}
-                        onChange={(e) => setSelectedType(e.target.value)}
-                        className="w-full px-3 py-2 border border-border-base rounded-button focus:outline-none focus:ring-2 focus:ring-brand-blue text-text-primary"
-                      >
-                        <option value="">All Types</option>
-                        {Object.entries(LAW_TYPE_LABELS).map(([key, label]) => (
-                          <option key={key} value={key}>{label}</option>
-                        ))}
-                      </select>
-                    </div>
-                    {selectedType && (
-                      <button onClick={() => setSelectedType('')} className="text-sm text-brand-blue hover:text-brand-dark">
-                        Clear filters
-                      </button>
-                    )}
-                  </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-text-muted uppercase tracking-wider mb-2">Law Type</label>
+                  <select
+                    value={selectedType}
+                    onChange={(e) => setSelectedType(e.target.value)}
+                    className="w-full px-3 py-2.5 border border-border-base rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-blue text-sm font-bold"
+                  >
+                    <option value="">All Types</option>
+                    {Object.entries(LAW_TYPE_LABELS).map(([key, label]) => (
+                      <option key={key} value={key}>{label}</option>
+                    ))}
+                  </select>
                 </div>
-              )}
-            </div>
+                {selectedType && (
+                  <button
+                    onClick={() => setSelectedType('')}
+                    className="mt-3 text-xs font-bold text-brand-blue hover:text-brand-dark"
+                  >
+                    Clear filter
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
-      </div>
 
-      {/* Results Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="mb-6">
-          <p className="text-text-secondary">
+        {/* Results Count */}
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-text-secondary">
             {loading ? (
               'Loading laws...'
             ) : (
               <>
-                <span className="font-semibold text-text-primary">{articles.length}</span>
+                <span className="font-bold text-brand-dark">{articles.length}</span>
                 {' '}{articles.length === 1 ? 'article' : 'articles'} found
                 {searchTerm && <span> for "<span className="font-medium">{searchTerm}</span>"</span>}
-                {selectedType && <span> in <span className="font-medium">{LAW_TYPE_LABELS[selectedType]}</span></span>}
               </>
             )}
           </p>
         </div>
 
+        {/* Error */}
         {error && (
-          <div className="bg-danger-bg border border-red-300 rounded-card p-4 mb-6">
-            <p className="text-danger-text font-medium">{error}</p>
-            <button onClick={fetchArticles} className="mt-2 text-brand-blue hover:text-brand-dark font-medium">
-              Try again
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center justify-between">
+            <p className="text-sm font-bold text-red-600">{error}</p>
+            <button onClick={fetchArticles} className="text-sm font-bold text-brand-blue hover:text-brand-dark">
+              Retry
             </button>
           </div>
         )}
 
+        {/* Loading Skeleton */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-white rounded-card shadow-card p-6 animate-pulse">
+              <div key={i} className="bg-white rounded-2xl border border-border-base p-6 animate-pulse">
                 <div className="h-4 bg-page-bg rounded w-1/3 mb-3"></div>
                 <div className="h-5 bg-page-bg rounded w-3/4 mb-2"></div>
                 <div className="h-3 bg-page-bg rounded w-full mb-2"></div>
@@ -220,13 +182,17 @@ export default function LawSearchPage() {
             ))}
           </div>
         ) : articles.length === 0 ? (
-          <div className="text-center py-12">
-            <Scale className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No articles found</h3>
-            <p className="text-gray-600 mb-4">Try adjusting your search or filters</p>
+          <div className="text-center py-16">
+            <div className="w-20 h-20 rounded-[2rem] bg-brand-blue/5 flex items-center justify-center mx-auto mb-6">
+              <Scale size={36} className="text-brand-blue" />
+            </div>
+            <h3 className="text-lg font-bold text-brand-dark mb-2">No articles found</h3>
+            <p className="text-sm text-text-secondary max-w-md mx-auto mb-6">
+              Try adjusting your search terms or filters to find relevant legal articles.
+            </p>
             <button
               onClick={() => { setSearchTerm(''); setSelectedType(''); }}
-              className="text-brand-blue hover:text-brand-dark font-medium"
+              className="text-sm font-bold text-brand-blue hover:text-brand-dark"
             >
               Clear all filters
             </button>
@@ -236,7 +202,7 @@ export default function LawSearchPage() {
             {articles.map((article) => (
               <div
                 key={article.id}
-                className="bg-white rounded-card shadow-card hover:shadow-xl transition-all border border-border-base hover:-translate-y-1 overflow-hidden"
+                className="bg-white rounded-2xl border border-border-base hover:shadow-lg hover:border-brand-blue/20 transition-all group overflow-hidden"
               >
                 <div className="p-6">
                   {/* Type Badge */}
@@ -244,21 +210,21 @@ export default function LawSearchPage() {
                     <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${LAW_TYPE_COLORS[article.legalCode?.type] || 'bg-gray-50 text-gray-600 border-gray-200'}`}>
                       {LAW_TYPE_LABELS[article.legalCode?.type] || article.legalCode?.type}
                     </span>
-                    <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
+                    <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider font-mono">
                       Art. {article.articleNumber}
                     </span>
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-lg font-bold text-brand-dark mb-2">
+                  <h3 className="text-base font-bold text-brand-dark mb-2 group-hover:text-brand-blue transition-colors">
                     {article.title || `Article ${article.articleNumber}`}
                   </h3>
 
                   {/* Source */}
-                  <p className="text-xs text-text-muted mb-3 flex items-center gap-1">
-                    <BookOpen size={12} />
-                    {article.legalCode?.shortName}
-                    {article.legalCode?.lawNumber && <span className="font-mono">({article.legalCode.lawNumber})</span>}
+                  <p className="text-xs text-text-muted mb-3 flex items-center gap-1.5">
+                    <BookOpen size={12} className="text-brand-blue" />
+                    <span className="font-bold">{article.legalCode?.shortName}</span>
+                    {article.legalCode?.lawNumber && <span className="font-mono opacity-60">({article.legalCode.lawNumber})</span>}
                   </p>
 
                   {/* Article Text */}
@@ -290,7 +256,7 @@ export default function LawSearchPage() {
                   {(article.penaltyMin || article.fineMin) && (
                     <div className="bg-red-50 rounded-xl p-3 mt-3 border border-red-100">
                       <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider mb-1">Penalties</p>
-                      <div className="flex items-center gap-4 text-xs text-red-700">
+                      <div className="flex flex-wrap items-center gap-4 text-xs text-red-700">
                         {article.penaltyMin && (
                           <span>Imprisonment: <span className="font-bold">{article.penaltyMin} – {article.penaltyMax}</span></span>
                         )}
@@ -315,6 +281,6 @@ export default function LawSearchPage() {
           </div>
         )}
       </div>
-    </div>
+    </AppLayout>
   );
 }
