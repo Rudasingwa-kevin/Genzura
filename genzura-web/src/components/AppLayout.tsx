@@ -23,6 +23,7 @@ import {
   MessageSquare,
   Check,
   XCircle,
+  Scale,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
@@ -281,6 +282,7 @@ const navItems = [
   { icon: Briefcase,       label: 'Cases',     to: '/cases'     },
   { icon: CalendarIcon,    label: 'Calendar',  to: '/calendar'  },
   { icon: Folder,          label: 'Documents', to: '/documents' },
+  { icon: Scale,           label: 'Find Laws', to: '/laws'      },
   { icon: Users,           label: 'Clients',   to: '/clients'   },
   { icon: BarChart3,       label: 'Analytics', to: '/analytics' },
   { icon: MessageSquare,   label: 'Feedback',  to: '/feedback'  },

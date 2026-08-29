@@ -6,7 +6,7 @@ import {
   FileText, Download, Paperclip, MessageSquare, Send, CheckCircle2,
   Edit3, Archive, Share2, Flag, MoreHorizontal, Plus, Search,
   Filter, ChevronRight, History, X, Copy, Trash2, FileDown,
-  Loader2, Briefcase
+  Loader2, Briefcase, Scale, Sparkles, ExternalLink, Trash
 } from 'lucide-react';
 import AppLayout from '../components/AppLayout';
 import {
@@ -17,6 +17,7 @@ import { caseService } from '../api/services/case.service';
 import { documentService } from '../api/services/document.service';
 import { userService } from '../api/services/user.service';
 import { trackingService } from '../api/services/tracking.service';
+import { lawService } from '../api/services/law.service';
 import { useAuth } from '../contexts/AuthContext';
 import EmptyState from '../components/EmptyState';
 import { CaseSummaryPDF } from '../components/CaseSummaryPDF';
@@ -271,7 +272,7 @@ export default function CaseDetailPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [newNote, setNewNote] = useState('');
-  const [activeTab, setActiveTab] = useState<'timeline' | 'documents' | 'notes'>('timeline');
+  const [activeTab, setActiveTab] = useState<'timeline' | 'documents' | 'notes' | 'laws'>('timeline');
   const [currentCase, setCurrentCase] = useState<any>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -279,6 +280,8 @@ export default function CaseDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [caseLaws, setCaseLaws] = useState<any[]>([]);
+  const [isMatching, setIsMatching] = useState(false);
   const pdfRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -310,6 +313,53 @@ export default function CaseDetailPage() {
     };
     fetchCase();
   }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    const fetchLaws = async () => {
+      try {
+        const result = await lawService.getCaseLaws(id);
+        setCaseLaws(result.data || []);
+      } catch (err) {
+        // Laws may not exist yet for this case
+        setCaseLaws([]);
+      }
+    };
+    fetchLaws();
+  }, [id]);
+
+  const handleMatchLaws = async () => {
+    if (!id) return;
+    setIsMatching(true);
+    const toastId = toast.loading('AI is analyzing your case against Rwandan laws...', {
+      style: { borderRadius: '1rem', background: '#1e293b', color: '#fff', fontWeight: 'bold' }
+    });
+    try {
+      const result = await lawService.matchLawsToCase(id);
+      setCaseLaws(result.data?.laws || []);
+      toast.success(
+        `Matched ${result.data?.savedMatches || 0} applicable law(s) to this case`,
+        { id: toastId, icon: '⚖️', style: { borderRadius: '1rem', background: '#1e293b', color: '#fff', fontWeight: 'bold' } }
+      );
+    } catch (error: any) {
+      console.error('Law matching failed:', error);
+      toast.error(error.response?.data?.error || 'Failed to match laws. Ensure ANTHROPIC_API_KEY is configured.', { id: toastId });
+    } finally {
+      setIsMatching(false);
+    }
+  };
+
+  const handleRemoveLaw = async (lawId: string) => {
+    if (!id) return;
+    const loadId = toast.loading('Removing law...');
+    try {
+      await lawService.removeLawFromCase(id, lawId);
+      setCaseLaws(prev => prev.filter(l => l.id !== lawId));
+      toast.success('Law removed from case', { id: loadId });
+    } catch (error) {
+      toast.error('Failed to remove law', { id: loadId });
+    }
+  };
 
   const caseData = currentCase;
 
@@ -743,7 +793,7 @@ export default function CaseDetailPage() {
             <div className="bg-white rounded-[2.5rem] border border-border-base shadow-sm overflow-hidden min-h-[600px] flex flex-col">
               <div className="px-4 sm:px-6 lg:px-10 py-6 lg:py-8 border-b border-border-base flex flex-col lg:flex-row lg:items-center justify-between gap-4 lg:gap-6 bg-white sticky top-0 z-20">
                 <div className="flex gap-1.5 sm:gap-2 p-1.5 bg-page-bg rounded-2xl border border-border-base w-full lg:w-fit overflow-x-auto">
-                  {(['timeline', 'documents', 'notes'] as const).map((tab) => (
+                  {(['timeline', 'documents', 'notes', 'laws'] as const).map((tab) => (
                     <button
                       key={tab}
                       onClick={() => setActiveTab(tab)}
@@ -756,11 +806,12 @@ export default function CaseDetailPage() {
                       {tab === 'timeline' && <History size={12} className="sm:w-3.5 sm:h-3.5" />}
                       {tab === 'documents' && <Paperclip size={12} className="sm:w-3.5 sm:h-3.5" />}
                       {tab === 'notes' && <MessageSquare size={12} className="sm:w-3.5 sm:h-3.5" />}
-                      <span>{tab}</span>
+                      {tab === 'laws' && <Scale size={12} className="sm:w-3.5 sm:h-3.5" />}
+                      <span>{tab === 'laws' ? 'Applicable Laws' : tab}</span>
                       <span className={`text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-lg border ${
                         activeTab === tab ? 'bg-brand-blue text-white border-brand-blue' : 'bg-white text-text-muted border-border-base'
                       }`}>
-                        {tab === 'timeline' ? (caseData.timeline?.length || 0) : tab === 'documents' ? (caseData.documents?.length || 0) : (caseData.notes?.length || 0)}
+                        {tab === 'laws' ? caseLaws.length : tab === 'timeline' ? (caseData.timeline?.length || 0) : tab === 'documents' ? (caseData.documents?.length || 0) : (caseData.notes?.length || 0)}
                       </span>
                     </button>
                   ))}
@@ -903,6 +954,138 @@ export default function CaseDetailPage() {
                         </button>
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* Applicable Laws Content */}
+                {activeTab === 'laws' && (
+                  <div className="space-y-6">
+                    {/* AI Match Header */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 bg-gradient-to-r from-brand-blue/5 to-brand-green/5 rounded-2xl border border-brand-blue/10">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-brand-blue to-brand-dark flex items-center justify-center text-white shadow-lg shadow-brand-blue/20">
+                          <Scale size={24} />
+                        </div>
+                        <div>
+                          <h4 className="text-base font-bold text-brand-dark">Rwandan Law Matching</h4>
+                          <p className="text-xs text-text-muted mt-1">
+                            AI-powered analysis matches this case to relevant articles from {caseLaws.length > 0 ? <span className="font-bold text-brand-blue">{caseLaws.length} law(s)</span> : 'the Rwandan legal database'}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleMatchLaws}
+                        disabled={isMatching}
+                        className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-brand-blue to-brand-dark text-white font-bold text-sm shadow-lg shadow-brand-blue/20 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-60 active:scale-95 whitespace-nowrap"
+                      >
+                        {isMatching ? (
+                          <>
+                            <Loader2 size={16} className="animate-spin" /> Analyzing...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles size={16} /> {caseLaws.length > 0 ? 'Re-match Laws' : 'Match Laws with AI'}
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Laws List */}
+                    {caseLaws.length === 0 ? (
+                      <div className="text-center py-12">
+                        <div className="w-20 h-20 rounded-[2rem] bg-brand-blue/5 flex items-center justify-center mx-auto mb-6">
+                          <Scale size={36} className="text-brand-blue" />
+                        </div>
+                        <h4 className="text-lg font-bold text-brand-dark mb-2">No Laws Matched Yet</h4>
+                        <p className="text-sm text-text-secondary max-w-md mx-auto mb-6">
+                          Click "Match Laws with AI" to analyze this case against the Rwandan legal database. The AI will identify relevant Penal Code, Commercial Code, Labor Law, and other statutory provisions.
+                        </p>
+                        <button
+                          onClick={handleMatchLaws}
+                          disabled={isMatching}
+                          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-brand-blue text-white font-bold text-sm shadow-lg shadow-brand-blue/20 hover:shadow-xl transition-all"
+                        >
+                          {isMatching ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                          {isMatching ? 'Analyzing...' : 'Match Laws with AI'}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {caseLaws.map((caseLaw: any) => (
+                          <div
+                            key={caseLaw.id}
+                            className="bg-white border border-border-base rounded-2xl p-6 hover:shadow-md hover:border-brand-blue/20 transition-all group"
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap mb-2">
+                                  <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${
+                                    caseLaw.relevance === 'Primary'
+                                      ? 'bg-red-50 text-red-600 border-red-200'
+                                      : caseLaw.relevance === 'Secondary'
+                                      ? 'bg-amber-50 text-amber-600 border-amber-200'
+                                      : 'bg-blue-50 text-blue-600 border-blue-200'
+                                  }`}>
+                                    {caseLaw.relevance}
+                                  </span>
+                                  {caseLaw.suggestedBy === 'AI' && (
+                                    <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-violet-50 text-violet-600 border border-violet-200 flex items-center gap-1">
+                                      <Sparkles size={10} /> AI Suggested
+                                    </span>
+                                  )}
+                                  {caseLaw.legalCode && (
+                                    <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
+                                      {caseLaw.legalCode.shortName}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <h5 className="text-base font-bold text-brand-dark mb-1">
+                                  {caseLaw.legalArticle?.title || `Article ${caseLaw.legalArticle?.articleNumber}`}
+                                </h5>
+
+                                {caseLaw.legalArticle?.articleNumber && (
+                                  <p className="text-xs text-text-muted mb-2 font-mono">
+                                    Article {caseLaw.legalArticle.articleNumber} · {caseLaw.legalCode?.code}
+                                  </p>
+                                )}
+
+                                {caseLaw.legalArticle?.textEN && (
+                                  <p className="text-sm text-text-secondary leading-relaxed mb-3 line-clamp-3">
+                                    {caseLaw.legalArticle.textEN}
+                                  </p>
+                                )}
+
+                                {caseLaw.notes && (
+                                  <div className="bg-brand-blue/5 rounded-xl p-3 mt-3">
+                                    <p className="text-xs font-bold text-brand-blue mb-1 uppercase tracking-wider">AI Reasoning</p>
+                                    <p className="text-sm text-text-secondary">{caseLaw.notes}</p>
+                                  </div>
+                                )}
+
+                                {caseLaw.legalArticle?.keywords && caseLaw.legalArticle.keywords.length > 0 && (
+                                  <div className="flex flex-wrap gap-1.5 mt-3">
+                                    {caseLaw.legalArticle.keywords.map((kw: string) => (
+                                      <span key={kw} className="px-2 py-0.5 rounded-md bg-page-bg text-[10px] font-bold text-text-muted border border-border-base/50">
+                                        {kw}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+
+                              <button
+                                onClick={() => handleRemoveLaw(caseLaw.id)}
+                                className="p-2 rounded-lg text-text-muted hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
+                                title="Remove from case"
+                              >
+                                <Trash size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

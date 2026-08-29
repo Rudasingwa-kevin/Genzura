@@ -24,6 +24,7 @@ import FeedbackPage   from './pages/FeedbackPage';
 import PublicFeedbackPage from './pages/PublicFeedbackPage';
 import AttorneyDirectoryPage from './pages/AttorneyDirectoryPage';
 import AttorneyProfilePage from './pages/AttorneyProfilePage';
+import LawSearchPage from './pages/LawSearchPage';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -50,6 +51,7 @@ function App() {
             <Route path="/contact"    element={<PublicFeedbackPage />} />
             <Route path="/attorneys"  element={<AttorneyDirectoryPage />} />
             <Route path="/attorneys/:id" element={<AttorneyProfilePage />} />
+            <Route path="/laws"       element={<LawSearchPage />} />
 
             <Route path="/dashboard"  element={<ProtectedRoute><Dashboard /></ProtectedRoute>}     />
             <Route path="/cases"      element={<ProtectedRoute><CasesPage /></ProtectedRoute>}     />
